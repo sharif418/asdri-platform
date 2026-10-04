@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, CalendarDays, Clock3, User } from "lucide-react";
 import { pick, type Language, type LocalizedText } from "@/types";
 import { formatDate, toBnDigits } from "@/lib/format";
+import { langPath } from "@/lib/locale";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { cn } from "@/lib/utils";
 
@@ -103,7 +104,7 @@ export function BlogExplorer({ articles, lang }: BlogExplorerProps) {
           {filtered.map((article, index) => (
             <RevealItem key={article.slug}>
               <article className="group flex h-full flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-gold/50 hover:shadow-lg">
-                <Link href={`/media/blog/${article.slug}`} className="relative block aspect-[16/10] overflow-hidden" tabIndex={-1} aria-hidden>
+                <Link href={langPath(lang, `/media/blog/${article.slug}`)} className="relative block aspect-[16/10] overflow-hidden" tabIndex={-1} aria-hidden>
                   <img
                     src={article.cover}
                     alt=""
@@ -118,7 +119,7 @@ export function BlogExplorer({ articles, lang }: BlogExplorerProps) {
 
                 <div className="flex flex-1 flex-col gap-3 p-5">
                   <h2 className="font-heading text-lg font-semibold leading-snug">
-                    <Link href={`/media/blog/${article.slug}`} className="link-sweep transition-colors hover:text-primary">
+                    <Link href={langPath(lang, `/media/blog/${article.slug}`)} className="link-sweep transition-colors hover:text-primary">
                       {pick(article.title, lang)}
                     </Link>
                   </h2>
@@ -164,7 +165,7 @@ export function BlogExplorer({ articles, lang }: BlogExplorerProps) {
           {lang === "bn"
             ? "ইনস্টিটিউটের গবেষণা জার্নালে প্রকাশিত পূর্ণাঙ্গ প্রবন্ধসমূহ পেতে লাইব্রেরি পরিদর্শন করুন।"
             : "For full journal papers, visit the institute library section."}{" "}
-          <Link href="/research/library" className="link-sweep inline-flex items-center gap-1 font-semibold text-primary">
+          <Link href={langPath(lang, "/research/library")} className="link-sweep inline-flex items-center gap-1 font-semibold text-primary">
             {lang === "bn" ? "লাইব্রেরি ও জার্নাল" : "Library & Journals"}
             <ArrowRight aria-hidden className="h-3.5 w-3.5" />
           </Link>

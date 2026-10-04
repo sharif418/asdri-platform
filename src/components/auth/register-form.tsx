@@ -16,6 +16,7 @@ import {
 import { useLanguage } from "@/components/providers/language-provider";
 import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { langPath } from "@/lib/locale";
 import type { Language } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -118,7 +119,7 @@ export function RegisterForm({ lang }: { lang: Language }) {
           ? "স্বয়ংক্রিয়ভাবে লগইন হয়ে গেছেন — ড্যাশবোর্ডে যাচ্ছি…"
           : "You are signed in — taking you to the dashboard…",
       });
-      router.push("/account");
+      router.push(langPath(lang, "/account"));
       router.refresh();
     } catch {
       toast({ title: t("toast.error"), variant: "destructive" });
@@ -313,7 +314,7 @@ export function RegisterForm({ lang }: { lang: Language }) {
 
         <p className="mt-5 text-center text-[13px] text-muted-foreground">
           {bn ? "ইতিমধ্যেই অ্যাকাউন্ট আছে?" : "Already have an account?"}{" "}
-          <Link href="/login" className="font-semibold text-primary hover:underline">
+          <Link href={langPath(lang, "/login")} className="font-semibold text-primary hover:underline">
             {t("action.login")}
           </Link>
         </p>

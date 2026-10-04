@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { courses } from "@/content/courses";
+import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { Course, CourseKind, Language } from "@/types";
 import { cn } from "@/lib/utils";
@@ -39,7 +40,7 @@ export function CourseCard({ course, lang, priority = false }: { course: Course;
   const Icon = courseIcons[course.icon] ?? GraduationCap;
 
   return (
-    <Link href={`/academics/courses/${course.slug}`} className="group block h-full">
+    <Link href={langPath(lang, `/academics/courses/${course.slug}`)} className="group block h-full">
       <article
         className={cn(
           "relative flex h-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-950/10",

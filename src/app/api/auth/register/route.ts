@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
+import { Prisma, UserRole } from "@prisma/client";
 import { db } from "@/lib/db";
-import {
-  SESSION_COOKIE,
-  createSessionToken,
-  hashPassword,
-  sessionCookieOptions,
-  type SessionRole,
-} from "@/lib/auth";
+import { SESSION_COOKIE, CSRF_COOKIE, createSession, hashPassword } from "@/lib/auth";
 import { getClientIp, isSameOrigin, jsonError, jsonOk, rateLimit } from "@/lib/security";
 import { registerSchema, zodFields } from "@/lib/validators";
 
 export const dynamic = "force-dynamic";
 
-/** POST /api/auth/register — create an account and sign the user in immediately. */
+const ALLOWED_SELF_ROLES: UserRole[] = ["APPLICANT"];
+
+/**
+ * POST /api/auth/register — public account creation. Only applicant accounts
+ * can be self-registered; staff accounts are created by an administrator.
+ */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!isSameOrigin(request)) {
     return jsonError("Invalid origin", "UNAUTHORIZED", 403);
@@ -22,7 +21,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const ip = getClientIp(request);
   const limiter = rateLimit({ key: "auth-register", identifier: ip, limit: 5, windowMs: 10 * 60_000 });
   if (!limiter.ok) {
-    return jsonError("অনেকবার চেষ্টা করেছেন, কিছুক্ষণ পর আবার করুন", "RATE_LIMIT", 429);
+    return jsonError("অনেকবার চেষ্টা করেছেন, কিছুক্ষণ পর আবার চেষ্টা করুন", "RATE_LIMIT", 429);
   }
 
   let body: unknown;
@@ -39,6 +38,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       { status: 400 },
     );
   }
+
+  const requestedRole = (parsed.data.role ?? "APPLICANT") as UserRole;
+  const role: UserRole = ALLOWED_SELF_ROLES.includes(requestedRole) ? requestedRole : "APPLICANT";
 
   try {
     const existing = await db.user.findUnique({ where: { email: parsed.data.email } });
@@ -60,7 +62,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           name: parsed.data.name,
           email: parsed.data.email,
           phone: parsed.data.phone || null,
-          role: parsed.data.role,
+          role,
           passwordHash: hashPassword(parsed.data.password),
         },
       });
@@ -79,18 +81,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       throw error;
     }
 
-    const token = createSessionToken({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role as SessionRole,
+    const { csrfToken, cookieValue, maxAge } = await createSession(user.id, {
+      ip,
+      userAgent: request.headers.get("user-agent") ?? undefined,
     });
 
     const response = jsonOk(
       { user: { name: user.name, email: user.email, role: user.role }, message: "অ্যাকাউন্ট তৈরি হয়েছে — স্বাগতম!" },
       201,
     );
-    response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions);
+    const cookieBase = {
+      sameSite: "lax" as const,
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge,
+    };
+    response.cookies.set(SESSION_COOKIE, cookieValue, { ...cookieBase, httpOnly: true });
+    response.cookies.set(CSRF_COOKIE, csrfToken, { ...cookieBase, httpOnly: false });
     return response;
   } catch {
     return jsonError("সার্ভারে সমস্যা হয়েছে, কিছুক্ষণ পর আবার চেষ্টা করুন", "SERVER", 500);

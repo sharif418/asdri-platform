@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { useLanguage } from "@/components/providers/language-provider";
+import { langPath } from "@/lib/locale";
 import { cn } from "@/lib/utils";
 
 interface SearchBoxProps {
@@ -30,7 +31,7 @@ export function SearchBox({ initialQuery = "", autoFocus = false, size = "defaul
 
   function submit(query: string): void {
     const trimmed = query.trim();
-    router.push(trimmed.length > 0 ? `/search?q=${encodeURIComponent(trimmed)}` : "/search");
+    router.push(langPath(lang, trimmed.length > 0 ? `/search?q=${encodeURIComponent(trimmed)}` : "/search"));
   }
 
   const hero = size === "hero";

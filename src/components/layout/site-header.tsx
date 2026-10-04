@@ -31,6 +31,7 @@ import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { CommandPalette, SearchTrigger } from "@/components/search/command-palette";
 import { useLanguage } from "@/components/providers/language-provider";
 import { navigation, siteConfig } from "@/content/site";
+import { langPath } from "@/lib/locale";
 import type { DictionaryKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -50,7 +51,13 @@ const navSections: NavSection[] = [
   { key: "nav.contact", href: "/contact", children: [...navigation.contact] },
 ];
 
-/** Top utility bar — contact info, language switch, auth shortcuts. */
+/** Internal pathnames are locale-prefixed (/bn/x, /en/x) — strip to compare. */
+function displayPath(pathname: string): string {
+  if (pathname.startsWith("/en")) return pathname.slice(3) || "/";
+  if (pathname.startsWith("/bn")) return pathname.slice(3) || "/";
+  return pathname;
+}
+
 function TopUtilityBar() {
   const { lang, t, toggle } = useLanguage();
   return (
@@ -92,14 +99,14 @@ function TopUtilityBar() {
           </button>
           <span aria-hidden className="hidden h-4 w-px bg-ivory/20 sm:block" />
           <Link
-            href="/login"
+            href={langPath(lang, "/login")}
             className="hidden items-center gap-1 transition-colors hover:text-gold sm:inline-flex"
           >
             <LogIn aria-hidden className="h-3.5 w-3.5" />
             {t("action.login")}
           </Link>
           <Link
-            href="/register"
+            href={langPath(lang, "/register")}
             className="hidden items-center gap-1 transition-colors hover:text-gold sm:inline-flex"
           >
             <UserPlus aria-hidden className="h-3.5 w-3.5" />
@@ -123,8 +130,8 @@ function ActiveNavUnderline() {
 
 /** Desktop mega-menu trigger + panel. */
 function DesktopNavItem({ section }: { section: NavSection }) {
-  const { t } = useLanguage();
-  const pathname = usePathname();
+  const { t, lang } = useLanguage();
+  const pathname = displayPath(usePathname());
   const base = section.href;
   const active = pathname === base || pathname.startsWith(`${base}/`);
 
@@ -136,7 +143,7 @@ function DesktopNavItem({ section }: { section: NavSection }) {
           className={cn(navigationMenuTriggerStyle(), "bg-transparent px-3 py-2 text-[14px] font-medium")}
           data-active={active}
         >
-          <Link href={base}>
+          <Link href={langPath(lang, base)}>
             <span className={cn(active ? "text-primary font-semibold" : "link-sweep")}>{t(section.key)}</span>
           </Link>
         </NavigationMenuLink>
@@ -156,7 +163,7 @@ function DesktopNavItem({ section }: { section: NavSection }) {
                   <li key={child.href}>
                     <NavigationMenuLink asChild>
                       <Link
-                        href={child.href}
+                        href={langPath(lang, child.href)}
                         className="block rounded-md px-3 py-2 text-sm transition-colors hover:bg-secondary hover:text-primary"
                       >
                         {t(child.key)}
@@ -176,7 +183,7 @@ function DesktopNavItem({ section }: { section: NavSection }) {
 /** Mobile drawer navigation with accordions (includes its own trigger). */
 function MobileNav({ onSearchClick }: { onSearchClick: () => void }) {
   const { t, lang, toggle } = useLanguage();
-  const pathname = usePathname();
+  const pathname = displayPath(usePathname());
   const [open, setOpen] = useState(false);
 
   return (
@@ -217,7 +224,7 @@ function MobileNav({ onSearchClick }: { onSearchClick: () => void }) {
             {t("search.placeholder")}
           </button>
           <Link
-            href="/"
+            href={langPath(lang, "/")}
             onClick={() => setOpen(false)}
             className={cn(
               "block rounded-md px-3 py-2.5 text-[15px] font-medium hover:bg-secondary",
@@ -233,7 +240,7 @@ function MobileNav({ onSearchClick }: { onSearchClick: () => void }) {
                 <AccordionItem key={section.key} value={section.key} className="border-b-0">
                   <div className="flex items-center justify-between">
                     <Link
-                      href={section.href}
+                      href={langPath(lang, section.href)}
                       onClick={() => setOpen(false)}
                       className={cn(
                         "flex-1 py-2.5 text-[15px] font-medium hover:text-primary",
@@ -252,7 +259,7 @@ function MobileNav({ onSearchClick }: { onSearchClick: () => void }) {
                         {section.children.map((child) => (
                           <Link
                             key={child.href}
-                            href={child.href}
+                            href={langPath(lang, child.href)}
                             onClick={() => setOpen(false)}
                             className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-primary"
                           >
@@ -269,13 +276,13 @@ function MobileNav({ onSearchClick }: { onSearchClick: () => void }) {
 
           <div className="mt-6 grid gap-2">
             <Button asChild variant="outline" className="justify-start">
-              <Link href="/login" onClick={() => setOpen(false)}>
+              <Link href={langPath(lang, "/login")} onClick={() => setOpen(false)}>
                 <LogIn aria-hidden className="h-4 w-4" />
                 {t("action.login")}
               </Link>
             </Button>
             <Button asChild variant="outline" className="justify-start">
-              <Link href="/register" onClick={() => setOpen(false)}>
+              <Link href={langPath(lang, "/register")} onClick={() => setOpen(false)}>
                 <UserPlus aria-hidden className="h-4 w-4" />
                 {t("action.register")}
               </Link>
@@ -309,10 +316,10 @@ function MobileNav({ onSearchClick }: { onSearchClick: () => void }) {
 }
 /** Sticky site header: utility bar + logo + mega menu + search + donate CTA. */
 export function SiteHeader() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const pathname = usePathname();
+  const pathname = displayPath(usePathname());
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -331,7 +338,7 @@ export function SiteHeader() {
         )}
       >
         <div className="container-site flex h-16 items-center justify-between gap-4 lg:h-[72px]">
-          <Link href="/" aria-label={siteConfig.nameEn} className="min-w-0">
+          <Link href={langPath(lang, "/")} aria-label={siteConfig.nameEn} className="min-w-0">
             <LogoLockup nameBn={siteConfig.nameBn} nameEn={siteConfig.nameEn} parentBn={siteConfig.parentBn} />
           </Link>
 
@@ -344,7 +351,7 @@ export function SiteHeader() {
                       asChild
                       className={cn(navigationMenuTriggerStyle(), "bg-transparent px-3 py-2 text-[14px] font-medium")}
                     >
-                      <Link href="/">
+                      <Link href={langPath(lang, "/")}>
                         <span className={cn(pathname === "/" ? "text-primary font-semibold" : "link-sweep")}>
                           {t("nav.home")}
                         </span>
@@ -367,7 +374,7 @@ export function SiteHeader() {
               size="sm"
               className="hidden bg-gold-gradient text-[13px] font-semibold text-gold-foreground shadow-sm hover:opacity-95 sm:inline-flex"
             >
-              <Link href="/support">
+              <Link href={langPath(lang, "/support")}>
                 <HeartHandshake aria-hidden className="h-4 w-4" />
                 {t("action.donate")}
               </Link>

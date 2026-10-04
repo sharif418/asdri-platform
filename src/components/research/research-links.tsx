@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BookMarked, FileQuestion, FolderKanban, LibraryBig, MessagesSquare } from "lucide-react";
 import { pick } from "@/types";
 import type { Language, LocalizedText } from "@/types";
+import { langPath } from "@/lib/locale";
 
 interface ResearchLink {
   href: string;
@@ -68,7 +69,7 @@ export function ResearchLinks({ lang }: { lang: Language }) {
       {links.map((link) => (
         <Link
           key={link.href}
-          href={link.href}
+          href={langPath(lang, link.href)}
           className="group flex h-full flex-col rounded-2xl border bg-card p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-md"
         >
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-deep text-gold">

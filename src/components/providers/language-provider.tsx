@@ -1,10 +1,16 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
-import { dictionaries, LANG_COOKIE, type DictionaryKey } from "@/lib/i18n";
+import { usePathname, useRouter } from "next/navigation";
+import { dictionaries, type DictionaryKey } from "@/lib/i18n";
 import type { Language } from "@/types";
+import { otherLang } from "@/lib/locale";
 
+/**
+ * Language context. The URL is the source of truth: /x renders Bangla, /en/x
+ * renders English (the proxy rewrites bare paths to /bn/x internally). The
+ * switcher navigates the visitor to the SAME page in the other language.
+ */
 interface LanguageContextValue {
   lang: Language;
   t: (key: DictionaryKey) => string;
@@ -13,6 +19,13 @@ interface LanguageContextValue {
 }
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
+
+/** Map an internal pathname (/bn/x or /en/x) to the public display path (/x). */
+function displayPath(pathname: string): string {
+  if (pathname.startsWith("/en")) return pathname.slice(3) || "/";
+  if (pathname.startsWith("/bn")) return pathname.slice(3) || "/";
+  return pathname;
+}
 
 export function LanguageProvider({
   initialLang,
@@ -23,27 +36,30 @@ export function LanguageProvider({
 }) {
   const [lang, setLangState] = useState<Language>(initialLang);
   const router = useRouter();
+  const pathname = usePathname();
 
   const setLang = useCallback(
     (next: Language) => {
       setLangState(next);
-      document.cookie = `${LANG_COOKIE}=${next}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
-      document.documentElement.lang = next === "bn" ? "bn" : "en";
-      document.documentElement.dataset.lang = next;
-      router.refresh();
+      const base = displayPath(pathname);
+      const target = next === "en" ? `/en${base === "/" ? "" : base}` : base;
+      router.push(target);
     },
-    [router],
+    [pathname, router],
   );
 
   const toggle = useCallback(() => {
-    setLang(lang === "bn" ? "en" : "bn");
+    setLang(otherLang(lang));
   }, [lang, setLang]);
 
-  const t = useCallback((key: DictionaryKey) => dictionaries[lang][key] ?? key, [lang]);
-
   const value = useMemo<LanguageContextValue>(
-    () => ({ lang, t, setLang, toggle }),
-    [lang, t, setLang, toggle],
+    () => ({
+      lang,
+      t: (key: DictionaryKey) => dictionaries[lang][key] ?? key,
+      setLang,
+      toggle,
+    }),
+    [lang, setLang, toggle],
   );
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
@@ -51,6 +67,6 @@ export function LanguageProvider({
 
 export function useLanguage(): LanguageContextValue {
   const ctx = useContext(LanguageContext);
-  if (!ctx) throw new Error("useLanguage must be used inside <LanguageProvider>");
+  if (!ctx) throw new Error("useLanguage must be used within <LanguageProvider>");
   return ctx;
 }

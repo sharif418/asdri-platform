@@ -15,6 +15,7 @@ import {
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { courses } from "@/content/courses";
+import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { Course, Language } from "@/types";
 import { cn } from "@/lib/utils";
@@ -59,7 +60,7 @@ export function FeaturedPrograms({ lang }: { lang: Language }) {
             const Icon = courseIcons[course.icon] ?? GraduationCap;
             return (
               <RevealItem key={course.slug}>
-                <Link href={`/academics/courses/${course.slug}`} className="group block h-full">
+                <Link href={langPath(lang, `/academics/courses/${course.slug}`)} className="group block h-full">
                   <article className="relative flex h-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-950/10">
                     {/* Colored top ribbon */}
                     <div className={cn("h-1.5 w-full bg-gradient-to-r", course.accentClass)} />

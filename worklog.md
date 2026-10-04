@@ -675,3 +675,45 @@ Task: Round 8 QA assessment, Reveal hydration-mismatch fix, focus selection (pin
 - **Priority 3**: Real YouTube video IDs (chronic — client input needed); metadataBase real domain + ADMIN_SEED_PASSWORD env before launch (chronic P4).
 - **Priority 4**: /media/news countdown + gallery lightbox polish backlog (from 15-b VLM notes, low-severity).
 - Admin credentials for testing: admin@assunnah-institute.org / AsSunnah#Admin2026!Dawah (sandbox default).
+
+---
+Task ID: 2-pages
+Agent: general-purpose (page migration)
+Task: Migrate all [lang]/(site) pages from getLang() cookie helper to URL params
+
+Work Log:
+- Migrated all 34 page.tsx files under src/app/[lang]/(site)/** from `const lang = await getLang()` (cookie) to `const { lang } = await params` (URL):
+  - 20 no-props static pages (home, media hub/videos/gallery/news/blog index, admissions overview/faq/scholarships, login, register, contact, account, research overview/library/clarifications/projects/publications, zakat-calculator) → signature `({ params }: { params: Promise<{ lang: Lang }> })`.
+  - 8 typed static pages (about overview/leadership/alumni/campus, academics overview/downloads/development/faculty/courses) → same signature; dropped now-unused `Language` type imports (kept in account — still used by amountLabel()).
+  - 2 [slug] dynamic pages — academics/courses/[slug] (CoursePageProps) and media/blog/[slug] (ArticlePageProps) → `params: Promise<{ lang: Lang; slug: string }>`, destructured as `const { slug, lang } = await params`. Their generateMetadata/generateStaticParams untouched (no lang usage).
+  - 4 searchParams pages — notices, support, research/fatwa, search → added `params: Promise<{ lang: Lang }>` alongside existing (already Next-16 Promise) searchParams; renamed the local `const params = await searchParams` to `sp` to free the identifier (minimal mechanical rename, matches notices' existing `sp` convention).
+- All pages: removed `import { getLang } from "@/lib/i18n-server"` → `import type { Lang } from "@/lib/locale"`.
+- not-found.tsx: server component WITHOUT getLang → left as-is per contract (bilingual static markup). [...catchAll]/page.tsx: no lang usage (pure notFound() delegate) → no change needed.
+- src/lib/i18n-server.ts DELETED (git rm). src/lib/i18n.ts: LANG_COOKIE export removed (rg confirmed zero remaining importers).
+- Admin pages, api routes, and Round-1 helpers (search-index.ts, article.ts, audit-range.ts, audit.ts) verified clean — none imported i18n-server/getLang, no fixes needed.
+- Verification: `rg "i18n-server|getLang|LANG_COOKIE" src` → empty. `bunx tsc --noEmit` → 28 errors, byte-for-byte IDENTICAL error inventory to pre-migration baseline (captured before edits): scripts/seed*.ts Prisma enum casing, account/page.tsx + quick-access.tsx auth mid-refactor (SessionRole/FullSession), notices/page.tsx + search/page.tsx Prisma enum/shape, storage/index.ts overload — only line numbers shifted (+6/+1 lines from new props destructuring). `bunx eslint "src/app/[lang]/(site)" --ext .ts,.tsx` → 37 files linted, 0 errors 0 warnings (note: the literal glob `src/app/[lang]/(site)/**` is interpreted by ESLint's glob engine as a character class, so the directory form was used).
+
+Stage Summary:
+- URL-based i18n is now fully wired through the page layer: every (site) page derives `lang` from the [lang] route segment (bn default via proxy rewrite, en at /en/*); zero cookie reads remain in src.
+- i18n-server.ts + LANG_COOKIE are gone; locale.ts (Lang/isLang/langPath/otherLang/alternatesFor) is the single lang source for pages.
+- Remaining tsc errors (28) are ALL pre-existing and outside this migration's scope: Prisma lowercase-enum vs schema uppercase enums (seed scripts, notices/search pages — schema casing refactor mid-flight) and the in-progress auth.ts FullSession reshape (account page, quick-access) — left for their owning agents per instructions (auth.ts is on the do-not-touch list).
+
+---
+Task ID: 2-links
+Agent: general-purpose (locale link pass)
+Task: Locale-prefix all internal links with langPath()
+
+Work Log:
+- 57 files changed (27 components + 30 pages), zero new `lang` props threaded — every touched file already had lang in scope (server pages via `const { lang } = await params`, components via existing `lang: Language` prop, client islands via `useLanguage()`).
+- Components (27): site-footer (footerColumns + navigation slices), page-hero (Home crumb Link), hero, urgent-strip, vision-pillars, research-highlights, featured-programs, media-hub (6 links), campus-life, leadership-showcase, notices-feed, support-section (fundCards data → wrapped at render), fatwa-gateway, course-card, course-facts, course-eligibility, blog-explorer (3), zakat-result (2 with query), donation-form, clarification-topic-section, publication-grid, research-links, login-form (href /register + router.push /account), register-form (href /login + router.push /account), notice-search (router.push /notices?q=), command-palette (central go() → router.push(langPath(lang, href)) — covers QUICK_LINKS, popular queries, live notices/fatwas, static search entries, full-search), search-box (router.push /search?q=).
+- Pages (30): every string/template `<Link href>` wrapped; every PageHero breadcrumb `href:` prop now passes langPath(lang, ...) (PageHero treats crumb hrefs as pre-localized pass-through — matches account/page.tsx's already-migrated pattern, avoids double-prefixing); search page wraps its ResultCardData href builders (static entries, /notices?notice=, /research/fatwa?focus=) at build time per "fix at the page level where lang exists"; media hub cards + clarifications multi-format band wrap data hrefs at render; 6 breadcrumb-only pages (fatwa, publications, videos, gallery, news, blog) updated.
+- notices/page.tsx: buildNoticesUrl now takes `lang: Lang` first param and returns langPath(lang, `/notices?…`) — all 6 call sites + NoticeDeepLink's returnPath (router.replace) updated; "view all" empty-state link wrapped.
+- not-found.tsx: converted server → client component ("use client" + useLanguage) so the 404's Home/Notices links stay in the visitor's language; provider sits above the boundary in [lang]/layout.tsx so this is safe (bilingual static markup otherwise unchanged).
+- login-form router.push keeps "/admin" branch bare (exempt) and wraps only "/account".
+- Exempted as-is (verified): href="/admin" (account page), admin-logout-button router.push("/login"), notice-dialog attachmentUrl (/api/media/...), download-center item.url + library referenceFiles file.url (/downloads/* static assets — proxy reserves file-extension paths, langPath-wrapping would 404), article-toc + clarifications `#topic-` in-page anchors, all siteConfig socials/phone/maps/mailto/youtube external hrefs, contact infoCards (tel/map/mailto/social).
+- Verification: `rg -o 'href="/[^"]*"' src/components src/app/[lang]` → only `href="/admin"` (exempt account page). `bunx tsc --noEmit` → 0 errors (fixed one stray `}` my search-page edit introduced; re-run clean). `bunx eslint src/components "src/app/[lang]" --ext .ts,.tsx` → zero output (0 errors/0 warnings). `rg -n 'router.push\("/' src/components` → only admin-logout-button /login (explicitly exempt); all other push/replace sites are langPath-wrapped or consume lang-aware pre-built paths (language-provider target, notice-deep-link returnPath).
+
+Stage Summary:
+- Every localized internal link under src/components/** and src/app/[lang]/** is now built via langPath(lang, path) — string literals, template literals (queries + #fragments preserved), data-driven card/fund/breadcrumb hrefs (canonical-bare data, prefixed at render), search index consumption (command palette go() + search page result builders), and router.push navigations. English visitors at /en/* stay in English on every click; Bangla bare-path behavior unchanged (langPath bn → identity).
+- account/page.tsx verified (not touched): langPath on /login /register /admissions + breadcrumb; bare href="/admin" is the sanctioned exception.
+- Remaining bare hrefs are exclusively the exempted set (admin, api-served downloads, static /downloads assets, in-page #anchors, external protocols) — audited and intentional.

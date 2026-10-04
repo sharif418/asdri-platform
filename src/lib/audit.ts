@@ -1,59 +1,52 @@
 import { db } from "@/lib/db";
-import type { SessionUser } from "@/lib/auth";
+import type { Prisma } from "@prisma/client";
 
 /**
- * Admin accountability — every privileged write is recorded to AdminAction.
- * Auditing must never break the primary operation, so failures are swallowed
- * (the admin UI surfaces nothing; the log is best-effort append-only).
+ * Audit trail — every admin mutation records who, what, entity, and a trimmed
+ * diff of changed fields. Written by the shared repository helpers so no
+ * route can forget it.
  */
 
-export const ADMIN_ACTION_TYPES = [
-  "notice.create",
-  "notice.update",
-  "notice.delete",
-  "notice.pin",
-  "notice.unpin",
-  "fatwa.answer",
-  "fatwa.publish",
-  "fatwa.delete",
-  "message.status",
-  "message.delete",
-  "subscriber.delete",
-  "campaign.create",
-  "campaign.update",
-  "campaign.status",
-  "campaign.delete",
-  "donation.status",
-] as const;
-
-export type AdminActionType = (typeof ADMIN_ACTION_TYPES)[number];
-
-export type AdminActionGroup = "notice" | "fatwa" | "message" | "subscriber" | "campaign" | "donation";
-
-export function adminActionGroup(action: AdminActionType): AdminActionGroup {
-  return action.split(".")[0] as AdminActionGroup;
+export async function audit(
+  actorId: string | null | undefined,
+  action: string,
+  entity: string,
+  entityId?: string | null,
+  diff?: { before?: unknown; after?: unknown },
+  ip?: string | null,
+): Promise<void> {
+  await db.auditLog.create({
+    data: {
+      actorId: actorId ?? null,
+      action,
+      entity,
+      entityId: entityId ?? null,
+      diff: (diff ? trimDiff(diff) : undefined) as Prisma.InputJsonValue | undefined,
+      ip: ip ?? null,
+    },
+  });
 }
 
-/** Best-effort audit append — call after the primary mutation succeeds. */
-export async function logAdminAction(params: {
-  actor: SessionUser;
-  action: AdminActionType;
-  entityRef: string;
-  summaryBn: string;
-}): Promise<void> {
-  try {
-    await db.adminAction.create({
-      data: {
-        actorId: params.actor.id,
-        actorName: params.actor.name,
-        actorEmail: params.actor.email,
-        action: params.action,
-        entityRef: params.entityRef.slice(0, 300),
-        summaryBn: params.summaryBn.slice(0, 500),
-      },
-      select: { id: true },
-    });
-  } catch {
-    // Never surface audit failures to the admin flow.
+function trimDiff(diff: { before?: unknown; after?: unknown }): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (diff.before !== undefined) out.before = shallow(diff.before);
+  if (diff.after !== undefined) out.after = shallow(diff.after);
+  return out;
+}
+
+/** Keep diffs small: strings truncated, nested objects dropped. */
+function shallow(value: unknown): unknown {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "string") return value.slice(0, 300);
+  if (typeof value === "number" || typeof value === "boolean") return value;
+  if (Array.isArray(value)) return `[${value.length} items]`;
+  if (typeof value === "object") {
+    const src = value as Record<string, unknown>;
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(src).slice(0, 40)) {
+      out[k] = typeof v === "string" ? v.slice(0, 120) : typeof v === "object" ? "…" : v;
+    }
+    return out;
   }
+  return String(value);
 }

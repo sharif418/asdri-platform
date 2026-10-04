@@ -60,3 +60,8 @@ tool-results/
 .git-sandbox-history/
 # Local SQLite data
 db/
+
+# Local-disk storage driver fallback (dev)
+storage-local/
+
+# QA screenshots are committed as PR proof — .qa/ stays tracked

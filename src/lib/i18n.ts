@@ -1,7 +1,5 @@
 import type { Language } from "@/types";
 
-export const LANG_COOKIE = "asr-lang";
-
 /**
  * UI dictionary — every chrome string (nav, buttons, labels, section eyebrows).
  * Content-level bilingual text lives in `src/content/*` as `{ bn, en }` objects.

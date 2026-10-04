@@ -24,6 +24,7 @@ import {
 } from "@/lib/search-index";
 import { RESULT_ICON_FALLBACK, RESULT_ICONS } from "@/components/search/result-icon";
 import { usePaletteLiveSearch, type LiveFatwaItem, type LiveNoticeItem } from "@/hooks/use-palette-live-search";
+import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -72,7 +73,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
   function go(href: string): void {
     onOpenChange(false);
-    router.push(href);
+    router.push(langPath(lang, href));
   }
 
   function goFullSearch(): void {

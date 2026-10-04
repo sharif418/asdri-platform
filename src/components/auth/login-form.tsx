@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/components/providers/language-provider";
 import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { langPath } from "@/lib/locale";
 import type { Language } from "@/types";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -64,7 +65,7 @@ export function LoginForm({ lang }: { lang: Language }) {
         title: bn ? `স্বাগতম, ${payload.data.user.name}!` : `Welcome back, ${payload.data.user.name}!`,
         description: bn ? "সফলভাবে লগইন হয়েছে" : "Signed in successfully",
       });
-      router.push(payload.data.user.role === "admin" ? "/admin" : "/account");
+      router.push(payload.data.user.role === "admin" ? "/admin" : langPath(lang, "/account"));
       router.refresh();
     } catch {
       toast({ title: t("toast.error"), variant: "destructive" });
@@ -168,7 +169,7 @@ export function LoginForm({ lang }: { lang: Language }) {
 
         <p className="mt-5 text-center text-[13px] text-muted-foreground">
           {bn ? "অ্যাকাউন্ট নেই?" : "Don't have an account?"}{" "}
-          <Link href="/register" className="font-semibold text-primary hover:underline">
+          <Link href={langPath(lang, "/register")} className="font-semibold text-primary hover:underline">
             {bn ? "রেজিস্ট্রেশন করুন" : "Create one"}
           </Link>
         </p>

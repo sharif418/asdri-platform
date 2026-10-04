@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/components/providers/language-provider";
 import { formatDate, daysAgoLabel } from "@/lib/format";
+import { langPath } from "@/lib/locale";
 import { cn } from "@/lib/utils";
 import type { Language, LocalizedText, NoticeCategory } from "@/types";
 import { pick } from "@/types";
@@ -149,7 +150,7 @@ export function NoticesFeed({ lang }: { lang: Language }) {
                 return (
                   <li key={notice.id}>
                     <Link
-                      href={`/notices?notice=${notice.slug}`}
+                      href={langPath(lang, `/notices?notice=${notice.slug}`)}
                       className="group flex items-start gap-4 rounded-xl border bg-card p-4 shadow-sm transition-all hover:border-gold/50 hover:shadow-md sm:items-center sm:p-5"
                     >
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
@@ -197,7 +198,7 @@ export function NoticesFeed({ lang }: { lang: Language }) {
 
         <Reveal className="mt-8 flex justify-center">
           <Link
-            href="/notices"
+            href={langPath(lang, "/notices")}
             className="inline-flex items-center gap-2 rounded-full border px-6 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
           >
             <Bell aria-hidden className="h-4 w-4" />

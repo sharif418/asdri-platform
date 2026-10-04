@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { jsonError, jsonOk } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/auth/me — return the signed-in user from the session cookie. */
+/** GET /api/auth/me — the signed-in user (null when anonymous). */
 export async function GET(): Promise<NextResponse> {
-  const session = await getSession();
-  if (!session) {
+  const user = await getCurrentUser();
+  if (!user) {
     return jsonError("লগইন করা নেই", "UNAUTHORIZED", 401);
   }
-  return jsonOk({ user: session });
+  return jsonOk({ user });
 }

@@ -4,6 +4,7 @@ import { Bell, ChevronRight, Home } from "lucide-react";
 import type { LocalizedText } from "@/types";
 import { pick } from "@/types";
 import type { Language } from "@/types";
+import { langPath } from "@/lib/locale";
 import { SectionHeading } from "./section-heading";
 import { StarMotif } from "./ornaments";
 import { cn } from "@/lib/utils";
@@ -68,7 +69,7 @@ export function PageHero({
         <nav aria-label="Breadcrumb">
           <ol className="flex flex-wrap items-center gap-1.5 text-sm text-ivory/70">
             <li>
-              <Link href="/" className="inline-flex items-center gap-1 transition-colors hover:text-gold">
+              <Link href={langPath(lang, "/")} className="inline-flex items-center gap-1 transition-colors hover:text-gold">
                 <Home className="h-3.5 w-3.5" />
                 <span>{lang === "bn" ? "হোম" : "Home"}</span>
               </Link>

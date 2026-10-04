@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { pick } from "@/types";
 import type { Course, Language } from "@/types";
+import { langPath } from "@/lib/locale";
 
 /** Key-facts sidebar for the course detail page. */
 export function CourseFacts({ course, lang }: { course: Course; lang: Language }) {
@@ -75,7 +76,7 @@ export function CourseFacts({ course, lang }: { course: Course; lang: Language }
             size="lg"
             className="bg-gold-gradient w-full font-semibold text-gold-foreground shadow-md hover:opacity-95"
           >
-            <Link href="/admissions">
+            <Link href={langPath(lang, "/admissions")}>
               {lang === "bn" ? "ভর্তির আবেদন করুন" : "Apply for Admission"}
               <ArrowRight aria-hidden className="h-4 w-4" />
             </Link>

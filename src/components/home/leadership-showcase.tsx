@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { leadershipTeam } from "@/content/faculty";
+import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { Language } from "@/types";
 import { cn } from "@/lib/utils";
@@ -28,7 +29,7 @@ export function LeadershipShowcase({ lang }: { lang: Language }) {
         <Stagger className="mt-12 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-5">
           {leadershipTeam.map((member) => (
             <RevealItem key={member.id}>
-              <Link href="/academics/faculty" className="group block">
+              <Link href={langPath(lang, "/academics/faculty")} className="group block">
                 <article className="relative h-full overflow-hidden rounded-xl border bg-card p-5 text-center shadow-sm transition-all hover:-translate-y-1 hover:border-gold/60 hover:shadow-lg">
                   <div
                     aria-hidden
@@ -57,7 +58,7 @@ export function LeadershipShowcase({ lang }: { lang: Language }) {
 
         <Reveal className="mt-10 text-center">
           <Link
-            href="/academics/faculty"
+            href={langPath(lang, "/academics/faculty")}
             className="inline-flex items-center gap-2 rounded-full border px-6 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
           >
             {lang === "bn" ? "সম্পূর্ণ শিক্ষক প্যানেল" : "Full Faculty Panel"}

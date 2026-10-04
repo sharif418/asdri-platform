@@ -4,6 +4,7 @@ import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { CornerOrnament } from "@/components/shared/ornaments";
 import { corePillars, visionStatement } from "@/content/stats";
+import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { Language } from "@/types";
 
@@ -47,7 +48,7 @@ export function VisionPillars({ lang }: { lang: Language }) {
 
         <Reveal className="mt-10 text-center">
           <Link
-            href="/about"
+            href={langPath(lang, "/about")}
             className="link-sweep inline-flex items-center gap-1.5 text-sm font-semibold text-primary"
           >
             {lang === "bn" ? "লক্ষ্য ও উদ্দেশ্য সম্পর্কে আরও" : "More about vision & objectives"}

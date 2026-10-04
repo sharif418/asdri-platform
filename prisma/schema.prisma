@@ -1,171 +1,977 @@
-// As-Sunnah Dawah & Research Institute — database schema
-// SQLite (single-instance) with indexed query paths for every hot route.
+// As-Sunnah Dawah & Research Institute — platform schema (PostgreSQL 16)
+//
+// Conventions
+// - Bilingual content: `<field>Bn` / `<field>En` (both required where the UI
+//   demands; optional fields default to "" so an office can fill one language
+//   first and publish later).
+// - Publishing: `isPublished` + `publishedAt`; drafts never appear publicly.
+// - Every model that an admin mutates is audited via `AuditLog`.
+// - Indexes are declared from the actual query paths used by the site (see
+//   comments); no speculative indexes.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-/* ————————— Public notices (dynamic notice board) ————————— */
+/* ══════════════════════════ 1. Identity & configuration ══════════════════════════ */
 
-model Notice {
-  id            String        @id @default(cuid())
-  slug          String        @unique
-  titleBn       String
-  titleEn       String
-  excerptBn     String
-  excerptEn     String
-  bodyBn        String        @default("")
-  bodyEn        String        @default("")
-  category      String // admission | recruitment | academic | general
-  status        String // new | active | closed
-  pinned        Boolean       @default(false) // editorial pin — surfaces above the regular board flow
-  attachmentUrl String?
-  publishedAt   DateTime
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
-  @@index([category, status, publishedAt(sort: Desc)])
-  @@index([publishedAt(sort: Desc)])
-  @@index([pinned, publishedAt(sort: Desc)])
+/// Site-wide settings, typed JSON per key. Read through src/lib/settings.ts
+/// (cached). Keys: site.identity, site.contact, site.social, site.seo,
+/// donations.zakat, admissions.settings …
+model SiteSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+  updatedBy String?
 }
 
-/* ————————— Fatwa bank + submitted questions ————————— */
+/// Navigation menu tree (header main, header utility, footer, mobile).
+/// Order is `sortOrder` within a parent.
+model MenuItem {
+  id         String     @id @default(cuid())
+  location   MenuLocation @default(HEADER_MAIN)
+  labelBn    String
+  labelEn    String
+  href       String // e.g. /academics/courses or absolute https://…
+  parentId   String?
+  parent     MenuItem?  @relation("MenuTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children   MenuItem[] @relation("MenuTree")
+  sortOrder  Int        @default(0)
+  isVisible  Boolean    @default(true)
+  flagKey    String? // feature flag that gates this item (optional)
+
+  @@index([location, isVisible, sortOrder])
+}
+
+enum MenuLocation {
+  HEADER_MAIN
+  HEADER_UTILITY
+  FOOTER_PRIMARY
+  FOOTER_SECONDARY
+  MOBILE
+}
+
+/// Home page = ordered, individually switchable sections.
+model HomeSection {
+  id         String  @id @default(cuid())
+  key        String  @unique // hero | stats | vision | programs | notices | …
+  titleBn    String  @default("")
+  titleEn    String  @default("")
+  isEnabled  Boolean @default(true)
+  sortOrder  Int     @default(0)
+  config     Json? // per-section overrides (e.g. which courses to feature)
+}
+
+/// Impact figures ("এক নজরে" band).
+model Stat {
+  id         String  @id @default(cuid())
+  value      Int // integer value; rendered with locale numerals + suffix
+  suffixBn   String  @default("")
+  suffixEn   String  @default("")
+  labelBn    String
+  labelEn    String
+  iconKey    String?
+  sortOrder  Int     @default(0)
+  isPublished Boolean @default(true)
+}
+
+/// Feature flags — a disabled module disappears from navigation, sitemap,
+/// search and its routes redirect home. Seeded from the modules matrix.
+model FeatureFlag {
+  key         String   @id // "admissions" | "donations" | "fatwa" | …
+  isEnabled   Boolean  @default(true)
+  labelBn     String
+  labelEn     String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+/// Teams/departments people belong to (শিক্ষক প্যানেল, আরবি টিম, ফতোয়া বোর্ড…).
+model Team {
+  id          String  @id @default(cuid())
+  key         String  @unique
+  nameBn      String
+  nameEn      String
+  descriptionBn String @default("")
+  descriptionEn String @default("")
+  sortOrder   Int     @default(0)
+  isPublished Boolean @default(true)
+  people      Person[]
+}
+
+/* ══════════════════════════ 2. Academics ══════════════════════════ */
+
+model Course {
+  id            String   @id @default(cuid())
+  code          String   @unique // PYS | CCIS | DDIS | ATT | RDT | AZAN | IRM
+  slug          String   @unique
+  titleBn       String
+  titleEn       String
+  titleAr       String? // e.g. السنة التمهيدية للتخصص
+  taglineBn     String   @default("")
+  taglineEn     String   @default("")
+  overviewBn    String   @default("") // long text (rich HTML)
+  overviewEn    String   @default("")
+  objectivesBn  String   @default("") // rich HTML
+  objectivesEn  String   @default("")
+  careerBn      String   @default("") // post-completion pathways (DDIS)
+  careerEn      String   @default("")
+  durationBn    String   @default("")
+  durationEn    String   @default("")
+  eligibilityBn String   @default("") // rich HTML
+  eligibilityEn String   @default("")
+  courseTypeBn  String   @default("") // আবাসিক/অনাবাসিক, gender note
+  courseTypeEn  String   @default("")
+  seats         Int?
+  coverMediaId  String?
+  coverMedia    Media?   @relation("CourseCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  isFeatured    Boolean  @default(false) // home "Featured Programs"
+  isPublished   Boolean  @default(false)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  semesters        Semester[]
+  specializations  CourseSpecialization[]
+  sdpPrograms      SdpProgram[]
+  intakes          Intake[]
+  downloads        DownloadResource[]
+
+  @@index([isPublished, sortOrder])
+  @@index([isFeatured, isPublished])
+}
+
+/// তাখাসসুস departments (PYS only in seed, reusable for others).
+model CourseSpecialization {
+  id        String  @id @default(cuid())
+  courseId  String
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  nameBn    String
+  nameEn    String
+  nameAr    String?
+  sortOrder Int     @default(0)
+
+  @@index([courseId, sortOrder])
+}
+
+model Semester {
+  id        String   @id @default(cuid())
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  number    Int // 1..n (display "১ম সেমিস্টার")
+  year      Int      @default(1)
+  titleBn   String   @default("")
+  titleEn   String   @default("")
+  durationBn String  @default("")
+  durationEn String  @default("")
+  subjects  Subject[]
+  sdpPrograms SdpProgram[]
+
+  @@unique([courseId, number])
+  @@index([courseId])
+}
+
+model Subject {
+  id          String   @id @default(cuid())
+  semesterId  String
+  semester    Semester @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  code        String   @default("") // PYS 1101, CCAIS 101, PGD-DIS 2201…
+  titleBn     String
+  titleEn     String
+  modulesBn   String   @default("") // included modules (newline list)
+  modulesEn   String   @default("")
+  credits     Int      @default(0)
+  marks       Int      @default(0)
+  hours       Int? // non-credit hours
+  isNonCredit Boolean  @default(false) // সম্পূরক কোর্স
+  sortOrder   Int      @default(0)
+
+  @@index([semesterId, sortOrder])
+}
+
+model Person {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  nameBn      String
+  nameEn      String
+  titleBn     String   @default("") // চেয়ারম্যান / উস্তাজ, ফিকহ
+  titleEn     String   @default("")
+  roleTitleBn String   @default("") // longer designation
+  roleTitleEn String   @default("")
+  bioBn       String   @default("") // rich HTML
+  bioEn       String   @default("")
+  subjectsBn  String   @default("") // taught subjects (plain text list)
+  subjectsEn  String   @default("")
+  teamId      String?
+  team        Team?    @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  photoMediaId String?
+  photoMedia  Media?   @relation("PersonPhoto", fields: [photoMediaId], references: [id], onDelete: SetNull)
+  isPublished Boolean  @default(true)
+  isFeatured  Boolean  @default(false) // home leadership showcase
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  posts       Post[]
+
+  @@index([isPublished, sortOrder])
+  @@index([teamId])
+  @@index([isFeatured, isPublished])
+}
+
+/// শিক্ষার্থী উন্নয়ন কার্যক্রম (SDP) — bound to a course (PYS in the doc).
+model SdpProgram {
+  id           String  @id @default(cuid())
+  courseId     String?
+  course       Course? @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  semesterId   String?
+  semester     Semester? @relation(fields: [semesterId], references: [id], onDelete: SetNull)
+  titleBn      String
+  titleEn      String
+  objectiveBn  String  @default("")
+  objectiveEn  String  @default("")
+  activitiesBn String  @default("")
+  activitiesEn String  @default("")
+  hours        Int     @default(0)
+  outcomeBn    String  @default("")
+  outcomeEn    String  @default("")
+  sortOrder    Int     @default(0)
+
+  @@index([courseId, sortOrder])
+}
+
+/// অ্যালামনাই batches (per course).
+model AlumniBatch {
+  id        String   @id @default(cuid())
+  courseKey String // PYS | PGDID | CCIS | ATT
+  year      Int
+  batchNoBn String   @default("") // "১ম ব্যাচ"
+  batchNoEn String   @default("") // "1st batch"
+  count     Int
+  noteBn    String   @default("")
+  noteEn    String   @default("")
+
+  @@unique([courseKey, year, batchNoBn])
+}
+
+/// Campus & facilities (আবাসন, লাইব্রেরি, আমলি ট্র্যাকার…).
+model Facility {
+  id          String   @id @default(cuid())
+  titleBn     String
+  titleEn     String
+  descriptionBn String @default("")
+  descriptionEn String @default("")
+  imageMediaId String?
+  imageMedia  Media?   @relation("FacilityImage", fields: [imageMediaId], references: [id], onDelete: SetNull)
+  sortOrder   Int      @default(0)
+  isPublished Boolean  @default(true)
+
+  @@index([isPublished, sortOrder])
+}
+
+/// ভর্তি প্রক্রিয়া steps.
+model AdmissionStep {
+  id           String  @id @default(cuid())
+  stepNumber   Int
+  titleBn      String
+  titleEn      String
+  descriptionBn String @default("")
+  descriptionEn String @default("")
+  isPublished  Boolean @default(true)
+
+  @@index([isPublished, stepNumber])
+}
+
+/// স্কলারশিপ ও আর্থিক সহায়তা.
+model Scholarship {
+  id            String  @id @default(cuid())
+  nameBn        String
+  nameEn        String
+  descriptionBn String  @default("")
+  descriptionEn String  @default("")
+  criteriaBn    String  @default("")
+  criteriaEn    String  @default("")
+  sortOrder     Int     @default(0)
+  isPublished   Boolean @default(true)
+
+  @@index([isPublished, sortOrder])
+}
+
+/* ══════════════════════════ 3. Content ══════════════════════════ */
+
+model Notice {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  titleBn     String
+  titleEn     String
+  excerptBn   String   @default("")
+  excerptEn   String   @default("")
+  bodyBn      String   @default("") // rich HTML
+  bodyEn      String   @default("")
+  category    NoticeCategory
+  status      NoticeStatus @default(NEW)
+  pinned      Boolean  @default(false)
+  attachmentMediaId String?
+  attachment  Media?   @relation("NoticeAttachment", fields: [attachmentMediaId], references: [id], onDelete: SetNull)
+  isPublished Boolean  @default(true)
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category, status, publishedAt(sort: Desc)])
+  @@index([pinned, isPublished, publishedAt(sort: Desc)])
+  @@index([isPublished, publishedAt(sort: Desc)])
+}
+
+enum NoticeCategory {
+  ADMISSION
+  RECRUITMENT
+  ACADEMIC
+  GENERAL
+}
+
+enum NoticeStatus {
+  NEW
+  ACTIVE
+  CLOSED
+}
+
+model PostCategory {
+  id        String @id @default(cuid())
+  slug      String @unique
+  nameBn    String
+  nameEn    String
+  sortOrder Int    @default(0)
+  posts     Post[]
+}
+
+model Post {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  titleBn     String
+  titleEn     String
+  excerptBn   String   @default("")
+  excerptEn   String   @default("")
+  bodyBn      String   @default("") // rich HTML
+  bodyEn      String   @default("")
+  coverMediaId String?
+  coverMedia  Media?   @relation("PostCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  authorId    String?
+  author      Person? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  categoryId  String?
+  category    PostCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  kind        PostKind @default(ARTICLE)
+  isPublished Boolean  @default(false)
+  publishedAt DateTime?
+  readingMinutes Int?
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isPublished, publishedAt(sort: Desc)])
+  @@index([categoryId, isPublished, publishedAt(sort: Desc)])
+  @@index([kind, isPublished, publishedAt(sort: Desc)])
+  @@index([authorId])
+}
+
+/// ARTiCLE = blog, CLARIFICATION = সংশয় নিরসন, NEWS = খবর/ইভেন্ট.
+enum PostKind {
+  ARTICLE
+  CLARIFICATION
+  NEWS
+}
+
+model Album {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  titleBn     String
+  titleEn     String
+  descriptionBn String @default("")
+  descriptionEn String @default("")
+  coverMediaId String?
+  coverMedia  Media?   @relation("AlbumCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  isPublished Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  images      AlbumImage[]
+
+  @@index([isPublished, sortOrder])
+}
+
+model AlbumImage {
+  id          String  @id @default(cuid())
+  albumId     String
+  album       Album   @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  mediaId     String
+  media       Media   @relation("AlbumImageMedia", fields: [mediaId], references: [id], onDelete: Cascade)
+  captionBn   String  @default("")
+  captionEn   String  @default("")
+  sortOrder   Int     @default(0)
+
+  @@index([albumId, sortOrder])
+}
+
+model Video {
+  id          String   @id @default(cuid())
+  titleBn     String
+  titleEn     String
+  descriptionBn String @default("")
+  descriptionEn String @default("")
+  youtubeId   String // or URL — parsed
+  playlistKey String   @default("default") // সংক্ষিপ্ত সংশয় নিরসন | পডকাস্ট | …
+  sortOrder   Int      @default(0)
+  isPublished Boolean  @default(true)
+  publishedAt DateTime @default(now())
+
+  @@index([isPublished, sortOrder])
+  @@index([playlistKey, isPublished, sortOrder])
+}
+
+model Publication {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  titleBn     String
+  titleEn     String
+  abstractBn  String   @default("")
+  abstractEn  String   @default("")
+  authorsBn   String   @default("")
+  authorsEn   String   @default("")
+  kind        PublicationKind @default(JOURNAL)
+  isbn        String?
+  issn        String?
+  year        Int
+  fileMediaId String?
+  fileMedia   Media?   @relation("PublicationFile", fields: [fileMediaId], references: [id], onDelete: SetNull)
+  coverMediaId String?
+  coverMedia  Media?   @relation("PublicationCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  isPublished Boolean  @default(true)
+  publishedAt DateTime @default(now())
+  sortOrder   Int      @default(0)
+
+  @@index([isPublished, publishedAt(sort: Desc)])
+}
+
+enum PublicationKind {
+  JOURNAL
+  MAGAZINE
+  BULLETIN
+  BOOK
+  PAPER
+}
+
+model ResearchProject {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  titleBn      String
+  titleEn      String
+  summaryBn    String   @default("")
+  summaryEn    String   @default("")
+  progress     Int      @default(0) // 0–100
+  statusBn     String   @default("")
+  statusEn     String   @default("")
+  isCallForPapers Boolean @default(false)
+  deadline     DateTime?
+  isPublished  Boolean  @default(true)
+  sortOrder    Int      @default(0)
+
+  @@index([isPublished, sortOrder])
+}
+
+model Faq {
+  id         String  @id @default(cuid())
+  categoryBn String  @default("সাধারণ")
+  categoryEn String  @default("General")
+  questionBn String
+  questionEn String
+  answerBn   String  @default("")
+  answerEn   String  @default("")
+  sortOrder  Int     @default(0)
+  isPublished Boolean @default(true)
+
+  @@index([isPublished, sortOrder])
+}
+
+model DownloadResource {
+  id          String  @id @default(cuid())
+  titleBn     String
+  titleEn     String
+  descriptionBn String @default("")
+  descriptionEn String @default("")
+  categoryBn  String  @default("সাধারণ")
+  categoryEn  String  @default("General")
+  fileMediaId String?
+  fileMedia   Media?  @relation("DownloadFile", fields: [fileMediaId], references: [id], onDelete: SetNull)
+  courseId    String?
+  course      Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  sortOrder   Int     @default(0)
+  isPublished Boolean @default(true)
+
+  @@index([isPublished, sortOrder])
+  @@index([courseId])
+}
+
+model FatwaCategory {
+  id        String   @id @default(cuid())
+  key       String   @unique // ibadat | muamalat | aqidah | family | contemporary
+  nameBn    String
+  nameEn    String
+  sortOrder Int      @default(0)
+  entries   FatwaEntry[]
+}
 
 model FatwaEntry {
   id          String   @id @default(cuid())
   slug        String   @unique
-  category    String // ibadat | muamalat | aqidah | family | contemporary
+  categoryId  String?
+  category    FatwaCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   questionBn  String
   questionEn  String
-  answerBn    String
-  answerEn    String
+  answerBn    String   @default("") // rich HTML
+  answerEn    String   @default("")
   answeredBy  String
-  publishedAt DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isPublished Boolean  @default(true)
+  publishedAt DateTime @default(now())
 
-  @@index([category, publishedAt(sort: Desc)])
+  @@index([isPublished, publishedAt(sort: Desc)])
+  @@index([categoryId, isPublished])
 }
 
 model FatwaQuestion {
-  id            String    @id @default(cuid())
-  name          String
-  email         String
-  phone         String?
-  category      String
-  question      String
-  isPrivate     Boolean   @default(false)
-  status        String    @default("pending") // pending | answered | published
-  answer        String?
-  answeredAt    DateTime?
-  publishedSlug String? // slug of the FatwaEntry promoted from this question
-  createdAt     DateTime  @default(now())
+  id          String    @id @default(cuid())
+  reference   String    @unique // FAT-2026-0001
+  name        String
+  email       String
+  phone       String?
+  categoryKey String    @default("contemporary")
+  question    String
+  isPrivate   Boolean   @default(false)
+  status      FatwaQStatus @default(PENDING)
+  answer      String?
+  answeredById String?
+  answeredBy  User?     @relation("FatwaAnswerer", fields: [answeredById], references: [id], onDelete: SetNull)
+  answeredAt  DateTime?
+  publishedSlug String? // FatwaEntry slug once promoted
+  createdAt   DateTime  @default(now())
 
   @@index([status, createdAt(sort: Desc)])
   @@index([email])
 }
 
-/* ————————— Donations & campaigns ————————— */
-
-model FundingCampaign {
-  id           String    @id @default(cuid())
-  slug         String    @unique
-  titleBn      String
-  titleEn      String
-  descriptionBn String
-  descriptionEn String
-  targetAmount Float
-  raisedAmount Float     @default(0)
-  currency     String    @default("BDT")
-  deadline     DateTime?
-  active       Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  donations    DonationIntent[]
-
-  @@index([active])
+enum FatwaQStatus {
+  PENDING
+  ANSWERED
+  PUBLISHED
+  REJECTED
 }
 
-model DonationIntent {
-  id              String   @id @default(cuid())
-  receiptNo       String   @unique
-  fundType        String // zakat | general | scholarship | sponsor
-  amount          Float
-  currency        String   @default("BDT")
-  donorName       String
-  email           String
-  phone           String?
-  anonymous       Boolean  @default(false)
-  studentRef      String?
-  recurring       Boolean  @default(false)
-  message         String?
-  status          String   @default("initiated") // initiated | completed
-  campaignId      String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+/* ══════════════════════════ 4. Media library ══════════════════════════ */
 
-  campaign        FundingCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+model Media {
+  id          String   @id @default(cuid())
+  key         String   @unique // storage key: 2026/10/uuid.ext (+ variants)
+  filename    String
+  mime        String
+  size        Int // bytes (original)
+  width       Int?
+  height      Int?
+  altBn       String   @default("")
+  altEn       String   @default("")
+  variants    Json? // { thumb: {key,w,h,size}, md:…, lg:… }
+  kind        MediaKind
+  uploadedById String?
+  uploadedBy  User?    @relation("MediaUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
 
-  @@index([email, createdAt(sort: Desc)])
-  @@index([fundType])
-  @@index([campaignId])
+  // reverse relations (naming kept explicit)
+  courseCovers    Course[]        @relation("CourseCover")
+  personPhotos    Person[]        @relation("PersonPhoto")
+  facilityImages  Facility[]      @relation("FacilityImage")
+  noticeAttachments Notice[]      @relation("NoticeAttachment")
+  postCovers      Post[]          @relation("PostCover")
+  albumCovers     Album[]         @relation("AlbumCover")
+  albumImages     AlbumImage[]    @relation("AlbumImageMedia")
+  publicationFiles Publication[]  @relation("PublicationFile")
+  publicationCovers Publication[] @relation("PublicationCover")
+  downloadFiles   DownloadResource[] @relation("DownloadFile")
+  campaignCovers  Campaign[]      @relation("CampaignCover")
+  applicationPhotos Application[] @relation("ApplicationPhoto")
+  applicationDocs ApplicationDocument[] @relation("ApplicationDocument")
+
+  @@index([createdAt(sort: Desc)])
+  @@index([kind])
 }
 
-/* ————————— Contact & newsletter ————————— */
+enum MediaKind {
+  IMAGE
+  DOCUMENT
+}
+
+/* ══════════════════════════ 5. Admissions ══════════════════════════ */
+
+model Intake {
+  id          String   @id @default(cuid())
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  year        Int
+  sessionBn   String   @default("") // "২০২৬ শিক্ষাবর্ষ"
+  sessionEn   String   @default("")
+  opensAt     DateTime?
+  closesAt    DateTime?
+  examDate    DateTime?
+  seatsTotal  Int?
+  isPublished Boolean  @default(false)
+  status      IntakeStatus @default(UPCOMING)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  applications Application[]
+
+  @@unique([courseId, year])
+  @@index([isPublished, status])
+}
+
+enum IntakeStatus {
+  UPCOMING
+  OPEN
+  CLOSED
+  PROCESSING
+}
+
+model Application {
+  id          String   @id @default(cuid())
+  trackingNo  String   @unique // ASDRI-2026-000123
+  intakeId    String
+  intake      Intake   @relation(fields: [intakeId], references: [id], onDelete: Cascade)
+  userId      String? // applicant account (nullable until claimed)
+  user        User?    @relation("ApplicantApplications", fields: [userId], references: [id], onDelete: SetNull)
+
+  // personal
+  fullNameBn  String
+  fullNameEn  String
+  fatherName  String
+  motherName  String
+  birthDate   DateTime?
+  gender      String   @default("male")
+  nid         String?
+  phone       String
+  email       String?
+  presentAddress String @default("")
+  permanentAddress String @default("")
+  photoMediaId String?
+  photoMedia  Media?   @relation("ApplicationPhoto", fields: [photoMediaId], references: [id], onDelete: SetNull)
+
+  // guardian
+  guardianName   String @default("")
+  guardianPhone  String @default("")
+  guardianRelation String @default("")
+
+  // declaration
+  declarationAccepted Boolean @default(false)
+
+  status      ApplicationStatus @default(SUBMITTED)
+  reviewNote  String   @default("")
+  examScore   Int?
+  vivaScore   Int?
+  submittedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  education   ApplicationEducation[]
+  documents   ApplicationDocument[]
+  events      ApplicationEvent[]
+
+  @@index([intakeId, status])
+  @@index([status, submittedAt(sort: Desc)])
+  @@index([userId])
+  @@index([trackingNo])
+}
+
+enum ApplicationStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  SHORTLISTED
+  EXAM_SCHEDULED
+  EXAM_TAKEN
+  INTERVIEW
+  ADMITTED
+  WAITLISTED
+  REJECTED
+}
+
+model ApplicationEducation {
+  id            String  @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  level         String // এসএসসি / এইচএসসি / স্নাতক / তাকমিল / ফাযিল…
+  institution   String  @default("")
+  groupOrSubject String @default("")
+  year          Int?
+  result        String  @default("")
+  sortOrder     Int     @default(0)
+
+  @@index([applicationId, sortOrder])
+}
+
+model ApplicationDocument {
+  id            String  @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  type          AppDocType
+  mediaId       String
+  media         Media    @relation("ApplicationDocument", fields: [mediaId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+
+  @@index([applicationId])
+}
+
+enum AppDocType {
+  PHOTO
+  NID
+  TRANSCRIPT
+  CERTIFICATE
+  CHARACTER
+  OTHER
+}
+
+model ApplicationEvent {
+  id            String   @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  status        ApplicationStatus
+  note          String   @default("")
+  actorId       String?
+  actor         User?    @relation("ApplicationEvents", fields: [actorId], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now())
+
+  @@index([applicationId, createdAt])
+}
+
+/* ══════════════════════════ 6. Donations & finance ══════════════════════════ */
+
+model Fund {
+  id          String  @id @default(cuid())
+  key         String  @unique // zakat | general | scholarship | sponsor
+  nameBn      String
+  nameEn      String
+  descriptionBn String @default("")
+  descriptionEn String @default("")
+  isDefault   Boolean @default(false)
+  isEnabled   Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  campaigns Campaign[]
+  donations Donation[]
+  entries   ManualLedgerEntry[]
+}
+
+model Campaign {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  fundId      String
+  fund        Fund     @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  titleBn     String
+  titleEn     String
+  descriptionBn String @default("")
+  descriptionEn String @default("")
+  goalAmount  Int // BDT
+  coverMediaId String?
+  coverMedia  Media?   @relation("CampaignCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  startsAt    DateTime?
+  endsAt      DateTime?
+  isPublished Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  donations   Donation[]
+
+  @@index([isPublished, sortOrder])
+}
+
+model Donation {
+  id           String   @id @default(cuid())
+  trackingCode String   @unique // DN-2026-000456
+  receiptNo    String?  @unique // issued on completion: ASDRI-R-000456
+  fundId       String
+  fund         Fund     @relation(fields: [fundId], references: [id], onDelete: Restrict)
+  campaignId   String?
+  campaign     Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  amount       Int // BDT (integer — no fractional taka)
+  currency     String   @default("BDT")
+  donorName    String
+  isAnonymous  Boolean  @default(false) // hidden publicly; intact in ledger+receipt
+  donorEmail   String?
+  donorPhone   String?
+  donorAddress String   @default("")
+  sponsorStudentRef String? // manual student ref for sponsorships
+  message      String?
+  status       DonationStatus @default(PENDING)
+  provider     String   @default("sandbox")
+  providerTxnId String?
+  paidAt       DateTime?
+  receiptSentAt DateTime?
+  initiatedById String?
+  initiatedBy  User?    @relation("DonationInitiator", fields: [initiatedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  transactions PaymentTransaction[]
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([fundId, status])
+  @@index([campaignId, status])
+  @@index([donorEmail])
+  @@index([paidAt(sort: Desc)])
+}
+
+enum DonationStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model PaymentTransaction {
+  id          String   @id @default(cuid())
+  donationId  String
+  donation    Donation @relation(fields: [donationId], references: [id], onDelete: Cascade)
+  provider    String
+  event       String // initiated | callback | verified | failed | manual
+  signatureValid Boolean @default(false)
+  rawPayload  Json?
+  createdAt   DateTime @default(now())
+
+  @@index([donationId, createdAt])
+}
+
+model ManualLedgerEntry {
+  id        String   @id @default(cuid())
+  fundId    String
+  fund      Fund     @relation(fields: [fundId], references: [id], onDelete: Restrict)
+  direction LedgerDirection
+  amount    Int
+  description String
+  entryDate DateTime
+  attachmentMediaId String?
+  createdById String?
+  createdBy  User?    @relation("LedgerAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+
+  @@index([fundId, entryDate(sort: Desc)])
+}
+
+enum LedgerDirection {
+  INCOME
+  EXPENSE
+}
+
+/* ══════════════════════════ 7. Users, sessions, ops ══════════════════════════ */
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  phone        String?
+  passwordHash String
+  role         UserRole
+  isActive     Boolean  @default(true)
+  lastLoginAt  DateTime?
+  createdById  String? // who created this user (admin)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions    Session[]
+  auditLogs   AuditLog[]
+  mediaUploads Media[] @relation("MediaUploader")
+  applications Application[] @relation("ApplicantApplications")
+  applicationEvents ApplicationEvent[] @relation("ApplicationEvents")
+  answeredFatwa FatwaQuestion[] @relation("FatwaAnswerer")
+  initiatedDonations Donation[] @relation("DonationInitiator")
+  ledgerEntries ManualLedgerEntry[] @relation("LedgerAuthor")
+
+  @@index([role])
+}
+
+enum UserRole {
+  ADMIN
+  EDITOR
+  ADMISSIONS
+  FINANCE
+  FATWA
+  APPLICANT
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String   @unique // sha256 of the cookie token
+  csrfToken  String // bound double-submit token
+  ip         String?
+  userAgent  String?
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String // notice.update, application.status, donation.mark-paid …
+  entity    String
+  entityId  String?
+  diff      Json? // { before, after } trimmed to changed fields
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([actorId, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+}
 
 model ContactMessage {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   name      String
   email     String
   phone     String?
-  subject   String
+  subject   String  @default("")
   message   String
-  status    String   @default("new") // new | read | replied
+  isRead    Boolean @default(false)
   createdAt DateTime @default(now())
 
-  @@index([status, createdAt(sort: Desc)])
+  @@index([isRead, createdAt(sort: Desc)])
 }
 
 model NewsletterSubscriber {
   id        String   @id @default(cuid())
   email     String   @unique
+  locale    String   @default("bn")
+  confirmed Boolean  @default(true)
   createdAt DateTime @default(now())
 }
 
-/* ————————— Accounts (students / donors / alumni) ————————— */
+/// Mail outbox — every email the system sends (log driver in dev, smtp in
+/// prod writes here too) so receipts can be re-sent and audited.
+model OutboxEmail {
+  id        String   @id @default(cuid())
+  to        String
+  subject   String
+  body      String
+  html      String
+  kind      String // donation.receipt | application.submitted | fatwa.answered …
+  payload   Json? // template data
+  sentAt    DateTime?
+  error     String?
+  createdAt DateTime @default(now())
 
-model User {
-  id           String       @id @default(cuid())
-  email        String       @unique
-  name         String
-  phone        String?
-  role         String       @default("student") // student | donor | alumni | admin
-  passwordHash String
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  lastLoginAt  DateTime?
-
-  @@index([role])
-}
-
-/* ————————— Admin accountability ————————— */
-
-model AdminAction {
-  id         String   @id @default(cuid())
-  actorId    String
-  actorName  String
-  actorEmail String
-  action     String // notice.create | notice.update | notice.delete | notice.pin | notice.unpin | fatwa.answer | fatwa.publish | fatwa.delete | message.status | message.delete | subscriber.delete
-  entityRef  String // slug / id / title of the affected entity
-  summaryBn  String // human-readable Bengali summary
-  createdAt  DateTime @default(now())
-
-  @@index([createdAt(sort: Desc)])
-  @@index([action, createdAt(sort: Desc)])
+  @@index([kind, createdAt(sort: Desc)])
+  @@index([sentAt])
 }

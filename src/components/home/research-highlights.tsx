@@ -4,6 +4,7 @@ import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { StarMotif } from "@/components/shared/ornaments";
 import { clarificationTopics } from "@/content/research";
+import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { Language } from "@/types";
 
@@ -49,7 +50,7 @@ export function ResearchHighlights({ lang }: { lang: Language }) {
             return (
               <RevealItem key={topic.id}>
                 <Link
-                  href={`/research/clarifications#topic-${topic.id}`}
+                  href={langPath(lang, `/research/clarifications#topic-${topic.id}`)}
                   className="group block h-full rounded-xl border border-ivory/15 bg-white/[0.06] p-5 backdrop-blur transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:bg-white/10"
                 >
                   <div className="flex items-center justify-between">
@@ -75,7 +76,7 @@ export function ResearchHighlights({ lang }: { lang: Language }) {
 
         <Reveal className="mt-10 flex justify-center">
           <Link
-            href="/research/clarifications"
+            href={langPath(lang, "/research/clarifications")}
             className="inline-flex items-center gap-2 rounded-full border border-gold/50 bg-gold/10 px-6 py-2.5 text-sm font-semibold text-gold transition-all hover:bg-gold hover:text-gold-foreground"
           >
             {lang === "bn" ? "সংশয় নিরসন দেখুন" : "Browse Intellectual Clarifications"}

@@ -1,101 +1,89 @@
 import { NextRequest, NextResponse } from "next/server";
+import { DEFAULT_LANG, isLang } from "@/lib/locale";
 
 /**
- * Proxy (Next.js 16 "proxy" file convention, formerly middleware) —
- * defense-in-depth for authenticated areas plus OWASP security headers on
- * every response.
+ * Proxy (Next.js 16's middleware convention).
  *
- * The HMAC session token is verified with Web Crypto (edge-compatible) using
- * the same secret + payload scheme as src/lib/auth.ts. Page-level
- * getAdminSession() gates remain the primary authorization layer.
+ * 1. Locale routing — Bangla is the default, URL-less language: any path not
+ *    claimed by /en, /api, /admin, static assets or special routes is
+ *    internally rewritten to /bn/<path> (the URL the visitor sees never
+ *    changes). /en/<path> passes through untouched. This gives every page
+ *    two real, server-rendered URLs — one per language.
+ *
+ * 2. OWASP security headers on every response.
  */
 
-const SESSION_COOKIE = "asr-session";
+const RESERVED = [
+  "/_next",
+  "/api",
+  "/admin",
+  "/en",
+  "/checkout", // hosted sandbox gateway callback paths
+  "/offline",
+  "/sw.js",
+];
 
-interface SessionPayload {
-  id: string;
-  name: string;
-  email: string;
-  role: "student" | "donor" | "alumni" | "admin";
-  exp: number;
+function isReserved(pathname: string): boolean {
+  if (RESERVED.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return true;
+  // static files: /logo.svg, /images/hero.png, /favicon.ico, /fonts.css …
+  if (pathname.startsWith("/images/") || pathname.startsWith("/icons/")) return true;
+  const last = pathname.split("/").pop() ?? "";
+  return /\.[a-zA-Z0-9]{2,8}$/.test(last);
 }
 
-function getSecret(): string {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret || secret.length < 16) {
-    return "as-sunnah-dev-secret-fallback-change-me"; // mirrors lib/auth.ts dev fallback
+function securityHeaders(res: NextResponse, isProd: boolean): NextResponse {
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'" + (isProd ? "" : " 'unsafe-eval'"),
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    "connect-src 'self'",
+    "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://youtube-nocookie.com https://maps.google.com https://www.google.com",
+    "media-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'self'",
+    isProd ? "upgrade-insecure-requests" : "",
+  ]
+    .filter(Boolean)
+    .join("; ");
+
+  res.headers.set("Content-Security-Policy", csp);
+  res.headers.set("X-Content-Type-Options", "nosniff");
+  res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.headers.set("X-Frame-Options", "SAMEORIGIN");
+  res.headers.set(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+  );
+  if (isProd) {
+    res.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
   }
-  return secret;
+  return res;
 }
 
-/** base64url → Uint8Array over a plain ArrayBuffer (edge-safe, no Buffer). */
-function base64UrlToBytes(value: string): Uint8Array<ArrayBuffer> {
-  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
-  const binary = atob(padded);
-  const bytes = new Uint8Array(new ArrayBuffer(binary.length));
-  for (let index = 0; index < binary.length; index++) {
-    bytes[index] = binary.charCodeAt(index);
-  }
-  return bytes;
-}
+export function proxy(request: NextRequest): NextResponse {
+  const { pathname, search } = request.nextUrl;
+  const isProd = process.env.NODE_ENV === "production";
 
-async function verifySessionToken(token: string | undefined): Promise<SessionPayload | null> {
-  if (!token) return null;
-  const [body, signature] = token.split(".");
-  if (!body || !signature) return null;
-
-  try {
-    const key = await crypto.subtle.importKey(
-      "raw",
-      new TextEncoder().encode(getSecret()),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["verify"],
-    );
-    const valid = await crypto.subtle.verify("HMAC", key, base64UrlToBytes(signature), new TextEncoder().encode(body));
-    if (!valid) return null;
-
-    const decoded = new TextDecoder().decode(base64UrlToBytes(body));
-    const payload = JSON.parse(decoded) as SessionPayload;
-    if (typeof payload.exp !== "number" || payload.exp * 1000 < Date.now()) return null;
-    return payload;
-  } catch {
-    return null;
-  }
-}
-
-function applySecurityHeaders(response: NextResponse): NextResponse {
-  response.headers.set("X-Content-Type-Options", "nosniff");
-  response.headers.set("X-Frame-Options", "DENY");
-  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
-  response.headers.set("X-DNS-Prefetch-Control", "off");
-  return response;
-}
-
-export async function proxy(request: NextRequest): Promise<NextResponse> {
-  const { pathname } = request.nextUrl;
-
-  const isAdminArea = pathname === "/admin" || pathname.startsWith("/admin/");
-  const isAccountArea = pathname === "/account" || pathname.startsWith("/account/");
-
-  if (isAdminArea || isAccountArea) {
-    const session = await verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
-    if (!session) {
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("next", pathname);
-      return applySecurityHeaders(NextResponse.redirect(loginUrl));
-    }
-    if (isAdminArea && session.role !== "admin") {
-      // Non-admins probing /admin are quietly routed home.
-      return applySecurityHeaders(NextResponse.redirect(new URL("/", request.url)));
-    }
+  if (isReserved(pathname)) {
+    return securityHeaders(NextResponse.next(), isProd);
   }
 
-  return applySecurityHeaders(NextResponse.next());
+  // /en/... passes through as the [lang]=en route
+  if (pathname === "/en" || pathname.startsWith("/en/")) {
+    return securityHeaders(NextResponse.next(), isProd);
+  }
+
+  // everything else is Bangla (default): rewrite to /bn/... internally
+  const url = request.nextUrl.clone();
+  url.pathname = `/${DEFAULT_LANG}${pathname === "/" ? "" : pathname}`;
+  url.search = search;
+  return securityHeaders(NextResponse.rewrite(url), isProd);
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|manifest.webmanifest|sw.js|robots.txt|sitemap.xml|feed.xml|images|icons).*)"],
+  matcher: ["/((?!_next/static|_next/image).*)"],
 };

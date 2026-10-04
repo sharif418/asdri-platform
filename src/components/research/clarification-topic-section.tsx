@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, FileText, FlaskConical, Globe, HelpCircle, Landmark, Play, ShieldAlert, Venus } from "lucide-react";
 import { blogArticles } from "@/content/blog";
 import { toBnDigits } from "@/lib/format";
+import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { BlogArticle, ClarificationTopic, Language } from "@/types";
 
@@ -98,7 +99,7 @@ export function ClarificationTopicSection({
             {related.map((article) => (
               <li key={article.slug}>
                 <Link
-                  href={`/media/blog/${article.slug}`}
+                  href={langPath(lang, `/media/blog/${article.slug}`)}
                   className="group flex items-start justify-between gap-4 rounded-xl border bg-background/60 p-4 transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-sm"
                 >
                   <div>
@@ -119,7 +120,7 @@ export function ClarificationTopicSection({
             ))}
           </ul>
           <Link
-            href="/media/blog"
+            href={langPath(lang, "/media/blog")}
             className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary transition-colors hover:text-gold"
           >
             {lang === "bn" ? "সব আর্টিকেল দেখুন" : "Browse all articles"}

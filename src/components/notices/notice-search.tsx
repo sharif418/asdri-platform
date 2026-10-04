@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { useLanguage } from "@/components/providers/language-provider";
+import { langPath } from "@/lib/locale";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -28,7 +29,7 @@ export function NoticeSearch({ initialQuery, category }: NoticeSearchProps) {
     const trimmed = query.trim();
     if (trimmed) params.set("q", trimmed);
     const qs = params.toString();
-    router.push(qs ? `/notices?${qs}` : "/notices");
+    router.push(langPath(lang, qs ? `/notices?${qs}` : "/notices"));
   }
 
   // Debounced auto-search while typing.
@@ -39,7 +40,7 @@ export function NoticeSearch({ initialQuery, category }: NoticeSearchProps) {
       }
     }, 450);
     return () => window.clearTimeout(id);
-  }, [value, initialQuery, category, router]);
+  }, [value, initialQuery, category, router, lang]);
 
   function onSubmit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();

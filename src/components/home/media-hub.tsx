@@ -4,6 +4,7 @@ import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { blogArticles } from "@/content/blog";
 import { galleryPhotos } from "@/content/media";
+import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { Language } from "@/types";
 import { formatDate } from "@/lib/format";
@@ -37,7 +38,7 @@ export function MediaHub({ lang }: { lang: Language }) {
                 <Newspaper aria-hidden className="h-4 w-4 text-gold" />
                 {lang === "bn" ? "সর্বশেষ প্রবন্ধ" : "Latest Articles"}
               </h3>
-              <Link href="/media/blog" className="link-sweep inline-flex items-center gap-1 text-[13px] font-medium text-primary">
+              <Link href={langPath(lang, "/media/blog")} className="link-sweep inline-flex items-center gap-1 text-[13px] font-medium text-primary">
                 {lang === "bn" ? "সব লেখা" : "All articles"}
                 <ArrowRight aria-hidden className="h-3.5 w-3.5" />
               </Link>
@@ -45,7 +46,7 @@ export function MediaHub({ lang }: { lang: Language }) {
             <Stagger className="mt-4 space-y-4">
               {latestArticles.map((article) => (
                 <RevealItem key={article.slug}>
-                  <Link href={`/media/blog/${article.slug}`} className="group flex gap-4 rounded-xl border bg-card p-4 shadow-sm transition-all hover:border-gold/50 hover:shadow-md">
+                  <Link href={langPath(lang, `/media/blog/${article.slug}`)} className="group flex gap-4 rounded-xl border bg-card p-4 shadow-sm transition-all hover:border-gold/50 hover:shadow-md">
                     <div className="relative hidden w-28 shrink-0 overflow-hidden rounded-lg sm:block">
                       <img src={article.cover} alt={pick(article.title, lang)} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
                     </div>
@@ -71,7 +72,7 @@ export function MediaHub({ lang }: { lang: Language }) {
             {/* Videos strip */}
             <Reveal className="mt-6">
               <Link
-                href="/media/videos"
+                href={langPath(lang, "/media/videos")}
                 className="group flex items-center justify-between gap-4 rounded-xl border border-gold/30 bg-gradient-to-r from-emerald-deep to-emerald-800 p-5 text-ivory transition-all hover:shadow-lg hover:shadow-emerald-950/20"
               >
                 <div className="flex items-center gap-4">
@@ -101,7 +102,7 @@ export function MediaHub({ lang }: { lang: Language }) {
                 <Images aria-hidden className="h-4 w-4 text-gold" />
                 {lang === "bn" ? "ফটো গ্যালারি" : "Photo Gallery"}
               </h3>
-              <Link href="/media/gallery" className="link-sweep inline-flex items-center gap-1 text-[13px] font-medium text-primary">
+              <Link href={langPath(lang, "/media/gallery")} className="link-sweep inline-flex items-center gap-1 text-[13px] font-medium text-primary">
                 {lang === "bn" ? "সব ছবি" : "All photos"}
                 <ArrowRight aria-hidden className="h-3.5 w-3.5" />
               </Link>
@@ -112,7 +113,7 @@ export function MediaHub({ lang }: { lang: Language }) {
                   key={photo.src}
                   className={index === 0 ? "col-span-2" : undefined}
                 >
-                  <Link href="/media/gallery" className="group relative block overflow-hidden rounded-lg">
+                  <Link href={langPath(lang, "/media/gallery")} className="group relative block overflow-hidden rounded-lg">
                     <img
                       src={photo.src}
                       alt={pick(photo.alt, lang)}
@@ -128,7 +129,7 @@ export function MediaHub({ lang }: { lang: Language }) {
             {/* Library preview */}
             <Reveal className="mt-6">
               <Link
-                href="/research/library"
+                href={langPath(lang, "/research/library")}
                 className="group flex items-center justify-between rounded-xl border bg-card p-4 shadow-sm transition-all hover:border-gold/50 hover:shadow-md"
               >
                 <div>

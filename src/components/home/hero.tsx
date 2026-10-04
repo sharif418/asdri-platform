@@ -15,6 +15,7 @@ import {
 import { Bismillah, StarMotif } from "@/components/shared/ornaments";
 import { siteConfig } from "@/content/site";
 import { useLanguage } from "@/components/providers/language-provider";
+import { langPath } from "@/lib/locale";
 import type { Language } from "@/types";
 import { pick } from "@/types";
 
@@ -110,7 +111,7 @@ export function Hero({ lang }: HeroProps) {
             size="lg"
             className="bg-gold-gradient min-w-[220px] text-[15px] font-semibold text-gold-foreground shadow-lg shadow-black/20 hover:opacity-95"
           >
-            <Link href="/academics/courses">
+            <Link href={langPath(lang, "/academics/courses")}>
               <Sparkles aria-hidden className="h-4.5 w-4.5" />
               {t("action.exploreCourses")}
               <ArrowRight aria-hidden className="h-4 w-4" />
@@ -122,7 +123,7 @@ export function Hero({ lang }: HeroProps) {
             variant="secondary"
             className="min-w-[220px] border border-ivory/40 bg-white/10 text-[15px] font-medium text-ivory backdrop-blur hover:bg-white/15"
           >
-            <Link href="/academics/downloads">
+            <Link href={langPath(lang, "/academics/downloads")}>
               <Download aria-hidden className="h-4.5 w-4.5" />
               {t("action.downloadProspectus")}
             </Link>

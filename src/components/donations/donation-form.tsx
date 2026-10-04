@@ -40,6 +40,7 @@ import {
 } from "./donation-types";
 import { useLanguage } from "@/components/providers/language-provider";
 import { toast } from "@/hooks/use-toast";
+import { langPath } from "@/lib/locale";
 import type { FundType, Language } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -442,7 +443,7 @@ export function DonationForm({ fundType, initialAmount, lang, onSuccess }: Donat
                   ? "আপনার যাকাত শতভাগ যাকাত-যোগ্য অস্বচ্ছল শিক্ষার্থীদের ফ্রি শিক্ষা, আবাসন ও খাবারে ব্যয় হবে ইনশাআল্লাহ।"
                   : "Your zakat will be spent entirely on zakat-eligible students' education, housing, and meals, in shaa Allah."}
                 <Link
-                  href="/support/zakat-calculator"
+                  href={langPath(lang, "/support/zakat-calculator")}
                   className="mt-1.5 inline-flex items-center gap-1 font-semibold text-gold hover:underline"
                 >
                   <Calculator aria-hidden className="h-3.5 w-3.5" />

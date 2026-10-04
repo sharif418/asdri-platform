@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { campusLifeItems } from "@/content/faculty";
+import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { Language } from "@/types";
 
@@ -52,7 +53,7 @@ export function CampusLife({ lang }: { lang: Language }) {
 
         <Reveal className="mt-10 text-center">
           <Link
-            href="/about/campus"
+            href={langPath(lang, "/about/campus")}
             className="link-sweep inline-flex items-center gap-1.5 text-sm font-semibold text-primary"
           >
             {lang === "bn" ? "ক্যাম্পাস ও সুবিধাসমূহ" : "Campus & Facilities"}

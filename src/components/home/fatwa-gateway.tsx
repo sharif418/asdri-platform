@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useLanguage } from "@/components/providers/language-provider";
 import { toast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/format";
+import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { FatwaCategory, FatwaEntry, Language } from "@/types";
 
@@ -308,7 +309,7 @@ export function FatwaGateway({ lang }: { lang: Language }) {
               </div>
 
               <Link
-                href="/research/fatwa"
+                href={langPath(lang, "/research/fatwa")}
                 className="mt-6 inline-flex items-center justify-center gap-2 rounded-full border px-6 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
               >
                 {lang === "bn" ? "সম্পূর্ণ ফতোয়া ব্যাংক" : "Full Fatwa Bank"}

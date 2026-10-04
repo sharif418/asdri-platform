@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, GraduationCap, Hourglass } from "lucide-react";
 import { courses } from "@/content/courses";
+import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { Language } from "@/types";
 
@@ -48,7 +49,7 @@ export function CourseEligibility({ lang }: { lang: Language }) {
           </dl>
 
           <Link
-            href={`/academics/courses/${course.slug}`}
+            href={langPath(lang, `/academics/courses/${course.slug}`)}
             className="mt-auto inline-flex items-center gap-1.5 rounded-md pt-4 text-[13px] font-semibold text-primary transition-colors outline-none hover:text-gold focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             {lang === "bn" ? "কোর্স বিস্তারিত" : "Course details"}

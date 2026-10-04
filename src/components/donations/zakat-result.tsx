@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { AlertCircle, CheckCircle2, HeartHandshake, Info } from "lucide-react";
 import { formatNumber } from "@/lib/format";
+import { langPath } from "@/lib/locale";
 import type { Language } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -119,7 +120,7 @@ export function ZakatResult({ lang, netWealth, nisab, nisabBasis, zakatDue, isDu
       {/* CTA */}
       {isDue ? (
         <Link
-          href={`/support?fund=zakat&amount=${zakatAmount}`}
+          href={langPath(lang, `/support?fund=zakat&amount=${zakatAmount}`)}
           className="inline-flex items-center justify-center gap-2 rounded-full bg-gold-gradient px-6 py-3.5 text-[15px] font-bold text-gold-foreground shadow-lg shadow-gold/25 transition-opacity hover:opacity-95"
         >
           <HeartHandshake aria-hidden className="h-4.5 w-4.5" />
@@ -127,7 +128,7 @@ export function ZakatResult({ lang, netWealth, nisab, nisabBasis, zakatDue, isDu
         </Link>
       ) : (
         <Link
-          href="/support?fund=general"
+          href={langPath(lang, "/support?fund=general")}
           className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-[15px] font-bold text-primary-foreground shadow-lg transition-opacity hover:opacity-95"
         >
           <HeartHandshake aria-hidden className="h-4.5 w-4.5" />

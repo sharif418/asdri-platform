@@ -9,6 +9,7 @@ import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { useLanguage } from "@/components/providers/language-provider";
 import { formatCompactTaka, formatTaka } from "@/lib/format";
+import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { FundingCampaign, FundType, Language, LocalizedText } from "@/types";
 
@@ -111,7 +112,7 @@ export function SupportSection({ lang }: { lang: Language }) {
             return (
               <RevealItem key={fund.id}>
                 <Link
-                  href={fund.href}
+                  href={langPath(lang, fund.href)}
                   className="group flex h-full flex-col rounded-xl border border-ivory/15 bg-white/[0.06] p-5 backdrop-blur transition-all hover:-translate-y-1 hover:border-gold/60 hover:bg-white/10"
                 >
                   <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-gold/15 text-gold transition-transform group-hover:scale-110">
@@ -197,14 +198,14 @@ export function SupportSection({ lang }: { lang: Language }) {
           </div>
           <div className="flex flex-col items-center gap-2.5 sm:flex-row">
             <Link
-              href="/support/zakat-calculator"
+              href={langPath(lang, "/support/zakat-calculator")}
               className="inline-flex items-center gap-2 rounded-full border border-gold/50 bg-gold/10 px-5 py-2.5 text-sm font-semibold text-gold transition-all hover:bg-gold hover:text-gold-foreground"
             >
               <Calculator aria-hidden className="h-4 w-4" />
               {lang === "bn" ? "যাকাত ক্যালকুলেটর" : "Zakat Calculator"}
             </Link>
             <Link
-              href="/support"
+              href={langPath(lang, "/support")}
               className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-5 py-2.5 text-sm font-semibold text-gold-foreground shadow-lg shadow-black/20 transition-opacity hover:opacity-95"
             >
               <HeartHandshake aria-hidden className="h-4 w-4" />

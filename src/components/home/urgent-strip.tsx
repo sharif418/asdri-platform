@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronRight, Pin } from "lucide-react";
+import { langPath } from "@/lib/locale";
 import type { Language } from "@/types";
 
 interface UrgentStripProps {
@@ -17,7 +18,7 @@ export function UrgentStrip({ lang, notice }: UrgentStripProps) {
 
   return (
     <Link
-      href={`/notices?notice=${notice.slug}`}
+      href={langPath(lang, `/notices?notice=${notice.slug}`)}
       className="group block border-b border-gold/40 bg-gold/10 transition-colors hover:bg-gold/20"
     >
       <div className="container-site flex min-h-11 items-center justify-center gap-2.5 py-2 sm:gap-3">

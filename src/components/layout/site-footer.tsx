@@ -9,6 +9,7 @@ import { InstituteLogo } from "@/components/shared/logo";
 import { StarMotif } from "@/components/shared/ornaments";
 import { useLanguage } from "@/components/providers/language-provider";
 import { navigation, siteConfig } from "@/content/site";
+import { langPath } from "@/lib/locale";
 import type { DictionaryKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
@@ -168,7 +169,7 @@ export function SiteFooter() {
               {column.links.map((link) => (
                 <li key={link.href + link.key}>
                   <Link
-                    href={link.href}
+                    href={langPath(lang, link.href)}
                     className="flex min-h-11 items-center text-sm text-ivory/75 transition-colors hover:text-gold"
                   >
                     {t(link.key)}

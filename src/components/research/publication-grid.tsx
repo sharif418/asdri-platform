@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, BookMarked } from "lucide-react";
 import { PublicationCover } from "@/components/research/publication-cover";
 import { toBnDigits } from "@/lib/format";
+import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { Language, PublicationItem } from "@/types";
 
@@ -96,7 +97,7 @@ export function PublicationGrid({ items, lang }: { items: PublicationItem[]; lan
 
       <div className="mt-6 text-center">
         <Link
-          href="/research/library"
+          href={langPath(lang, "/research/library")}
           className="inline-flex items-center gap-2 rounded-full border border-gold/50 bg-gold/10 px-6 py-2.5 text-sm font-semibold text-gold transition-colors hover:bg-gold hover:text-gold-foreground"
         >
           <BookMarked aria-hidden className="h-4 w-4" />
