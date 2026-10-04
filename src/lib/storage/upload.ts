@@ -79,9 +79,16 @@ export async function uploadImage(filename: string, buf: Buffer): Promise<Upload
   if (!sniffed || !(sniffed in IMAGE_TYPES)) {
     throw new Error("শুধুমাত্র JPG, PNG বা WEBP ছবি গ্রহণযোগ্য।");
   }
-  const check = validateUpload(filename, sniffed, buf);
+  const check = validateUpload(normalizeExt(filename, sniffed), sniffed, buf);
   if (!check.ok) throw new Error(check.error);
-  return persistImage(filename, buf, check.mime);
+  return persistImage(normalizeExt(filename, sniffed), buf, check.mime);
+}
+
+/** Normalize a mislabeled extension to the sniffed content type. */
+function normalizeExt(filename: string, mime: string): string {
+  const trueExt = mime === "image/jpeg" ? ".jpg" : mime === "image/png" ? ".png" : mime === "image/webp" ? ".webp" : ".pdf";
+  const current = filename.toLowerCase().slice(filename.lastIndexOf("."));
+  return current === trueExt ? filename : `${filename.replace(/\.[^.]+$/, "")}${trueExt}`;
 }
 
 async function persistImage(filename: string, buf: Buffer, mime: string): Promise<UploadedMedia> {
@@ -134,11 +141,12 @@ export async function uploadDocument(filename: string, buf: Buffer): Promise<Upl
   if (!sniffed || !(sniffed in DOC_TYPES)) {
     throw new Error("শুধুমাত্র PDF ডকুমেন্ট গ্রহণযোগ্য।");
   }
-  const check = validateUpload(filename, sniffed, buf);
+  const normalized = filename.toLowerCase().endsWith(".pdf") ? filename : `${filename.replace(/\.[^.]+$/, "")}.pdf`;
+  const check = validateUpload(normalized, sniffed, buf);
   if (!check.ok) throw new Error(check.error);
-  const key = storageKeyFor(filename);
+  const key = storageKeyFor(normalized);
   await storage().put(key, buf, sniffed);
-  return { key, filename, mime: sniffed, size: buf.byteLength, kind: "DOCUMENT" };
+  return { key, filename: normalized, mime: sniffed, size: buf.byteLength, kind: "DOCUMENT" };
 }
 
 export { sniffMime };
