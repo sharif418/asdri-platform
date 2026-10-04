@@ -1,0 +1,171 @@
+// As-Sunnah Dawah & Research Institute — database schema
+// SQLite (single-instance) with indexed query paths for every hot route.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/* ————————— Public notices (dynamic notice board) ————————— */
+
+model Notice {
+  id            String        @id @default(cuid())
+  slug          String        @unique
+  titleBn       String
+  titleEn       String
+  excerptBn     String
+  excerptEn     String
+  bodyBn        String        @default("")
+  bodyEn        String        @default("")
+  category      String // admission | recruitment | academic | general
+  status        String // new | active | closed
+  pinned        Boolean       @default(false) // editorial pin — surfaces above the regular board flow
+  attachmentUrl String?
+  publishedAt   DateTime
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([category, status, publishedAt(sort: Desc)])
+  @@index([publishedAt(sort: Desc)])
+  @@index([pinned, publishedAt(sort: Desc)])
+}
+
+/* ————————— Fatwa bank + submitted questions ————————— */
+
+model FatwaEntry {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  category    String // ibadat | muamalat | aqidah | family | contemporary
+  questionBn  String
+  questionEn  String
+  answerBn    String
+  answerEn    String
+  answeredBy  String
+  publishedAt DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category, publishedAt(sort: Desc)])
+}
+
+model FatwaQuestion {
+  id            String    @id @default(cuid())
+  name          String
+  email         String
+  phone         String?
+  category      String
+  question      String
+  isPrivate     Boolean   @default(false)
+  status        String    @default("pending") // pending | answered | published
+  answer        String?
+  answeredAt    DateTime?
+  publishedSlug String? // slug of the FatwaEntry promoted from this question
+  createdAt     DateTime  @default(now())
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([email])
+}
+
+/* ————————— Donations & campaigns ————————— */
+
+model FundingCampaign {
+  id           String    @id @default(cuid())
+  slug         String    @unique
+  titleBn      String
+  titleEn      String
+  descriptionBn String
+  descriptionEn String
+  targetAmount Float
+  raisedAmount Float     @default(0)
+  currency     String    @default("BDT")
+  deadline     DateTime?
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  donations    DonationIntent[]
+
+  @@index([active])
+}
+
+model DonationIntent {
+  id              String   @id @default(cuid())
+  receiptNo       String   @unique
+  fundType        String // zakat | general | scholarship | sponsor
+  amount          Float
+  currency        String   @default("BDT")
+  donorName       String
+  email           String
+  phone           String?
+  anonymous       Boolean  @default(false)
+  studentRef      String?
+  recurring       Boolean  @default(false)
+  message         String?
+  status          String   @default("initiated") // initiated | completed
+  campaignId      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  campaign        FundingCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  @@index([email, createdAt(sort: Desc)])
+  @@index([fundType])
+  @@index([campaignId])
+}
+
+/* ————————— Contact & newsletter ————————— */
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String
+  status    String   @default("new") // new | read | replied
+  createdAt DateTime @default(now())
+
+  @@index([status, createdAt(sort: Desc)])
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+/* ————————— Accounts (students / donors / alumni) ————————— */
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  name         String
+  phone        String?
+  role         String       @default("student") // student | donor | alumni | admin
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  lastLoginAt  DateTime?
+
+  @@index([role])
+}
+
+/* ————————— Admin accountability ————————— */
+
+model AdminAction {
+  id         String   @id @default(cuid())
+  actorId    String
+  actorName  String
+  actorEmail String
+  action     String // notice.create | notice.update | notice.delete | notice.pin | notice.unpin | fatwa.answer | fatwa.publish | fatwa.delete | message.status | message.delete | subscriber.delete
+  entityRef  String // slug / id / title of the affected entity
+  summaryBn  String // human-readable Bengali summary
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt(sort: Desc)])
+  @@index([action, createdAt(sort: Desc)])
+}

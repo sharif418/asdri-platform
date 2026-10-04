@@ -1,0 +1,309 @@
+Navbar with Sub-menus (Dropdowns)
+
+1. Home
+
+(No dropdown)
+
+2. About Us
+
+-   Vision & Objectives
+
+-   Leadership & Administration
+
+-   Campus & Facilities
+
+-   Alumni Association
+
+3. Academics
+
+-   Courses
+
+    -   Preparatory Year for Specialization (PYS)
+
+    -   Certificate Course in Islamic Studies (CCIS)
+
+    -   Diploma in Dawah & Islamic Studies
+
+    -   Arabic Language Teacher Training
+
+    -   Ramadan Dawah Training
+
+    -   Azan Training Program
+
+    -   Islamic Research Methodology
+
+-   Faculty & Teachers
+
+-   Student Development Programs
+
+-   Download Center
+
+4. Admissions
+
+-   Admission Process
+
+-   Scholarships & Financial Aid
+
+-   Admission Notices
+
+-   FAQs
+
+5. Research & Publications
+
+-   Library & Journals
+
+-   Research Projects & Fellowships
+
+-   Faculty Publications & Books
+
+-   Intellectual Clarifications & Refutations
+
+-   Fatwa & Online Queries
+
+6. Media & Resources
+
+-   Blog
+
+-   Videos & Podcasts
+
+-   News & Events
+
+-   Photo Gallery
+
+-   Dawah Materials
+
+7. Notices
+
+-   Admission Notices
+
+-   Recruitment Notices
+
+-   Academic Notices
+
+-   General Announcements
+
+8. Support Us
+
+-   Zakat Fund
+
+-   Sponsor a Student
+
+-   General Donation
+
+-   Scholarship Fund
+
+-   Zakat Calculator
+
+9. Contact
+
+-   Contact & Location
+
+-   Other Websites
+
+Header & Navigation Bar Architecture
+
+-   Top Utility Bar:
+
+    -   Quick Contact Info (Phone, Email, Location)
+
+    -   Language Switcher (EN | BN)
+
+    -   [ Login ] (For Students, Donors, Alumni, and Staff)
+
+    -   [ Create Account / Register ] (New Student Applicants, Donor
+        Portal Signup, Alumni Registration)
+
+-   Main Navbar:
+
+    -   Logo & Institute Title (As-Sunnah Dawah & Research Institute)
+
+    -   Menu Items: Home | About Us | Academics | Admissions | Research
+        & Publications | Media & Resources | Notices | Contact
+
+    -   Primary Action CTA: [ Support Us / Donate ]
+
+Home Contents
+
+1. Hero Section (Top Banner)
+
+-   Main Heading: As-Sunnah Dawah & Research Institute
+
+-   Sub-Heading: An Educational Institution of As-Sunnah Foundation
+
+-   Brief Tagline/Intro: A dawah, education, and research-based
+    institute dedicated to propagating authentic Islamic knowledge based
+    on the Quran and Sunnah.
+
+-   Call-to-Action (CTA) Buttons:
+
+    -   [ Explore Courses ] (Directs to Academics)
+
+    -   [ Download Prospectus (PDF) ]
+
+-   Media Element:
+
+    -   An embedded introductory video showcasing campus life, dawah
+        activities, and vision.
+
+2. Impact at a Glance (Key Statistics Counter)
+
+A dynamic counter bar highlighting overall institutional metrics:
+
+-   Total Students: 420+
+
+-   Alem (Scholar) Students: 128+
+
+-   General Stream Students: 102+
+
+-   Short-Term Course Students: 190+
+
+-   Currently Enrolled: 127
+
+-   Successful Alumni: 293+
+
+3. Vision & Core Objectives
+
+-   Vision Statement: Preparing thoughtful, knowledgeable, and effective
+    dawah workers and researchers to address contemporary intellectual
+    confusion and social fitnah, providing academic responses to
+    misconceptions against Islam.
+
+-   Core Pillars:
+
+    -   Authentic Quran-Sunnah-based intellectual dawah.
+
+    -   Bridging traditional Islamic sciences with modern disciplines
+        (Psychology, Philosophy, Media, etc.).
+
+    -   Character tarbiyah, leadership, and public engagement.
+
+4. Featured Programs (Academics Preview)
+
+Card grid featuring active key courses with quick details ([ Duration ],
+[ Eligibility ], [ Learn More ]):
+
+1.  Preparatory Year for Specialization (PYS): 3-Year residential
+    flagship program for talented young Ulama focusing on higher dawah &
+    modern challenges.
+
+2.  Certificate Course in Islamic Studies (CCIS): 6-Month foundational
+    course in Tajweed, basic Arabic, Fiqh, and Sirah for university
+    graduates.
+
+3.  Diploma in Dawah & Islamic Studies: 2-Year (4 Semesters) advanced
+    diploma for CCIS graduates covering deep classical and modern dawah
+    tools.
+
+4.  Arabic Language Teacher Training: 15-Day intensive pedagogy and
+    modern CLT-method training for Arabic scholars.
+
+5.  Ramadan Dawah Training: 20-Day practical skill program covering
+    contemporary issues, public speaking, and intellectual challenges.
+
+6.  Azan Training Program: 15-Day course focusing on proper
+    pronunciation (Makhraj), vocal technique, and Muazzin tarbiyah.
+
+5. Intellectual Refutations & Research Highlights
+
+A section highlighting the institute's work in defending Islamic
+principles against modern challenges.
+
+-   Topics Addressed: Scientism, Secularism, Atheism & Skepticism,
+    Feminism, Orientalism, and LGBTQ/Gender Fitnah.
+
+-   Features:
+
+    -   Quick links to featured research papers and journals.
+
+    -   [ Browse Intellectual Clarifications ] CTA.
+
+6. Recent Announcements & Notices (Dynamic Feed)
+
+-   Tabbed Interface: [ All ] | [ Admission ] | [ Academic ] | [
+    Recruitment ]
+
+-   Card Display: Displays notice title, release date, and a dynamic
+    status badge (New, Active, Closed).
+
+-   CTA: [ View Notice Board ]
+
+7. Campus Life & Student Development
+
+Highlighting the holistic environment through a visual grid or slider:
+
+-   Tarbiyah & Spiritual Growth: Daily sunnah practices, amali trackers,
+    and mentorship.
+
+-   Intellectual Discussions: Debates, panel discussions, and group
+    study circles.
+
+-   Fieldwork: Practical 1-week dawah field experiences.
+
+-   Facilities: Fully equipped library, modern language & IT lab, and
+    clean residential space.
+
+8. Media & Knowledge Hub (Latest Updates)
+
+-   Latest Research Articles / Blog: Read-time estimators, author tags,
+    and key takeaways.
+
+-   Featured Videos & Podcasts: Integrated YouTube playlist pop-ups
+    (e.g., 4-5 minute quick intellectual responses).
+
+-   Photo Gallery: Interactive thumbnails showcasing recent events,
+    graduation ceremonies, and dawah fieldwork.
+
+-   Library & Journals Preview: Interactive ebook/PDF viewer previews of
+    annual journals and publications.
+
+9. Featured Leadership & Faculty
+
+A carousel or grid presenting prominent institute figures:
+
+-   Shaykh Ahmadullah: Chairman
+
+-   Khaled Muhammad Saifullah: In-Charge
+
+-   Key Scholars & Educators: Dr. Mostafa Manjur, Mawlana Liaquat Ali,
+    Ustadh Arif Billah, and language team coordinators.
+
+10. Support Us (Donation & Sponsorship Bar)
+
+An interactive section encouraging active participation in the
+institute's mission:
+
+-   Fund Categories: Zakat Fund, General Donation, Scholarship Fund,
+    Sponsor a Student.
+
+-   Interactive Tools:
+
+    -   In-built Zakat Calculator: Calculate cash, gold, and business
+        assets quickly.
+
+    -   Live Funding Goal Bar: Real-time progress tracker for active
+        campaigns.
+
+    -   Sponsor a Student: Option to sponsor fully funded zakat-eligible
+        students covering room, board, and tuition.
+
+-   Payment Support: Local (bKash/Nagad/Cards) and International
+    (PayPal/Stripe/USD) currency gateways.
+
+11. Fatwa & Online Query Gateway
+
+-   Quick Ask Box: Field for submitting daily Fiqh or contemporary
+    questions to the research board.
+
+-   Searchable Fatwa Bank: Instant search across previous authentic
+    rulings.
+
+12. Footer Section
+
+-   Institute Info: As-Sunnah Dawah & Research Institute, Satarkul,
+    Badda, Dhaka-1212.
+
+-   Contact Details: Phone (+880 1805-437910), Operating hours (9 AM - 5
+    PM), Email, and Google Maps embed.
+
+-   Quick Links: Download Center, FAQ, Alumni Portal, Social Media
+    links, and QR Code for instant admission updates.

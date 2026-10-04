@@ -1,0 +1,88 @@
+import type { Language } from "@/types";
+
+const BN_DIGITS = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"] as const;
+
+/** Convert Latin digits in a string/number to Bengali digits. */
+export function toBnDigits(value: string | number): string {
+  return String(value).replace(/[0-9]/g, (d) => BN_DIGITS[Number(d)]);
+}
+
+export function formatNumber(value: number, lang: Language): string {
+  const formatted = new Intl.NumberFormat("en-US").format(value);
+  return lang === "bn" ? toBnDigits(formatted) : formatted;
+}
+
+/** Format a BDT amount with Bengali digits and ৳ symbol when lang=bn. */
+export function formatTaka(amount: number, lang: Language): string {
+  const formatted = new Intl.NumberFormat("en-US").format(Math.round(amount));
+  return lang === "bn" ? `৳${toBnDigits(formatted)}` : `৳${formatted}`;
+}
+
+export function formatCompactTaka(amount: number, lang: Language): string {
+  if (amount >= 100000) {
+    const lakh = (amount / 100000).toFixed(amount % 100000 === 0 ? 0 : 1);
+    return lang === "bn" ? `৳${toBnDigits(lakh)} লক্ষ` : `৳${lakh}L`;
+  }
+  if (amount >= 1000) {
+    const k = (amount / 1000).toFixed(amount % 1000 === 0 ? 0 : 1);
+    return lang === "bn" ? `৳${toBnDigits(k)} হাজার` : `৳${k}K`;
+  }
+  return formatTaka(amount, lang);
+}
+
+const BN_MONTHS = [
+  "জানুয়ারি",
+  "ফেব্রুয়ারি",
+  "মার্চ",
+  "এপ্রিল",
+  "মে",
+  "জুন",
+  "জুলাই",
+  "আগস্ট",
+  "সেপ্টেম্বর",
+  "অক্টোবর",
+  "নভেম্বর",
+  "ডিসেম্বর",
+] as const;
+
+/** Format an ISO date as "১৫ জানুয়ারি ২০২৫" (bn) or "15 January 2025" (en). */
+export function formatDate(iso: string | Date, lang: Language): string {
+  const date = typeof iso === "string" ? new Date(iso) : iso;
+  if (Number.isNaN(date.getTime())) return "";
+  const day = date.getDate();
+  const month = BN_MONTHS[date.getMonth()];
+  const year = date.getFullYear();
+  if (lang === "bn") return `${toBnDigits(day)} ${month} ${toBnDigits(year)}`;
+  return `${day} ${month} ${year}`;
+}
+
+/** Relative "days ago" label for notice freshness. */
+export function daysAgoLabel(iso: string | Date, lang: Language): string {
+  const date = typeof iso === "string" ? new Date(iso) : iso;
+  const diffMs = Date.now() - date.getTime();
+  const days = Math.floor(diffMs / 86400000);
+  if (days <= 0) return lang === "bn" ? "আজ" : "Today";
+  if (days === 1) return lang === "bn" ? "গতকাল" : "Yesterday";
+  return lang === "bn" ? `${toBnDigits(days)} দিন আগে` : `${days} days ago`;
+}
+
+/** Is a notice "new"? (published within the last 14 days) */
+export function isNewNotice(iso: string | Date): boolean {
+  const date = typeof iso === "string" ? new Date(iso) : iso;
+  return Date.now() - date.getTime() < 14 * 86400000;
+}
+
+/** Format an ISO date as "জানুয়ারি ২০২৫" (bn) or "January 2025" (en) — archive headers. */
+export function formatMonthYear(iso: string | Date, lang: Language): string {
+  const date = typeof iso === "string" ? new Date(iso) : iso;
+  if (Number.isNaN(date.getTime())) return "";
+  const month = BN_MONTHS[date.getMonth()];
+  const year = date.getFullYear();
+  return lang === "bn" ? `${month} ${toBnDigits(year)}` : `${month} ${year}`;
+}
+
+/** Estimated reading time in minutes for a body of text. */
+export function readMinutes(text: string): number {
+  const words = text.trim().split(/\s+/).length;
+  return Math.max(1, Math.round(words / 180));
+}
