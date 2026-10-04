@@ -86,3 +86,15 @@ export function readMinutes(text: string): number {
   const words = text.trim().split(/\s+/).length;
   return Math.max(1, Math.round(words / 180));
 }
+
+/** Human file size: "৩৪.২ KB" / "1.9 MB" (admin library + audit). */
+export function formatBytes(bytes: number, lang: Language): string {
+  if (bytes <= 0) return lang === "bn" ? "০ B" : "0 B";
+  if (bytes < 1024) return `${lang === "bn" ? toBnDigits(bytes) : bytes} B`;
+  if (bytes < 1024 * 1024) {
+    const kb = (bytes / 1024).toFixed(bytes / 1024 >= 100 ? 0 : 1);
+    return `${lang === "bn" ? toBnDigits(kb) : kb} KB`;
+  }
+  const mb = (bytes / 1024 / 1024).toFixed(1);
+  return `${lang === "bn" ? toBnDigits(mb) : mb} MB`;
+}
