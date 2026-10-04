@@ -12,11 +12,12 @@ import {
   UserCheck,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { courses } from "@/content/courses";
+import { getCourses } from "@/lib/content/courses";
 import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { Course, CourseKind, Language } from "@/types";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/shared/empty-state";
 
 export const courseIcons: Record<string, LucideIcon> = {
   "graduation-cap": GraduationCap,
@@ -96,7 +97,11 @@ export function CourseCard({ course, lang, priority = false }: { course: Course;
 }
 
 /** Grid of every course in the catalog. */
-export function CourseGrid({ lang }: { lang: Language }) {
+export async function CourseGrid({ lang }: { lang: Language }) {
+  const courses = await getCourses();
+  if (courses.length === 0) {
+    return <EmptyState lang={lang} subject={{ bn: "কোর্স", en: "courses" }} />;
+  }
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {courses.map((course) => (

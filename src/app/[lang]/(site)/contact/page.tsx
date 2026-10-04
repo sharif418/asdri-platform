@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { langPath, type Lang } from "@/lib/locale";
 import { pick } from "@/types";
-import { siteConfig } from "@/content/site";
+import { getSiteConfig } from "@/lib/content/site";
 import { PageHero } from "@/components/shared/page-hero";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { ContactForm } from "@/components/contact/contact-form";
@@ -50,6 +50,7 @@ interface SocialLink {
 
 export default async function ContactPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  const siteConfig = await getSiteConfig();
   const bn = lang === "bn";
 
   const infoCards: InfoCard[] = [

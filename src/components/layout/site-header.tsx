@@ -30,7 +30,8 @@ import { LogoLockup } from "@/components/shared/logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { CommandPalette, SearchTrigger } from "@/components/search/command-palette";
 import { useLanguage } from "@/components/providers/language-provider";
-import { navigation, siteConfig } from "@/content/site";
+import { useSiteConfig } from "@/components/providers/site-config-provider";
+import { navigation } from "@/content/site";
 import { langPath } from "@/lib/locale";
 import type { DictionaryKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -60,6 +61,7 @@ function displayPath(pathname: string): string {
 
 function TopUtilityBar() {
   const { lang, t, toggle } = useLanguage();
+  const siteConfig = useSiteConfig();
   return (
     <div className="bg-emerald-deep text-ivory/90">
       <div className="container-site flex h-10 items-center justify-between gap-4 text-[12px] sm:text-[13px]">
@@ -183,6 +185,7 @@ function DesktopNavItem({ section }: { section: NavSection }) {
 /** Mobile drawer navigation with accordions (includes its own trigger). */
 function MobileNav({ onSearchClick }: { onSearchClick: () => void }) {
   const { t, lang, toggle } = useLanguage();
+  const siteConfig = useSiteConfig();
   const pathname = displayPath(usePathname());
   const [open, setOpen] = useState(false);
 
@@ -317,6 +320,7 @@ function MobileNav({ onSearchClick }: { onSearchClick: () => void }) {
 /** Sticky site header: utility bar + logo + mega menu + search + donate CTA. */
 export function SiteHeader() {
   const { t, lang } = useLanguage();
+  const siteConfig = useSiteConfig();
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const pathname = displayPath(usePathname());

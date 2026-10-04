@@ -1,19 +1,30 @@
 import type { Metadata } from "next";
+import { alternatesFor, langPath, type Lang } from "@/lib/locale";
+import { isFeatureEnabled } from "@/lib/settings";
+import { ModuleUnavailable } from "@/components/shared/module-unavailable";
+import { env } from "@/lib/env";
 import { BookMarked, CircleCheckBig, Mail, ShieldCheck } from "lucide-react";
-import { langPath, type Lang } from "@/lib/locale";
 import { PageHero } from "@/components/shared/page-hero";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { StarMotif } from "@/components/shared/ornaments";
 import { FatwaBankExplorer } from "@/components/research/fatwa-bank-explorer";
 import { FatwaAskForm } from "@/components/research/fatwa-ask-form";
-import { siteConfig } from "@/content/site";
+import { getSiteConfig } from "@/lib/content/site";
 
-export const metadata: Metadata = {
-  title: `ফতোয়া ও অনলাইন জিজ্ঞাসা — ${siteConfig.nameBn}`,
-  description:
-    "সার্চেবল ফতোয়া ব্যাংক — ইবাদত, লেনদেন, আকীদা, পারিবারিক ও সমকালীন বিষয়ে প্রামাণ্য জবাব, সঙ্গে অনলাইনে প্রশ্ন জমার সুযোগ।",
-};
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const siteConfig = await getSiteConfig();
+  const { canonical, languages } = alternatesFor("/research/fatwa", env.siteUrl);
+  return {
+    title: lang === "bn" ? `ফতোয়া ও অনলাইন জিজ্ঞাসা — ${siteConfig.nameBn}` : `Fatwa & Online Queries — ${siteConfig.nameEn}`,
+    description:
+      lang === "bn"
+        ? "সার্চেবল ফতোয়া ব্যাংক — ইবাদত, লেনদেন, আকীদা, পারিবারিক ও সমকালীন বিষয়ে প্রামাণ্য জবাব, সঙ্গে অনলাইনে প্রশ্ন জমার সুযোগ।"
+        : "A searchable fatwa bank — evidenced answers on worship, transactions, creed, family, and contemporary issues, with an online question gateway.",
+    alternates: { canonical, languages },
+  };
+}
 
 /** Fatwa & online queries — the full searchable bank + ask form. */
 export default async function FatwaPage({
@@ -24,7 +35,11 @@ export default async function FatwaPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { lang } = await params;
+  if (!(await isFeatureEnabled("fatwa"))) {
+    return <ModuleUnavailable lang={lang} moduleLabelBn="ফতোয়া ও অনলাইন জিজ্ঞাসা" moduleLabelEn="Fatwa & queries" />;
+  }
   const sp = await searchParams;
+  const siteConfig = await getSiteConfig();
   const initialQuery = typeof sp.q === "string" ? sp.q.trim().slice(0, 120) : "";
   const focusSlug = typeof sp.focus === "string" ? sp.focus.trim().slice(0, 160) : "";
 

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowUpRight, FileText, FlaskConical, Globe, HelpCircle, Landmark, Play, ShieldAlert, Venus } from "lucide-react";
-import { blogArticles } from "@/content/blog";
 import { toBnDigits } from "@/lib/format";
 import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
@@ -15,24 +14,6 @@ const topicIcons: Record<string, typeof FlaskConical> = {
   "shield-alert": ShieldAlert,
 };
 
-/** Topic id → related blog article slugs (falls back to the fitnah category). */
-const relatedSlugs: Record<string, string[]> = {
-  scientism: ["scientism-science-or-faith"],
-  secularism: ["secularism-critique-islamic-perspective"],
-  atheism: ["atheism-skepticism-response"],
-  feminism: ["women-rights-islam-feminist-objections"],
-  orientalism: ["orientalism-hadith-criticism-review"],
-  "lgbtq-gender": ["atheism-skepticism-response", "secularism-critique-islamic-perspective"],
-};
-
-function relatedArticlesFor(topic: ClarificationTopic): BlogArticle[] {
-  const direct = relatedSlugs[topic.id]
-    ?.map((slug) => blogArticles.find((article) => article.slug === slug))
-    .filter((article): article is BlogArticle => Boolean(article));
-  if (direct && direct.length > 0) return direct;
-  return blogArticles.filter((article) => article.category.en === "Contemporary Fitnah & Doubt Resolution").slice(0, 2);
-}
-
 /**
  * One clarification topic section. Renders with an explicit
  * `id="topic-{id}"` anchor — the home page deep-links here.
@@ -41,13 +22,15 @@ export function ClarificationTopicSection({
   topic,
   index,
   lang,
+  related,
 }: {
   topic: ClarificationTopic;
   index: number;
   lang: Language;
+  /** DB-driven related articles for the topic, passed by the server page. */
+  related: BlogArticle[];
 }) {
   const Icon = topicIcons[topic.icon] ?? HelpCircle;
-  const related = relatedArticlesFor(topic);
   const flip = index % 2 === 1;
 
   return (

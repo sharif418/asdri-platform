@@ -1,24 +1,30 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BadgeCheck } from "lucide-react";
-import { langPath, type Lang } from "@/lib/locale";
+import { alternatesFor, type Lang, langPath } from "@/lib/locale";
+import { env } from "@/lib/env";
+import { getCourses } from "@/lib/content/courses";
 import { PageHero } from "@/components/shared/page-hero";
 import { Reveal } from "@/components/shared/reveal";
 import { CourseGrid } from "@/components/academics/course-card";
 import { toBnDigits } from "@/lib/format";
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  const { canonical, languages } = alternatesFor("/academics/courses", env.siteUrl);
   return {
-    title: "চলমান কোর্সসমূহ | Courses",
+    title: isBn ? "চলমান কোর্সসমূহ | আস-সুন্নাহ ইনস্টিটিউট" : "Courses & Programs | As-Sunnah Institute",
     description:
       "PYS, CCIS, ডিপ্লোমা ইন দাওয়াহ অ্যান্ড ইসলামিক স্টাডিজসহ আস-সুন্নাহ ইনস্টিটিউটের সব কোর্সের তালিকা।",
-    alternates: { canonical: "/academics/courses" },
+    alternates: { canonical, languages },
   };
 }
 
 /** /academics/courses — the complete course catalog grid. */
 export default async function CoursesPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  const courses = await getCourses();
 
   return (
     <>
@@ -26,8 +32,8 @@ export default async function CoursesPage({ params }: { params: Promise<{ lang: 
         eyebrow={lang === "bn" ? "একাডেমিক" : "Academics"}
         title={{ bn: "চলমান কোর্সসমূহ", en: "Courses & Programs" }}
         description={{
-          bn: `মোট ${toBnDigits(7)}টি কোর্স ও প্রশিক্ষণ কার্যক্রম — প্রতিটির বিস্তারিত কারিকুলাম, যোগ্যতা ও ফলাফলসহ।`,
-          en: "A total of 7 courses and training programs — each with full curriculum, eligibility, and outcomes.",
+          bn: `মোট ${toBnDigits(courses.length)}টি কোর্স ও প্রশিক্ষণ কার্যক্রম — প্রতিটির বিস্তারিত কারিকুলাম, যোগ্যতা ও ফলাফলসহ।`,
+          en: `A total of ${courses.length} courses and training programs — each with full curriculum, eligibility, and outcomes.`,
         }}
         lang={lang}
         breadcrumb={[

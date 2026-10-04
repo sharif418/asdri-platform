@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { InstituteLogo } from "@/components/shared/logo";
 import { StarMotif } from "@/components/shared/ornaments";
 import { useLanguage } from "@/components/providers/language-provider";
-import { navigation, siteConfig } from "@/content/site";
+import { useSiteConfig } from "@/components/providers/site-config-provider";
+import { navigation } from "@/content/site";
 import { langPath } from "@/lib/locale";
 import type { DictionaryKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -101,6 +102,7 @@ function NewsletterForm() {
 /** Site footer — deep emerald ground, gold accents, 4-column grid. */
 export function SiteFooter() {
   const { t, lang } = useLanguage();
+  const siteConfig = useSiteConfig();
   const year = new Date().getFullYear();
 
   return (

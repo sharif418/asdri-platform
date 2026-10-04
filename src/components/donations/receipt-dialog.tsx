@@ -13,12 +13,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/format";
-import { FUND_LABELS, formatAmount, type ReceiptData } from "./donation-types";
-import type { Language } from "@/types";
+import { formatAmount, type ReceiptData } from "./donation-types";
+import type { FundType, Language } from "@/types";
 
 interface ReceiptDialogProps {
   receipt: ReceiptData | null;
   lang: Language;
+  /** DB-driven fund labels (title per fund key). */
+  fundLabels: Record<FundType, { bn: string; en: string }>;
   onClose: () => void;
 }
 
@@ -50,7 +52,7 @@ function CopyButton({ value, label, lang }: { value: string; label: string; lang
 }
 
 /** Success dialog shown after a donation intent is created: receipt + payment instructions. */
-export function ReceiptDialog({ receipt, lang, onClose }: ReceiptDialogProps) {
+export function ReceiptDialog({ receipt, lang, fundLabels, onClose }: ReceiptDialogProps) {
   const bn = lang === "bn";
   const open = receipt !== null;
 
@@ -103,7 +105,7 @@ export function ReceiptDialog({ receipt, lang, onClose }: ReceiptDialogProps) {
                 <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                   {bn ? "ফান্ড" : "Fund"}
                 </dt>
-                <dd className="mt-0.5 font-semibold">{FUND_LABELS[receipt.fundType][lang]}</dd>
+                <dd className="mt-0.5 font-semibold">{fundLabels[receipt.fundType][lang]}</dd>
               </div>
               <div>
                 <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">

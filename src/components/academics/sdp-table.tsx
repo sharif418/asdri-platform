@@ -2,14 +2,20 @@ import { ClipboardCheck, Hourglass } from "lucide-react";
 import { Reveal } from "@/components/shared/reveal";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { studentDevelopmentPrograms } from "@/content/courses";
+import { EmptyState } from "@/components/shared/empty-state";
+import { getSdpPrograms } from "@/lib/content/courses";
 import { toBnDigits } from "@/lib/format";
 import { pick } from "@/types";
 import type { Language } from "@/types";
 
 /** Student Development Programs — mandatory, non-credit activities table. */
-export function SdpTable({ lang }: { lang: Language }) {
+export async function SdpTable({ lang }: { lang: Language }) {
+  const studentDevelopmentPrograms = await getSdpPrograms();
   const totalHours = studentDevelopmentPrograms.reduce((sum, program) => sum + program.hours, 0);
+
+  if (studentDevelopmentPrograms.length === 0) {
+    return <EmptyState lang={lang} subject={{ bn: "কার্যক্রম", en: "programs" }} />;
+  }
 
   return (
     <Reveal>

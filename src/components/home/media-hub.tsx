@@ -2,15 +2,16 @@ import Link from "next/link";
 import { ArrowRight, Clock3, Newspaper, Images, PlayCircle, Youtube } from "lucide-react";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
-import { blogArticles } from "@/content/blog";
-import { galleryPhotos } from "@/content/media";
+import { getBlogArticles } from "@/lib/content/blog";
+import { getAlbums } from "@/lib/content/media";
 import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { Language } from "@/types";
 import { formatDate } from "@/lib/format";
 
 /** Media & knowledge hub — latest articles, videos, gallery, journals. */
-export function MediaHub({ lang }: { lang: Language }) {
+export async function MediaHub({ lang }: { lang: Language }) {
+  const [blogArticles, galleryPhotos] = await Promise.all([getBlogArticles(), getAlbums()]);
   const latestArticles = blogArticles.slice(0, 3);
   const galleryPreview = galleryPhotos.slice(0, 5);
 

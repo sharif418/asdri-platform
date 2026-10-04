@@ -1,29 +1,34 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { langPath, type Lang } from "@/lib/locale";
 import { PageHero } from "@/components/shared/page-hero";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal } from "@/components/shared/reveal";
 import { GoldRule } from "@/components/shared/ornaments";
 import { AlumniBatchTable, AlumniEngagement, AlumniSummary } from "@/components/about/alumni-sections";
-import { alumniIntro } from "@/content/media";
-import { instituteStats } from "@/content/stats";
+import { getAlumniIntro } from "@/lib/content/about";
+import { getInstituteStats } from "@/lib/content/stats";
+import { alternatesFor, type Lang, langPath } from "@/lib/locale";
+import { env } from "@/lib/env";
 import { pick } from "@/types";
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  const { canonical, languages } = alternatesFor("/about/alumni", env.siteUrl);
   return {
-    title: "অ্যালামনাই অ্যাসোসিয়েশন | Alumni Association",
+    title: isBn ? "অ্যালামনাই অ্যাসোসিয়েশন | আস-সুন্নাহ ইনস্টিটিউট" : "Alumni Association | As-Sunnah Institute",
     description:
       "আস-সুন্নাহ ইনস্টিটিউটের অ্যালামনাই — PGDID, CCIS ও শিক্ষক প্রশিক্ষণ ব্যাচের পরিসংখ্যান ও অ্যালামনাই সক্রিয়তা।",
-    alternates: { canonical: "/about/alumni" },
+    alternates: { canonical, languages },
   };
 }
 
 /** /about/alumni — alumni intro, batch statistics, engagement. */
 export default async function AlumniPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
-  const totalAlumni = instituteStats.find((stat) => stat.id === "alumni")?.value ?? 293;
+  const [alumniIntro, stats] = await Promise.all([getAlumniIntro(), getInstituteStats()]);
+  const totalAlumni = stats.find((stat) => stat.id === "alumni")?.value ?? 293;
 
   return (
     <>

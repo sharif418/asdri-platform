@@ -1,26 +1,33 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, FolderOpen } from "lucide-react";
-import { langPath, type Lang } from "@/lib/locale";
 import { PageHero } from "@/components/shared/page-hero";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal } from "@/components/shared/reveal";
 import { DownloadCenter } from "@/components/academics/download-center";
-import { downloadItems } from "@/content/research";
+import { getDownloadItems } from "@/lib/content/research";
+import { isFeatureEnabled } from "@/lib/settings";
+import { alternatesFor, type Lang, langPath } from "@/lib/locale";
+import { env } from "@/lib/env";
 import { toBnDigits } from "@/lib/format";
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  const { canonical, languages } = alternatesFor("/academics/downloads", env.siteUrl);
   return {
-    title: "ডাউনলোড সেন্টার | Download Center",
+    title: isBn ? "ডাউনলোড সেন্টার | আস-সুন্নাহ ইনস্টিটিউট" : "Download Center | As-Sunnah Institute",
     description:
       "সিলেবাস, ভর্তি ফর্ম, দাওয়াহ ম্যাটেরিয়ালস ও প্রসপেক্টাস — আস-সুন্নাহ ইনস্টিটিউটের ডাউনলোডযোগ্য রিসোর্স।",
-    alternates: { canonical: "/academics/downloads" },
+    alternates: { canonical, languages },
   };
 }
 
 /** /academics/downloads — category-filtered download center. */
 export default async function DownloadsPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  const downloadItems = await getDownloadItems();
+  const downloadsEnabled = await isFeatureEnabled("downloads");
 
   return (
     <>
@@ -53,7 +60,18 @@ export default async function DownloadsPage({ params }: { params: Promise<{ lang
           </Reveal>
 
           <div className="mx-auto mt-12 max-w-4xl">
-            <DownloadCenter lang={lang} />
+            {downloadsEnabled ? (
+              <DownloadCenter lang={lang} items={downloadItems} />
+            ) : (
+              <div className="mx-auto max-w-xl rounded-2xl border border-dashed border-gold/40 bg-card/60 px-6 py-14 text-center">
+                <p className="font-heading text-base font-semibold text-foreground">
+                  {lang === "bn" ? "ডাউনলোড সেন্টারটি এখন সাময়িকভাবে বন্ধ রাখা হয়েছে।" : "The download center is temporarily unavailable."}
+                </p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {lang === "bn" ? "শীঘ্রই আবার ফিরে আসছে।" : "It will be back soon."}
+                </p>
+              </div>
+            )}
           </div>
 
           <Reveal className="mt-12">

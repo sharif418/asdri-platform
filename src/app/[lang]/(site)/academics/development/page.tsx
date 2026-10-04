@@ -1,26 +1,33 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, HeartHandshake, Info } from "lucide-react";
-import { langPath, type Lang } from "@/lib/locale";
 import { PageHero } from "@/components/shared/page-hero";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { SdpTable } from "@/components/academics/sdp-table";
-import { studentDevelopmentPrograms } from "@/content/courses";
+import { getSdpPrograms } from "@/lib/content/courses";
+import { alternatesFor, type Lang, langPath } from "@/lib/locale";
+import { env } from "@/lib/env";
 import { toBnDigits } from "@/lib/format";
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  const { canonical, languages } = alternatesFor("/academics/development", env.siteUrl);
   return {
-    title: "শিক্ষার্থী উন্নয়ন কার্যক্রম | Student Development Programs",
+    title: isBn
+      ? "শিক্ষার্থী উন্নয়ন কার্যক্রম | আস-সুন্নাহ ইনস্টিটিউট"
+      : "Student Development Programs | As-Sunnah Institute",
     description:
       "SDP — তারবিয়াহ সেশন, শর্ট কোর্স, সেমিনার, সহ-শিক্ষা কার্যক্রম, বাধ্যতামূলক পাঠ ও কমিউনিটি সার্ভিস; বাধ্যতামূলক তবে অ-ক্রেডিট।",
-    alternates: { canonical: "/academics/development" },
+    alternates: { canonical, languages },
   };
 }
 
 /** /academics/development — Student Development Programs (SDP). */
 export default async function DevelopmentPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  const studentDevelopmentPrograms = await getSdpPrograms();
 
   const principles = [
     {

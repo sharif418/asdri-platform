@@ -2,7 +2,8 @@ import { BedDouble, Library, MoonStar, NotebookPen } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { SectionHeading } from "@/components/shared/section-heading";
-import { facilities } from "@/content/admission";
+import { EmptyState } from "@/components/shared/empty-state";
+import { getFacilities } from "@/lib/content/admission";
 import { pick } from "@/types";
 import type { Language } from "@/types";
 
@@ -14,7 +15,8 @@ const facilityIcons: Record<string, LucideIcon> = {
 };
 
 /** Campus facilities — icon cards on a parchment band. */
-export function FacilitiesGrid({ lang }: { lang: Language }) {
+export async function FacilitiesGrid({ lang }: { lang: Language }) {
+  const facilities = await getFacilities();
   return (
     <section className="bg-parchment py-16 sm:py-24 dark:bg-secondary/30">
       <div className="container-site">
@@ -31,6 +33,11 @@ export function FacilitiesGrid({ lang }: { lang: Language }) {
         </Reveal>
 
         <Stagger className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {facilities.length === 0 ? (
+            <div className="sm:col-span-2 lg:col-span-4">
+              <EmptyState lang={lang} subject={{ bn: "ক্যাম্পাস সুবিধা", en: "facilities" }} />
+            </div>
+          ) : null}
           {facilities.map((facility) => {
             const Icon = facilityIcons[facility.icon] ?? Library;
             return (

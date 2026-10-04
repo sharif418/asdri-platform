@@ -1,5 +1,6 @@
 import { CheckCircle2 } from "lucide-react";
-import { admissionSteps } from "@/content/admission";
+import { EmptyState } from "@/components/shared/empty-state";
+import { getAdmissionSteps } from "@/lib/content/admission";
 import { toBnDigits } from "@/lib/format";
 import { pick } from "@/types";
 import type { Language } from "@/types";
@@ -9,7 +10,11 @@ import type { Language } from "@/types";
  * gold medallions and a connecting rule; content alternates sides on
  * large screens and stacks cleanly on mobile.
  */
-export function AdmissionTimeline({ lang }: { lang: Language }) {
+export async function AdmissionTimeline({ lang }: { lang: Language }) {
+  const admissionSteps = await getAdmissionSteps();
+  if (admissionSteps.length === 0) {
+    return <EmptyState lang={lang} subject={{ bn: "ভর্তি ধাপ", en: "admission steps" }} />;
+  }
   return (
     <ol className="relative space-y-10 md:space-y-12" aria-label={lang === "bn" ? "ভর্তি প্রক্রিয়ার ধাপসমূহ" : "Admission process steps"}>
       {/* connecting spine */}

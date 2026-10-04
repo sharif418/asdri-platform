@@ -1,7 +1,7 @@
 import { Clock3, Mail, MapPin, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/shared/reveal";
-import { siteConfig } from "@/content/site";
+import { getSiteConfig } from "@/lib/content/site";
 import { pick } from "@/types";
 import type { LocalizedText } from "@/types";
 
@@ -12,7 +12,8 @@ interface CampusAddressProps {
 }
 
 /** Residential campus address card + embedded map. */
-export function CampusAddress({ title, description, lang }: CampusAddressProps) {
+export async function CampusAddress({ title, description, lang }: CampusAddressProps) {
+  const siteConfig = await getSiteConfig();
   return (
     <section className="bg-background py-16 sm:py-24">
       <div className="container-site">

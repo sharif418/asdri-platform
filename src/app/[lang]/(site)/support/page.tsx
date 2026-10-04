@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BookOpenCheck, Calculator, FileSpreadsheet, GraduationCap, LayoutDashboard, ShieldCheck } from "lucide-react";
 import { langPath, type Lang } from "@/lib/locale";
+import { isFeatureEnabled } from "@/lib/settings";
+import { ModuleUnavailable } from "@/components/shared/module-unavailable";
 import { PageHero } from "@/components/shared/page-hero";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
@@ -11,6 +13,7 @@ import { CampaignsSection } from "@/components/donations/campaigns-section";
 import { PaymentChannels } from "@/components/donations/payment-channels";
 import { FUND_TYPES } from "@/types";
 import type { FundType } from "@/types";
+import { getFunds, getFundLabels } from "@/lib/content/funds";
 
 export const metadata: Metadata = {
   title: "সাপোর্ট করুন — অনুদান পোর্টাল",
@@ -65,6 +68,9 @@ const transparencyItems = [
 
 export default async function SupportPage({ params, searchParams }: SupportPageProps) {
   const { lang } = await params;
+  if (!(await isFeatureEnabled("donations"))) {
+    return <ModuleUnavailable lang={lang} moduleLabelBn="অনুদান" moduleLabelEn="Donations" />;
+  }
   const sp = await searchParams;
 
   const fund = FUND_TYPES.includes(sp.fund as FundType) ? (sp.fund as FundType) : "zakat";
@@ -73,6 +79,8 @@ export default async function SupportPage({ params, searchParams }: SupportPageP
     Number.isFinite(parsedAmount) && parsedAmount >= 10 && parsedAmount <= 10_000_000
       ? Math.round(parsedAmount)
       : null;
+
+  const [funds, fundLabels] = await Promise.all([getFunds(), getFundLabels()]);
 
   return (
     <>
@@ -90,7 +98,7 @@ export default async function SupportPage({ params, searchParams }: SupportPageP
       />
 
       {/* Fund selector + donation form + receipt dialog */}
-      <DonationPortal initialFund={fund} initialAmount={initialAmount} lang={lang} />
+      <DonationPortal initialFund={fund} initialAmount={initialAmount} lang={lang} funds={funds} fundLabels={fundLabels} />
 
       {/* Live campaigns */}
       <CampaignsSection lang={lang} />

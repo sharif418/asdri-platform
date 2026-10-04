@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarClock, Coins, HandCoins, Hourglass, Scale, ShieldAlert } from "lucide-react";
 import { langPath, type Lang } from "@/lib/locale";
+import { isFeatureEnabled } from "@/lib/settings";
+import { ModuleUnavailable } from "@/components/shared/module-unavailable";
 import { PageHero } from "@/components/shared/page-hero";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
@@ -55,6 +57,9 @@ const scholarlyNotes = [
 
 export default async function ZakatCalculatorPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  if (!(await isFeatureEnabled("donations"))) {
+    return <ModuleUnavailable lang={lang} moduleLabelBn="যাকাত ক্যালকুলেটর" moduleLabelEn="Zakat calculator" />;
+  }
 
   return (
     <>

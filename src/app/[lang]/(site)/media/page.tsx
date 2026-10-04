@@ -4,10 +4,9 @@ import { ArrowRight, ArrowUpRight, Clock3, Images, Newspaper, PenLine, PlayCircl
 import { langPath, type Lang } from "@/lib/locale";
 import { pick, type LocalizedText } from "@/types";
 import { formatDate, toBnDigits } from "@/lib/format";
-import { blogArticles } from "@/content/blog";
-import { newsItems, videos } from "@/content/media";
-import { galleryPhotos } from "@/content/media";
-import { siteConfig } from "@/content/site";
+import { getBlogArticles } from "@/lib/content/blog";
+import { getNewsItems, getVideos, getAlbums } from "@/lib/content/media";
+import { getSiteConfig } from "@/lib/content/site";
 import { PageHero } from "@/components/shared/page-hero";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { GoldRule, StarMotif } from "@/components/shared/ornaments";
@@ -35,8 +34,15 @@ interface HubCard {
 
 export default async function MediaHubPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  const [blogArticles, newsItems, videos, galleryPhotos, siteConfig] = await Promise.all([
+    getBlogArticles(),
+    getNewsItems(),
+    getVideos(),
+    getAlbums(),
+    getSiteConfig(),
+  ]);
 
-  const latest = blogArticles[0];
+  const latest = blogArticles[0] ?? null;
   const upcomingCount = newsItems.filter((n) => n.upcoming).length;
   const videoCount = videos.length;
   const galleryCount = galleryPhotos.length;
@@ -52,7 +58,7 @@ export default async function MediaHubPage({ params }: { params: Promise<{ lang:
       },
       stat: toBnDigits(blogArticles.length),
       statLabel: { bn: "টি প্রকাশিত প্রবন্ধ", en: "published essays" },
-      images: [latest.cover, blogArticles[1].cover, blogArticles[3].cover],
+      images: [latest?.cover, blogArticles[1]?.cover, blogArticles[3]?.cover].filter((src): src is string => Boolean(src)),
       alt: { bn: "সর্বশেষ ব্লগ প্রবন্ধের প্রচ্ছদ", en: "Latest blog article covers" },
       cta: { bn: "প্রবন্ধ পড়ুন", en: "Read articles" },
       tone: "parchment",
@@ -67,7 +73,7 @@ export default async function MediaHubPage({ params }: { params: Promise<{ lang:
       },
       stat: toBnDigits(videoCount),
       statLabel: { bn: "টি প্লেলিস্ট ভিডিও", en: "playlist videos" },
-      images: [videos[0].thumbnail, videos[2].thumbnail, videos[3].thumbnail],
+      images: [videos[0]?.thumbnail, videos[2]?.thumbnail, videos[3]?.thumbnail].filter((src): src is string => Boolean(src)),
       alt: { bn: "ভিডিও থাম্বনেইল", en: "Video thumbnails" },
       cta: { bn: "ভিডিও দেখুন", en: "Watch videos" },
       tone: "emerald",
@@ -82,7 +88,7 @@ export default async function MediaHubPage({ params }: { params: Promise<{ lang:
       },
       stat: toBnDigits(upcomingCount),
       statLabel: { bn: "টি আসন্ন ইভেন্ট", en: "upcoming events" },
-      images: [newsItems[1].cover, newsItems[3].cover, newsItems[0].cover],
+      images: [newsItems[1]?.cover, newsItems[3]?.cover, newsItems[0]?.cover].filter((src): src is string => Boolean(src)),
       alt: { bn: "ইভেন্টের প্রচ্ছদ চিত্র", en: "Event cover images" },
       cta: { bn: "সংবাদ দেখুন", en: "View news" },
       tone: "parchment",
@@ -97,7 +103,7 @@ export default async function MediaHubPage({ params }: { params: Promise<{ lang:
       },
       stat: toBnDigits(galleryCount),
       statLabel: { bn: "টি ফটো", en: "photos" },
-      images: [galleryPhotos[9].src, galleryPhotos[7].src, galleryPhotos[4].src],
+      images: [galleryPhotos[2]?.src, galleryPhotos[1]?.src, galleryPhotos[0]?.src].filter((src): src is string => Boolean(src)),
       alt: { bn: "গ্যালারি ফটো", en: "Gallery photos" },
       cta: { bn: "গ্যালারি খুলুন", en: "Open gallery" },
       tone: "emerald",

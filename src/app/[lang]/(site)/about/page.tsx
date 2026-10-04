@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Eye } from "lucide-react";
-import { langPath, type Lang } from "@/lib/locale";
 import { PageHero } from "@/components/shared/page-hero";
 import { Reveal } from "@/components/shared/reveal";
 import { GoldRule, StarMotif } from "@/components/shared/ornaments";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { ObjectivesList } from "@/components/about/objectives-list";
-import { instituteIntro, objectivesList } from "@/content/about";
-import { corePillars, visionStatement } from "@/content/stats";
-import { siteConfig } from "@/content/site";
+import { getInstituteIntro, getObjectivesList } from "@/lib/content/about";
+import { getCorePillars, getVisionStatement } from "@/lib/content/stats";
+import { getSiteConfig } from "@/lib/content/site";
+import { alternatesFor, type Lang, langPath } from "@/lib/locale";
+import { env } from "@/lib/env";
 import { pick } from "@/types";
 import type { LucideIcon } from "lucide-react";
 import { BookOpen, GitMerge, Sprout } from "lucide-react";
@@ -21,18 +22,28 @@ const pillarIcons: Record<string, LucideIcon> = {
   sprout: Sprout,
 };
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  const { canonical, languages } = alternatesFor("/about", env.siteUrl);
   return {
-    title: "লক্ষ্য ও উদ্দেশ্য | Vision & Objectives",
+    title: isBn ? "লক্ষ্য ও উদ্দেশ্য | আস-সুন্নাহ ইনস্টিটিউট" : "Vision & Objectives | As-Sunnah Institute",
     description:
       "আস-সুন্নাহ দাওয়াহ অ্যান্ড রিসার্চ ইনস্টিটিউটের পরিচিতি, ভিশন বিবৃতি, চৌদ্দটি মূল উদ্দেশ্য ও কোর পিলার। Vision, objectives, and core pillars of the As-Sunnah Dawah & Research Institute.",
-    alternates: { canonical: "/about" },
+    alternates: { canonical, languages },
   };
 }
 
 /** /about — institute intro, vision statement, full objectives, core pillars. */
 export default async function AboutPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  const [instituteIntro, objectivesList, visionStatement, corePillars, siteConfig] = await Promise.all([
+    getInstituteIntro(),
+    getObjectivesList(),
+    getVisionStatement(),
+    getCorePillars(),
+    getSiteConfig(),
+  ]);
 
   return (
     <>

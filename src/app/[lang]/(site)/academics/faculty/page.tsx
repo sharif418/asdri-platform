@@ -1,27 +1,32 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { langPath, type Lang } from "@/lib/locale";
 import { PageHero } from "@/components/shared/page-hero";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal } from "@/components/shared/reveal";
 import { LeadershipCompact } from "@/components/about/leadership-grid";
 import { FacultyDirectory } from "@/components/academics/faculty-sections";
-import { facultyGroups } from "@/content/faculty";
+import { getFacultyGroups } from "@/lib/content/people";
+import { alternatesFor, type Lang, langPath } from "@/lib/locale";
+import { env } from "@/lib/env";
 import { toBnDigits } from "@/lib/format";
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  const { canonical, languages } = alternatesFor("/academics/faculty", env.siteUrl);
   return {
-    title: "শিক্ষক ও গবেষকবৃন্দ | Faculty & Teachers",
+    title: isBn ? "শিক্ষক ও গবেষকবৃন্দ | আস-সুন্নাহ ইনস্টিটিউট" : "Faculty & Teachers | As-Sunnah Institute",
     description:
       "আস-সুন্নাহ ইনস্টিটিউটের শিক্ষক প্যানেল, আরবি টিম, তাজবিদ টিম ও ভাষা বিভাগ — দেশ-বিদেশের শিক্ষাবিদ ও গবেষকদের সমন্বয়ে।",
-    alternates: { canonical: "/academics/faculty" },
+    alternates: { canonical, languages },
   };
 }
 
 /** /academics/faculty — leadership strip + full faculty directory. */
 export default async function FacultyPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  const facultyGroups = await getFacultyGroups();
   const totalMembers = facultyGroups.reduce((sum, group) => sum + group.members.length, 0);
 
   return (

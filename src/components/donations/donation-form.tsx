@@ -31,7 +31,6 @@ import { PaymentChannels } from "./payment-channels";
 import { SponsorPicker } from "./sponsor-picker";
 import {
   CURRENCY_OPTIONS,
-  FUND_LABELS,
   formatAmount,
   parseAmount,
   type CurrencyCode,
@@ -51,6 +50,8 @@ interface DonationFormProps {
   fundType: FundType;
   initialAmount: number | null;
   lang: Language;
+  /** DB-driven fund labels (title per fund key). */
+  fundLabels: Record<FundType, { bn: string; en: string }>;
   onSuccess: (receipt: ReceiptData) => void;
 }
 
@@ -64,9 +65,10 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 }
 
 /** The donation form: amount presets, currency, donor details, sponsor mode. */
-export function DonationForm({ fundType, initialAmount, lang, onSuccess }: DonationFormProps) {
+export function DonationForm({ fundType, initialAmount, lang, fundLabels, onSuccess }: DonationFormProps) {
   const { t } = useLanguage();
   const bn = lang === "bn";
+  const fundLabel = fundLabels[fundType][lang];
 
   const [amount, setAmount] = useState<string>(initialAmount ? String(initialAmount) : "1000");
   const [currency, setCurrency] = useState<CurrencyCode>("BDT");
@@ -181,7 +183,7 @@ export function DonationForm({ fundType, initialAmount, lang, onSuccess }: Donat
             {bn ? "অনুদানের বিবরণ" : "Donation Details"}
           </h3>
           <Badge variant="outline" className="border-gold/40 bg-gold/10 font-semibold text-gold">
-            {FUND_LABELS[fundType][lang]}
+            {fundLabel}
           </Badge>
         </div>
 
@@ -405,7 +407,7 @@ export function DonationForm({ fundType, initialAmount, lang, onSuccess }: Donat
                   : "— pick an amount"}
             </p>
             <p className="mt-1 text-[13px] text-ivory/70">
-              {bn ? "ফান্ড:" : "Fund:"} <span className="font-semibold text-ivory">{FUND_LABELS[fundType][lang]}</span>
+              {bn ? "ফান্ড:" : "Fund:"} <span className="font-semibold text-ivory">{fundLabel}</span>
             </p>
 
             <div className="mt-4 flex flex-wrap gap-2">

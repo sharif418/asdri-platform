@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { langPath, type Lang } from "@/lib/locale";
+import { isFeatureEnabled } from "@/lib/settings";
+import { ModuleUnavailable } from "@/components/shared/module-unavailable";
 import { toBnDigits } from "@/lib/format";
-import { galleryPhotos } from "@/content/media";
+import { getAlbums } from "@/lib/content/media";
 import { PageHero } from "@/components/shared/page-hero";
 import { Reveal } from "@/components/shared/reveal";
 import { GalleryExplorer } from "@/components/media/gallery-explorer";
@@ -15,6 +17,10 @@ export const metadata: Metadata = {
 
 export default async function GalleryPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  if (!(await isFeatureEnabled("gallery"))) {
+    return <ModuleUnavailable lang={lang} moduleLabelBn="ফটো গ্যালারি" moduleLabelEn="Photo gallery" />;
+  }
+  const galleryPhotos = await getAlbums();
 
   const photos = galleryPhotos.map((photo) => ({
     src: photo.src,

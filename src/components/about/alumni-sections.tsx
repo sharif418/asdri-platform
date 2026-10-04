@@ -4,8 +4,7 @@ import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { StatCounter } from "@/components/shared/stat-counter";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { alumniEngagement } from "@/content/about";
-import { alumniBatches } from "@/content/media";
+import { getAlumniBatches, getAlumniEngagement } from "@/lib/content/about";
 import { toBnDigits } from "@/lib/format";
 import { pick } from "@/types";
 import type { Language } from "@/types";
@@ -18,7 +17,8 @@ const engagementIcons: Record<string, LucideIcon> = {
 };
 
 /** Headline counters for the alumni page. */
-export function AlumniSummary({ lang, totalAlumni }: { lang: Language; totalAlumni: number }) {
+export async function AlumniSummary({ lang, totalAlumni }: { lang: Language; totalAlumni: number }) {
+  const alumniBatches = await getAlumniBatches();
   const totalBatchStudents = alumniBatches.reduce(
     (sum, program) => sum + program.batches.reduce((s, b) => s + b.count, 0),
     0,
@@ -53,7 +53,8 @@ export function AlumniSummary({ lang, totalAlumni }: { lang: Language; totalAlum
 }
 
 /** Program-wise batch statistics table. */
-export function AlumniBatchTable({ lang }: { lang: Language }) {
+export async function AlumniBatchTable({ lang }: { lang: Language }) {
+  const alumniBatches = await getAlumniBatches();
   const total = alumniBatches.reduce((sum, program) => sum + program.batches.reduce((s, b) => s + b.count, 0), 0);
 
   return (
@@ -99,7 +100,8 @@ export function AlumniBatchTable({ lang }: { lang: Language }) {
 }
 
 /** Alumni engagement highlight cards. */
-export function AlumniEngagement({ lang }: { lang: Language }) {
+export async function AlumniEngagement({ lang }: { lang: Language }) {
+  const alumniEngagement = await getAlumniEngagement();
   return (
     <section className="bg-parchment py-16 sm:py-24 dark:bg-secondary/30">
       <div className="container-site">

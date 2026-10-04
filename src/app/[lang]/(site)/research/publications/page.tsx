@@ -1,21 +1,35 @@
 import type { Metadata } from "next";
-import { langPath, type Lang } from "@/lib/locale";
 import { PageHero } from "@/components/shared/page-hero";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal } from "@/components/shared/reveal";
 import { PublicationGrid } from "@/components/research/publication-grid";
-import { publications } from "@/content/research";
-import { siteConfig } from "@/content/site";
+import { getPublications } from "@/lib/content/research";
+import { getSiteConfig } from "@/lib/content/site";
+import { alternatesFor, type Lang, langPath } from "@/lib/locale";
+import { isFeatureEnabled } from "@/lib/settings";
+import { ModuleUnavailable } from "@/components/shared/module-unavailable";
+import { env } from "@/lib/env";
 
-export const metadata: Metadata = {
-  title: `প্রকাশনা ও গ্রন্থ — ${siteConfig.nameBn}`,
-  description:
-    "শিক্ষক-গবেষকদের জার্নাল প্রবন্ধ, গ্রন্থ ও রিসার্চ পেপার — ধরন অনুযায়ী ফিল্টারযোগ্য প্রকাশনা সংগ্রহ।",
-};
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  const siteConfig = await getSiteConfig();
+  const { canonical, languages } = alternatesFor("/research/publications", env.siteUrl);
+  return {
+    title: isBn ? `প্রকাশনা ও গ্রন্থ — ${siteConfig.shortBn}` : `Publications & Books — ${siteConfig.shortEn}`,
+    description:
+      "শিক্ষক-গবেষকদের জার্নাল প্রবন্ধ, গ্রন্থ ও রিসার্চ পেপার — ধরন অনুযায়ী ফিল্টারযোগ্য প্রকাশনা সংগ্রহ।",
+    alternates: { canonical, languages },
+  };
+}
 
 /** Faculty publications & books — filterable grid with CSS covers. */
 export default async function PublicationsPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  if (!(await isFeatureEnabled("research"))) {
+    return <ModuleUnavailable lang={lang} moduleLabelBn="প্রকাশনা ও গ্রন্থপঞ্জি" moduleLabelEn="Publications" />;
+  }
+  const publications = await getPublications();
 
   return (
     <>

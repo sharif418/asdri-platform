@@ -1,5 +1,5 @@
 import { Landmark, Smartphone } from "lucide-react";
-import { siteConfig } from "@/content/site";
+import { getSiteConfig } from "@/lib/content/site";
 import type { Language } from "@/types";
 
 interface PaymentChannelsProps {
@@ -12,7 +12,8 @@ interface PaymentChannelsProps {
  * Official payment channels of the institute — bKash / Nagad / Rocket
  * mobile banking plus the bank transfer details, from `siteConfig.payment`.
  */
-export function PaymentChannels({ lang, tone = "default" }: PaymentChannelsProps) {
+export async function PaymentChannels({ lang, tone = "default" }: PaymentChannelsProps) {
+  const siteConfig = await getSiteConfig();
   const bn = lang === "bn";
   const onDark = tone === "on-dark";
 

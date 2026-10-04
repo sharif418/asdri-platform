@@ -1,5 +1,6 @@
 import { siteConfig, navigation } from "@/content/site";
 import { instituteStats, visionStatement, corePillars } from "@/content/stats";
+import { instituteIntro, objectivesList, campusIntro, orgStructure, alumniEngagement } from "@/content/about";
 import { dictionaries } from "@/lib/i18n";
 import type { Prisma, PrismaClient } from "@prisma/client";
 
@@ -60,6 +61,23 @@ export const SETTING_VALUES: Record<string, unknown> = {
     silverRateBdt: 145, // per gram — the office updates this from admin settings
     nisabGoldGrams: 87.48,
     goldRateBdt: 12500,
+  },
+  "site.about": {
+    intro: instituteIntro.map((p) => ({ bn: p.bn, en: p.en })),
+    objectives: objectivesList.map((p) => ({ bn: p.bn, en: p.en })),
+    campusIntro: { bn: campusIntro.bn, en: campusIntro.en },
+    orgStructure: orgStructure.map((o) => ({
+      id: o.id,
+      icon: o.icon,
+      title: { bn: o.title.bn, en: o.title.en },
+      description: { bn: o.description.bn, en: o.description.en },
+    })),
+    alumniEngagement: alumniEngagement.map((a) => ({
+      id: a.id,
+      icon: a.icon,
+      title: { bn: a.title.bn, en: a.title.en },
+      description: { bn: a.description.bn, en: a.description.en },
+    })),
   },
   "admissions.settings": {
     declarationBn:

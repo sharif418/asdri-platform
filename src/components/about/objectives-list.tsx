@@ -1,7 +1,8 @@
 import { CheckCircle2 } from "lucide-react";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { SectionHeading } from "@/components/shared/section-heading";
-import { objectivesList } from "@/content/about";
+import { EmptyState } from "@/components/shared/empty-state";
+import { getObjectivesList } from "@/lib/content/about";
 import { toBnDigits } from "@/lib/format";
 import { pick } from "@/types";
 import type { Language } from "@/types";
@@ -10,7 +11,8 @@ import type { Language } from "@/types";
  * The complete 14-point objectives list, rendered as a two-column
  * numbered checklist with gold markers.
  */
-export function ObjectivesList({ lang }: { lang: Language }) {
+export async function ObjectivesList({ lang }: { lang: Language }) {
+  const objectivesList = await getObjectivesList();
   return (
     <section className="bg-background py-16 sm:py-24">
       <div className="container-site">
@@ -27,6 +29,11 @@ export function ObjectivesList({ lang }: { lang: Language }) {
         </Reveal>
 
         <Stagger className="mt-12 grid gap-4 md:grid-cols-2">
+          {objectivesList.length === 0 ? (
+            <div className="md:col-span-2">
+              <EmptyState lang={lang} subject={{ bn: "উদ্দেশ্য", en: "objectives" }} />
+            </div>
+          ) : null}
           {objectivesList.map((objective, index) => (
             <RevealItem key={`objective-${index}`}>
               <article className="flex h-full gap-4 rounded-xl border bg-card p-5 shadow-sm transition-shadow hover:shadow-md hover:shadow-emerald-950/5">

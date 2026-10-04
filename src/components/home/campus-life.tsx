@@ -2,13 +2,15 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
-import { campusLifeItems } from "@/content/faculty";
+import { EmptyState } from "@/components/shared/empty-state";
+import { getCampusLifeItems } from "@/lib/content/admission";
 import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { Language } from "@/types";
 
 /** Campus life & student development — visual grid. */
-export function CampusLife({ lang }: { lang: Language }) {
+export async function CampusLife({ lang }: { lang: Language }) {
+  const campusLifeItems = await getCampusLifeItems();
   return (
     <section className="py-16 sm:py-24">
       <div className="container-site">
@@ -26,6 +28,14 @@ export function CampusLife({ lang }: { lang: Language }) {
         </Reveal>
 
         <Stagger className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {campusLifeItems.length === 0 ? (
+            <div className="sm:col-span-2 lg:col-span-3">
+              <EmptyState
+                lang={lang}
+                subject={{ bn: "ক্যাম্পাস লাইফ কার্যক্রম", en: "campus life items" }}
+              />
+            </div>
+          ) : null}
           {campusLifeItems.map((item) => (
             <RevealItem key={item.id}>
               <article className="group relative h-full overflow-hidden rounded-xl shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-950/15">

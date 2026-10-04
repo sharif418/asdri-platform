@@ -1,5 +1,5 @@
 import { CalendarClock, CheckCircle2, Mail } from "lucide-react";
-import { callForPapers } from "@/content/research";
+import { getCallForPapers } from "@/lib/content/research";
 import { formatDate, toBnDigits } from "@/lib/format";
 import { pick } from "@/types";
 import type { Language, LocalizedText } from "@/types";
@@ -8,7 +8,8 @@ import type { Language, LocalizedText } from "@/types";
  * Call for Papers panel — deadline countdown label, submission
  * guidelines, and the research email. Shown on the projects page.
  */
-export function CallForPapers({ lang }: { lang: Language }) {
+export async function CallForPapers({ lang }: { lang: Language }) {
+  const callForPapers = await getCallForPapers();
   if (!callForPapers.active) return null;
 
   const deadlineDate = new Date(callForPapers.deadline);

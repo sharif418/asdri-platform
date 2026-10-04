@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BellRing, ClipboardList, Mail } from "lucide-react";
-import { langPath, type Lang } from "@/lib/locale";
 import { PageHero } from "@/components/shared/page-hero";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal } from "@/components/shared/reveal";
@@ -9,17 +8,27 @@ import { StarMotif } from "@/components/shared/ornaments";
 import { AdmissionTimeline } from "@/components/admissions/admission-timeline";
 import { ExamSubjects } from "@/components/admissions/exam-subjects";
 import { CourseEligibility } from "@/components/admissions/course-eligibility";
-import { siteConfig } from "@/content/site";
+import { getSiteConfig } from "@/lib/content/site";
+import { alternatesFor, type Lang, langPath } from "@/lib/locale";
+import { env } from "@/lib/env";
 
-export const metadata: Metadata = {
-  title: `ভর্তি প্রক্রিয়া — ${siteConfig.nameBn}`,
-  description:
-    "আস-সুন্নাহ দাওয়াহ অ্যান্ড রিসার্চ ইনস্টিটিউটে ভর্তির ৫ ধাপ — অনলাইন আবেদন, প্রাথমিক যাচাই-বাছাই, লিখিত পরীক্ষা, মৌখিক পরীক্ষা (ভাইভা) ও চূড়ান্ত ভর্তি।",
-};
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  const siteConfig = await getSiteConfig();
+  const { canonical, languages } = alternatesFor("/admissions", env.siteUrl);
+  return {
+    title: isBn ? `ভর্তি প্রক্রিয়া — ${siteConfig.shortBn}` : `Admission Process — ${siteConfig.shortEn}`,
+    description:
+      "আস-সুন্নাহ দাওয়াহ অ্যান্ড রিসার্চ ইনস্টিটিউটে ভর্তির ৫ ধাপ — অনলাইন আবেদন, প্রাথমিক যাচাই-বাছাই, লিখিত পরীক্ষা, মৌখিক পরীক্ষা (ভাইভা) ও চূড়ান্ত ভর্তি।",
+    alternates: { canonical, languages },
+  };
+}
 
 /** Admissions — the structured 5-step admission journey. */
 export default async function AdmissionsPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  const siteConfig = await getSiteConfig();
 
   return (
     <>

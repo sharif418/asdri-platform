@@ -1,7 +1,8 @@
 import { BadgeCheck } from "lucide-react";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { CornerOrnament } from "@/components/shared/ornaments";
-import { leadershipTeam } from "@/content/faculty";
+import { EmptyState } from "@/components/shared/empty-state";
+import { getLeadershipTeam } from "@/lib/content/people";
 import { pick } from "@/types";
 import type { Language, LeadershipMember } from "@/types";
 import { cn } from "@/lib/utils";
@@ -47,7 +48,11 @@ function LeaderCard({ member, lang, priority }: { member: LeadershipMember; lang
 }
 
 /** Grid of leadership team cards. The chairman (first entry) is highlighted. */
-export function LeadershipGrid({ lang }: { lang: Language }) {
+export async function LeadershipGrid({ lang }: { lang: Language }) {
+  const leadershipTeam = await getLeadershipTeam();
+  if (leadershipTeam.length === 0) {
+    return <EmptyState lang={lang} subject={{ bn: "নেতৃত্ব", en: "leadership members" }} />;
+  }
   return (
     <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {leadershipTeam.map((member, index) => (
@@ -60,7 +65,11 @@ export function LeadershipGrid({ lang }: { lang: Language }) {
 }
 
 /** Compact leadership strip (used on faculty page). */
-export function LeadershipCompact({ lang }: { lang: Language }) {
+export async function LeadershipCompact({ lang }: { lang: Language }) {
+  const leadershipTeam = await getLeadershipTeam();
+  if (leadershipTeam.length === 0) {
+    return <EmptyState lang={lang} subject={{ bn: "নেতৃত্ব", en: "leadership members" }} />;
+  }
   return (
     <Reveal>
       <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">

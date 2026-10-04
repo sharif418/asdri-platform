@@ -139,10 +139,12 @@ export function VideoTheater({ videos, lang }: VideoTheaterProps) {
                   <span aria-hidden className="absolute inset-0 flex items-center justify-center">
                     <PlayCircle className="h-14 w-14 text-white drop-shadow-lg transition-transform duration-300 group-hover:scale-110" />
                   </span>
-                  <span className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-md bg-black/80 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur">
-                    <Clock3 aria-hidden className="h-3 w-3 text-gold" />
-                    {video.duration}
-                  </span>
+                  {video.duration ? (
+                    <span className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-md bg-black/80 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur">
+                      <Clock3 aria-hidden className="h-3 w-3 text-gold" />
+                      {video.duration}
+                    </span>
+                  ) : null}
                   <span className="absolute left-2.5 top-2.5 rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold text-primary backdrop-blur dark:bg-emerald-deep/90 dark:text-gold">
                     {pick(video.playlist, lang)}
                   </span>
@@ -176,10 +178,12 @@ export function VideoTheater({ videos, lang }: VideoTheaterProps) {
               <span aria-hidden className="absolute inset-0 flex items-center justify-center">
                 <PlayCircle className="h-20 w-20 animate-pulse text-white/95 drop-shadow-xl" />
               </span>
-              <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-md bg-black/80 px-2 py-1 text-xs font-semibold text-white">
-                <Clock3 aria-hidden className="h-3.5 w-3.5 text-gold" />
-                {openVideo.duration}
-              </span>
+              {openVideo.duration ? (
+                <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-md bg-black/80 px-2 py-1 text-xs font-semibold text-white">
+                  <Clock3 aria-hidden className="h-3.5 w-3.5 text-gold" />
+                  {openVideo.duration}
+                </span>
+              ) : null}
             </div>
 
             <div className="space-y-4 p-6">

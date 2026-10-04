@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Bell, Youtube } from "lucide-react";
 import { langPath, type Lang } from "@/lib/locale";
+import { isFeatureEnabled } from "@/lib/settings";
+import { ModuleUnavailable } from "@/components/shared/module-unavailable";
 import { pick } from "@/types";
 import { toBnDigits } from "@/lib/format";
-import { videos } from "@/content/media";
-import { siteConfig } from "@/content/site";
+import { getVideos } from "@/lib/content/media";
+import { getSiteConfig } from "@/lib/content/site";
 import { PageHero } from "@/components/shared/page-hero";
 import { Reveal } from "@/components/shared/reveal";
 import { VideoTheater } from "@/components/media/video-theater";
@@ -18,6 +20,11 @@ export const metadata: Metadata = {
 
 export default async function VideosPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  if (!(await isFeatureEnabled("videos"))) {
+    return <ModuleUnavailable lang={lang} moduleLabelBn="ভিডিও ও পডকাস্ট" moduleLabelEn="Videos & podcasts" />;
+  }
+  const videos = await getVideos();
+  const siteConfig = await getSiteConfig();
 
   const cards = videos.map((video) => ({
     id: video.id,
