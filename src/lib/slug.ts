@@ -28,3 +28,8 @@ export async function buildUniqueFatwaSlug(base: string): Promise<string> {
 export function containsBengali(text: string): boolean {
   return /[\u0980-\u09FF]/.test(text);
 }
+
+/** Generic slug builder used across admin modules (alias kept for clarity). */
+export function slugify(text: string): string {
+  return slugifyTitle(text) || `n-${Date.now().toString(36)}`;
+}

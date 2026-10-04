@@ -65,7 +65,7 @@ export function LoginForm({ lang }: { lang: Language }) {
         title: bn ? `স্বাগতম, ${payload.data.user.name}!` : `Welcome back, ${payload.data.user.name}!`,
         description: bn ? "সফলভাবে লগইন হয়েছে" : "Signed in successfully",
       });
-      router.push(payload.data.user.role === "admin" ? "/admin" : langPath(lang, "/account"));
+      router.push(["ADMIN", "EDITOR", "ADMISSIONS", "FINANCE", "FATWA"].includes(payload.data.user.role) ? "/admin" : langPath(lang, "/account"));
       router.refresh();
     } catch {
       toast({ title: t("toast.error"), variant: "destructive" });
