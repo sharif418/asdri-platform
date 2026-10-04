@@ -1,14 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ImageIcon, Loader2, Search, Trash2, Upload } from "lucide-react";
+import { FileText, ImageIcon, Loader2, Search, Trash2, Upload } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatBytes } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-/** What a picker consumer needs to know about the chosen image. */
+/** What a picker consumer needs to know about the chosen media row. */
 export interface PickedMedia {
   id: string;
   filename: string;
@@ -27,9 +27,9 @@ function csrfToken(): string {
   return document.cookie.match(/asr-csrf=([^;]+)/)?.[1] ?? "";
 }
 
-/** Fetch one page of IMAGE media for the picker grid. */
-async function fetchImages(q: string, signal?: AbortSignal): Promise<PickerRow[]> {
-  const params = new URLSearchParams({ kind: "IMAGE" });
+/** Fetch one page of media (IMAGE or DOCUMENT) for the picker grid. */
+async function fetchMedia(kind: "IMAGE" | "DOCUMENT", q: string, signal?: AbortSignal): Promise<PickerRow[]> {
+  const params = new URLSearchParams({ kind });
   if (q) params.set("q", q);
   const res = await fetch(`/api/admin/media?${params.toString()}`, { signal });
   if (!res.ok) return [];
@@ -38,18 +38,20 @@ async function fetchImages(q: string, signal?: AbortSignal): Promise<PickerRow[]
 }
 
 /**
- * Media picker — a modal that lists IMAGE media from the library (with
- * search + upload) and returns the chosen row. Used for person photos,
- * post/album covers. `onSelect(null)` clears the reference. `multi` mode
- * keeps a selection set and returns everything on confirm (gallery).
+ * Media picker — a modal that lists IMAGE or DOCUMENT media from the library
+ * (with search + upload) and returns the chosen row. Used for person photos,
+ * post/album covers (IMAGE) and publication/download files (DOCUMENT).
+ * `onSelect(null)` clears the reference. `multi` mode keeps a selection set
+ * and returns everything on confirm (gallery).
  */
 export function MediaPicker({
-  label = "ছবি নির্বাচন",
+  label,
   current,
   onSelect,
   multi = false,
   onSelectMany,
   compact = false,
+  kind = "IMAGE",
 }: {
   label?: string;
   current: PickedMedia | null;
@@ -57,7 +59,10 @@ export function MediaPicker({
   multi?: boolean;
   onSelectMany?: (media: PickedMedia[]) => void;
   compact?: boolean;
+  kind?: "IMAGE" | "DOCUMENT";
 }) {
+  const resolvedLabel = label ?? (kind === "DOCUMENT" ? "ফাইল নির্বাচন" : "ছবি নির্বাচন");
+  const isDocument = kind === "DOCUMENT";
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [items, setItems] = useState<PickerRow[]>([]);
@@ -66,14 +71,17 @@ export function MediaPicker({
   const [selected, setSelected] = useState<Map<string, PickedMedia>>(new Map());
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const load = useCallback(async (query: string, signal?: AbortSignal) => {
-    setLoading(true);
-    try {
-      setItems(await fetchImages(query, signal));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const load = useCallback(
+    async (query: string, signal?: AbortSignal) => {
+      setLoading(true);
+      try {
+        setItems(await fetchMedia(kind, query, signal));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [kind],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -101,10 +109,11 @@ export function MediaPicker({
         toast({ title: json.error ?? "আপলোড করা যায়নি", variant: "destructive" });
         return;
       }
-      toast({ title: "ছবি আপলোড হয়েছে" });
+      toast({ title: isDocument ? "ফাইল আপলোড হয়েছে" : "ছবি আপলোড হয়েছে" });
       await load(q);
       if (multi) {
-        setSelected((prev) => new Map(prev).set(json.data!.id, json.data!));
+        const row = json.data;
+        setSelected((prev) => new Map(prev).set(row.id, row));
       } else {
         onSelect?.(json.data);
         setOpen(false);
@@ -120,8 +129,8 @@ export function MediaPicker({
     <div className="space-y-2">
       <div className={cn("flex flex-wrap items-center gap-2", compact && "flex-nowrap")}>
         <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)} className="gap-1.5">
-          <ImageIcon aria-hidden className="h-3.5 w-3.5" />
-          {label}
+          {isDocument ? <FileText aria-hidden className="h-3.5 w-3.5" /> : <ImageIcon aria-hidden className="h-3.5 w-3.5" />}
+          {resolvedLabel}
         </Button>
         {!multi && current && (
           <Button
@@ -139,11 +148,13 @@ export function MediaPicker({
 
       {!multi && current && (
         <div className="flex items-center gap-3 rounded-lg border bg-secondary/30 p-2">
-          <img
-            src={`/api/media/${current.key}`}
-            alt={current.filename}
-            className="h-12 w-12 rounded-md object-cover"
-          />
+          {isDocument ? (
+            <span className="flex h-12 w-12 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <FileText aria-hidden className="h-6 w-6" />
+            </span>
+          ) : (
+            <img src={`/api/media/${current.key}`} alt={current.filename} className="h-12 w-12 rounded-md object-cover" />
+          )}
           <div className="min-w-0">
             <p className="truncate text-[12px] font-medium">{current.filename}</p>
             <p className="text-[11px] text-muted-foreground">
@@ -157,8 +168,14 @@ export function MediaPicker({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>মিডিয়া লাইব্রেরি — ছবি নির্বাচন</DialogTitle>
-            <DialogDescription>আপলোড করা ছবির মধ্য থেকে বেছে নিন, অথবা নতুন ছবি আপলোড করুন।</DialogDescription>
+            <DialogTitle>
+              মিডিয়া লাইব্রেরি — {isDocument ? "ডকুমেন্ট (PDF) নির্বাচন" : "ছবি নির্বাচন"}
+            </DialogTitle>
+            <DialogDescription>
+              {isDocument
+                ? "আপলোড করা পিডিএফগুলোর মধ্য থেকে বেছে নিন, অথবা নতুন ফাইল আপলোড করুন।"
+                : "আপলোড করা ছবির মধ্য থেকে বেছে নিন, অথবা নতুন ছবি আপলোড করুন।"}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -174,7 +191,7 @@ export function MediaPicker({
             <input
               ref={fileRef}
               type="file"
-              accept="image/jpeg,image/png,image/webp"
+              accept={isDocument ? "application/pdf" : "image/jpeg,image/png,image/webp"}
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
@@ -195,7 +212,45 @@ export function MediaPicker({
               </div>
             ) : items.length === 0 ? (
               <div className="py-14 text-center text-sm text-muted-foreground">
-                কোনো ছবি পাওয়া যায়নি — আপলোড বাটন থেকে নতুন ছবি যোগ করুন।
+                {isDocument ? "কোনো ডকুমেন্ট পাওয়া যায়নি — আপলোড বাটন থেকে নতুন পিডিএফ যোগ করুন।" : "কোনো ছবি পাওয়া যায়নি — আপলোড বাটন থেকে নতুন ছবি যোগ করুন।"}
+              </div>
+            ) : isDocument ? (
+              <div className="space-y-2">
+                {items.map((item) => {
+                  const isSelected = selected.has(item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        if (multi) {
+                          setSelected((prev) => {
+                            const next = new Map(prev);
+                            if (next.has(item.id)) next.delete(item.id);
+                            else next.set(item.id, item);
+                            return next;
+                          });
+                        } else {
+                          onSelect?.(item);
+                          setOpen(false);
+                        }
+                      }}
+                      className={cn(
+                        "flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors hover:border-gold/60",
+                        isSelected && "border-gold ring-2 ring-gold/40",
+                      )}
+                    >
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <FileText aria-hidden className="h-5 w-5" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13px] font-medium">{item.filename}</span>
+                        <span className="block text-[11px] text-muted-foreground">{formatBytes(item.size ?? 0, "bn")}</span>
+                      </span>
+                      {isSelected ? <span className="text-[11px] font-bold text-gold">✓ নির্বাচিত</span> : null}
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
