@@ -16,6 +16,8 @@ import { db } from "@/lib/db";
 import type { NoticeCategory as DbNoticeCategory, NoticeStatus as DbNoticeStatus } from "@prisma/client";
 import type { Lang } from "@/lib/locale";
 import { langPath } from "@/lib/locale";
+import { isFeatureEnabled } from "@/lib/settings";
+import { ModuleUnavailable } from "@/components/shared/module-unavailable";
 import { NOTICE_CATEGORIES, type Language, type NoticeCategory, type NoticeStatus } from "@/types";
 import { formatMonthYear, toBnDigits } from "@/lib/format";
 import { PageHero } from "@/components/shared/page-hero";
@@ -103,6 +105,9 @@ export default async function NoticesPage({
   searchParams: SearchParams;
 }) {
   const { lang } = await params;
+  if (!(await isFeatureEnabled("notices"))) {
+    return <ModuleUnavailable lang={lang} moduleLabelBn="নোটিশ বোর্ড" moduleLabelEn="Notice board" />;
+  }
   const sp = await searchParams;
 
   const rawCategory = firstParam(sp.category);

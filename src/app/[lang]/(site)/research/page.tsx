@@ -1,25 +1,34 @@
 import type { Metadata } from "next";
-import type { Lang } from "@/lib/locale";
 import { PageHero } from "@/components/shared/page-hero";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal } from "@/components/shared/reveal";
 import { GoldRule, StarMotif } from "@/components/shared/ornaments";
 import { ResearchLinks } from "@/components/research/research-links";
 import { ResearchAreas } from "@/components/research/research-areas";
-import { researchProjects } from "@/content/research";
-import { siteConfig } from "@/content/site";
+import { getResearchProjects } from "@/lib/content/research";
+import { getSiteConfig } from "@/lib/content/site";
+import { alternatesFor, langPath, type Lang } from "@/lib/locale";
+import { env } from "@/lib/env";
 import { toBnDigits } from "@/lib/format";
 import { pick } from "@/types";
 
-export const metadata: Metadata = {
-  title: `গবেষণা ও প্রকাশনা — ${siteConfig.nameBn}`,
-  description:
-    "সমকালীন মতাদর্শের বুদ্ধিবৃত্তিক জবাব, হাদীস-গবেষণা, তুলনামূলক ধর্মতত্ত্ব ও ফিকহ — আস-সুন্নাহ ইনস্টিটিউটের গবেষণা কার্যক্রম।",
-};
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  const siteConfig = await getSiteConfig();
+  const { canonical, languages } = alternatesFor("/research", env.siteUrl);
+  return {
+    title: isBn ? `গবেষণা ও প্রকাশনা — ${siteConfig.shortBn}` : `Research & Publications — ${siteConfig.shortEn}`,
+    description:
+      "সমকালীন মতাদর্শের বুদ্ধিবৃত্তিক জবাব, হাদীস-গবেষণা, তুলনামূলক ধর্মতত্ত্ব ও ফিকহ — আস-সুন্নাহ ইনস্টিটিউটের গবেষণা কার্যক্রম।",
+    alternates: { canonical, languages },
+  };
+}
 
 /** Research overview — mission, areas, and destinations. */
 export default async function ResearchPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  const researchProjects = await getResearchProjects();
   const ongoingCount = researchProjects.filter((p) => p.status === "ongoing").length;
 
   return (

@@ -2,14 +2,16 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
-import { leadershipTeam } from "@/content/faculty";
+import { EmptyState } from "@/components/shared/empty-state";
+import { getLeadershipTeam } from "@/lib/content/people";
 import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { Language } from "@/types";
 import { cn } from "@/lib/utils";
 
 /** Featured leadership — prominent figures with elegant monogram avatars. */
-export function LeadershipShowcase({ lang }: { lang: Language }) {
+export async function LeadershipShowcase({ lang }: { lang: Language }) {
+  const leadershipTeam = await getLeadershipTeam();
   return (
     <section className="py-16 sm:py-24">
       <div className="container-site">
@@ -27,6 +29,11 @@ export function LeadershipShowcase({ lang }: { lang: Language }) {
         </Reveal>
 
         <Stagger className="mt-12 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-5">
+          {leadershipTeam.length === 0 ? (
+            <div className="col-span-2 sm:col-span-3 lg:col-span-5">
+              <EmptyState lang={lang} subject={{ bn: "নেতৃত্ব", en: "leadership" }} />
+            </div>
+          ) : null}
           {leadershipTeam.map((member) => (
             <RevealItem key={member.id}>
               <Link href={langPath(lang, "/academics/faculty")} className="group block">

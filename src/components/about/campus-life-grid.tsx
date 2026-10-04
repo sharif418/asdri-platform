@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
-import { campusLifeItems } from "@/content/faculty";
+import { EmptyState } from "@/components/shared/empty-state";
+import { getCampusLifeItems } from "@/lib/content/admission";
 import { pick } from "@/types";
 import type { Language } from "@/types";
 
@@ -22,7 +23,11 @@ const lifeIcons: Record<string, LucideIcon> = {
 };
 
 /** Image-led grid of campus-life highlights. */
-export function CampusLifeGrid({ lang }: { lang: Language }) {
+export async function CampusLifeGrid({ lang }: { lang: Language }) {
+  const campusLifeItems = await getCampusLifeItems();
+  if (campusLifeItems.length === 0) {
+    return <EmptyState lang={lang} subject={{ bn: "ক্যাম্পাস লাইফ কার্যক্রম", en: "campus life items" }} />;
+  }
   return (
     <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {campusLifeItems.map((item) => {

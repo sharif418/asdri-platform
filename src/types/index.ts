@@ -85,6 +85,20 @@ export interface Course {
   icon: string; // lucide icon key, mapped in components
   accentClass: string; // tailwind gradient classes
   details: CourseDetails;
+  /** DB-driven extras (optional so legacy static content keeps type-checking) */
+  code?: string;
+  coverUrl?: string;
+  sdp?: SdpItem[];
+  specializations?: { bn: string; en: string; ar?: string }[];
+}
+
+export interface SdpItem {
+  id?: string;
+  title: LocalizedText;
+  objective: LocalizedText;
+  activities: LocalizedText;
+  hours: number;
+  outcome: LocalizedText;
 }
 
 /* ————————————————— Faculty ————————————————— */
@@ -259,7 +273,8 @@ export interface DownloadItem {
   category: "syllabus" | "form" | "dawah" | "prospectus";
   fileType: "PDF" | "DOC" | "ZIP";
   sizeLabel: string;
-  url: string;
+  /** null while the office has not attached a file (renders "coming soon"). */
+  url: string | null;
 }
 
 /* ————————————————— Admission ————————————————— */

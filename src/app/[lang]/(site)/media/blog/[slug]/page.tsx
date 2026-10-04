@@ -5,7 +5,9 @@ import { ArrowLeft, ArrowRight, CalendarDays, Clock3, User } from "lucide-react"
 import { langPath, type Lang } from "@/lib/locale";
 import { pick } from "@/types";
 import { formatDate, toBnDigits } from "@/lib/format";
-import { blogArticles, getArticle, relatedArticles } from "@/content/blog";
+import { getArticleBySlug, getBlogArticles, getRelatedArticles } from "@/lib/content/blog";
+import { alternatesFor } from "@/lib/locale";
+import { env } from "@/lib/env";
 import { estimateReadingMinutes, extractHeadings } from "@/lib/article";
 import { PageHero } from "@/components/shared/page-hero";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
@@ -20,20 +22,23 @@ interface ArticlePageProps {
   params: Promise<{ lang: Lang; slug: string }>;
 }
 
-export function generateStaticParams(): { slug: string }[] {
-  return blogArticles.map((article) => ({ slug: article.slug }));
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
+  const articles = await getBlogArticles();
+  return articles.map((article) => ({ slug: article.slug }));
 }
 
 export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const article = getArticle(slug);
+  const { slug, lang } = await params;
+  const article = await getArticleBySlug(slug);
   if (!article) return { title: "প্রবন্ধ পাওয়া যায়নি" };
+  const { canonical, languages } = alternatesFor(`/media/blog/${slug}`, env.siteUrl);
   return {
-    title: `${article.title.bn} | আস-সুন্নাহ ইনস্টিটিউট ব্লগ`,
-    description: article.excerpt.bn,
+    title: lang === "bn" ? `${article.title.bn} | আস-সুন্নাহ ইনস্টিটিউট ব্লগ` : `${article.title.en} | ASDRI Blog`,
+    description: lang === "bn" ? article.excerpt.bn : article.excerpt.en,
+    alternates: { canonical, languages },
     openGraph: {
-      title: article.title.bn,
-      description: article.excerpt.bn,
+      title: lang === "bn" ? article.title.bn : article.title.en,
+      description: lang === "bn" ? article.excerpt.bn : article.excerpt.en,
       images: [{ url: article.cover }],
       type: "article",
     },
@@ -42,10 +47,10 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
 
 export default async function ArticlePage({ params }: ArticlePageProps) {
   const { slug, lang } = await params;
-  const article = getArticle(slug);
+  const article = await getArticleBySlug(slug);
   if (!article) notFound();
 
-  const related = relatedArticles(slug);
+  const related = await getRelatedArticles(slug);
 
   // Reading time estimated from the Bengali body (~180 wpm) and the TOC
   // headings parsed from the same markdown the prose renderer consumes.

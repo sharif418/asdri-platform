@@ -1,5 +1,5 @@
 import { FlaskConical, Globe, HelpCircle, Landmark, ShieldAlert, Venus } from "lucide-react";
-import { clarificationTopics } from "@/content/research";
+import { getClarificationTopics } from "@/lib/content/research";
 import { pick } from "@/types";
 import type { Language } from "@/types";
 
@@ -13,7 +13,8 @@ const topicIcons: Record<string, typeof FlaskConical> = {
 };
 
 /** Research areas grid — the intellectual fronts the institute works on. */
-export function ResearchAreas({ lang }: { lang: Language }) {
+export async function ResearchAreas({ lang }: { lang: Language }) {
+  const clarificationTopics = await getClarificationTopics();
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {clarificationTopics.map((topic) => {

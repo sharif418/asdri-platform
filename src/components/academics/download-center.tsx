@@ -1,14 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Download, FileArchive, FileText, FileType2 } from "lucide-react";
+import { Download, FileArchive, FileText, FileType2, Hourglass } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { downloadItems } from "@/content/research";
 import { cn } from "@/lib/utils";
 import { pick } from "@/types";
 import type { DownloadItem, Language } from "@/types";
+
+interface DownloadCenterProps {
+  lang: Language;
+  /** DB-driven download resources, passed by the server page. */
+  items: DownloadItem[];
+}
 
 const fileIcons: Record<DownloadItem["fileType"], LucideIcon> = {
   PDF: FileType2,
@@ -25,12 +30,12 @@ const categories: { value: DownloadItem["category"] | "all"; label: { bn: string
 ];
 
 /** Download center — category-filtered list with file-type badges + sizes. */
-export function DownloadCenter({ lang }: { lang: Language }) {
+export function DownloadCenter({ lang, items }: DownloadCenterProps) {
   const [activeCategory, setActiveCategory] = useState<DownloadItem["category"] | "all">("all");
 
   const filtered = useMemo(
-    () => (activeCategory === "all" ? downloadItems : downloadItems.filter((item) => item.category === activeCategory)),
-    [activeCategory],
+    () => (activeCategory === "all" ? items : items.filter((item) => item.category === activeCategory)),
+    [activeCategory, items],
   );
 
   return (
@@ -44,8 +49,8 @@ export function DownloadCenter({ lang }: { lang: Language }) {
           const isActive = activeCategory === category.value;
           const count =
             category.value === "all"
-              ? downloadItems.length
-              : downloadItems.filter((item) => item.category === category.value).length;
+              ? items.length
+              : items.filter((item) => item.category === category.value).length;
           return (
             <button
               key={category.value}
@@ -104,12 +109,24 @@ export function DownloadCenter({ lang }: { lang: Language }) {
                   </div>
                 </div>
 
-                <Button asChild size="sm" variant="outline" className="w-full shrink-0 border-gold/50 hover:bg-gold/10 hover:text-gold sm:w-auto">
-                  <a href={item.url} download>
-                    <Download aria-hidden className="h-4 w-4" />
-                    {lang === "bn" ? "ডাউনলোড" : "Download"}
-                  </a>
-                </Button>
+                {item.url ? (
+                  <Button asChild size="sm" variant="outline" className="w-full shrink-0 border-gold/50 hover:bg-gold/10 hover:text-gold sm:w-auto">
+                    <a href={item.url} download>
+                      <Download aria-hidden className="h-4 w-4" />
+                      {lang === "bn" ? "ডাউনলোড" : "Download"}
+                    </a>
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled
+                    className="w-full shrink-0 cursor-not-allowed border-dashed sm:w-auto"
+                  >
+                    <Hourglass aria-hidden className="h-4 w-4 text-gold" />
+                    {lang === "bn" ? "শীঘ্রই আসছে" : "Coming soon"}
+                  </Button>
+                )}
               </article>
             </li>
           );
@@ -117,9 +134,17 @@ export function DownloadCenter({ lang }: { lang: Language }) {
       </ul>
 
       {filtered.length === 0 ? (
-        <p className="mt-10 text-center text-sm text-muted-foreground">
-          {lang === "bn" ? "এই বিভাগে কোনো ফাইল নেই।" : "No files in this category."}
-        </p>
+        <div className="mt-10 rounded-2xl border border-dashed border-gold/40 bg-card/60 px-6 py-12 text-center">
+          <span
+            aria-hidden
+            className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-gold/40 bg-gold/10 text-gold"
+          >
+            <Download aria-hidden className="h-7 w-7" />
+          </span>
+          <p className="font-heading text-base font-semibold text-foreground">
+            {lang === "bn" ? "এই বিভাগে কোনো ফাইল প্রকাশিত হয়নি" : "No files published in this category"}
+          </p>
+        </div>
       ) : null}
     </div>
   );

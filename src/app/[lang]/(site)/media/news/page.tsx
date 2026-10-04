@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { CalendarDays, MapPin, Sparkles } from "lucide-react";
 import { langPath, type Lang } from "@/lib/locale";
+import { isFeatureEnabled } from "@/lib/settings";
+import { ModuleUnavailable } from "@/components/shared/module-unavailable";
 import { pick } from "@/types";
 import { formatDate, toBnDigits } from "@/lib/format";
-import { newsItems } from "@/content/media";
+import { getNewsItems } from "@/lib/content/media";
 import { PageHero } from "@/components/shared/page-hero";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { EventCountdown } from "@/components/media/event-countdown";
@@ -24,6 +26,10 @@ function remainingSeconds(targetIso: string): number {
 
 export default async function NewsPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  if (!(await isFeatureEnabled("research"))) {
+    return <ModuleUnavailable lang={lang} moduleLabelBn="খবর ও ইভেন্ট" moduleLabelEn="News & events" />;
+  }
+  const newsItems = await getNewsItems();
 
   const upcoming = newsItems.filter((item) => item.upcoming);
   const past = newsItems.filter((item) => !item.upcoming);

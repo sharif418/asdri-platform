@@ -1,25 +1,50 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, FileText, Play } from "lucide-react";
-import { langPath, type Lang } from "@/lib/locale";
 import { PageHero } from "@/components/shared/page-hero";
 import { Reveal } from "@/components/shared/reveal";
 import { StarMotif } from "@/components/shared/ornaments";
 import { ClarificationTopicSection } from "@/components/research/clarification-topic-section";
 import { CounterQuestionForm } from "@/components/research/counter-question-form";
-import { clarificationTopics } from "@/content/research";
-import { siteConfig } from "@/content/site";
+import { getClarificationTopics } from "@/lib/content/research";
+import { getArticlesByCategorySlug } from "@/lib/content/blog";
+import { getSiteConfig } from "@/lib/content/site";
+import { alternatesFor, type Lang, langPath } from "@/lib/locale";
+import { isFeatureEnabled } from "@/lib/settings";
+import { ModuleUnavailable } from "@/components/shared/module-unavailable";
+import { env } from "@/lib/env";
 import { pick } from "@/types";
+import type { BlogArticle } from "@/types";
 
-export const metadata: Metadata = {
-  title: `সংশয় নিরসন ও জবাব — ${siteConfig.nameBn}`,
-  description:
-    "সায়েন্টিজম, সেকুলারিজম, নাস্তিক্যবাদ, নারীবাদ, প্রাচ্যবাদ ও জেন্ডার ফিতনা — গবেষণালব্ধ বুদ্ধিবৃত্তিক জবাব ও প্রতিপ্রশ্ন জমার সুযোগ।",
-};
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  const siteConfig = await getSiteConfig();
+  const { canonical, languages } = alternatesFor("/research/clarifications", env.siteUrl);
+  return {
+    title: isBn ? `সংশয় নিরসন ও জবাব — ${siteConfig.shortBn}` : `Intellectual Clarifications — ${siteConfig.shortEn}`,
+    description:
+      "সায়েন্টিজম, সেকুলারিজম, নাস্তিক্যবাদ, নারীবাদ, প্রাচ্যবাদ ও জেন্ডার ফিতনা — গবেষণালব্ধ বুদ্ধিবৃত্তিক জবাব ও প্রতিপ্রশ্ন জমার সুযোগ।",
+    alternates: { canonical, languages },
+  };
+}
 
 /** Intellectual clarifications & refutations — topic sections with anchors. */
 export default async function ClarificationsPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  if (!(await isFeatureEnabled("clarifications"))) {
+    return <ModuleUnavailable lang={lang} moduleLabelBn="সংশয় নিরসন" moduleLabelEn="Clarifications" />;
+  }
+  const clarificationTopics = await getClarificationTopics();
+  const allArticles = await getArticlesByCategorySlug("clar-all");
+  const relatedByTopic = new Map<string, BlogArticle[]>();
+  for (const topic of clarificationTopics) {
+    const related = await getArticlesByCategorySlug(`clar-${topic.id}`);
+    relatedByTopic.set(
+      topic.id,
+      related.length > 0 ? related.slice(0, 3) : allArticles.slice(0, 2),
+    );
+  }
 
   return (
     <>
@@ -68,7 +93,12 @@ export default async function ClarificationsPage({ params }: { params: Promise<{
         <div className="container-site space-y-8 sm:space-y-10">
           {clarificationTopics.map((topic, index) => (
             <Reveal key={topic.id} delay={Math.min(index * 0.05, 0.2)}>
-              <ClarificationTopicSection topic={topic} index={index} lang={lang} />
+              <ClarificationTopicSection
+                topic={topic}
+                index={index}
+                lang={lang}
+                related={relatedByTopic.get(topic.id) ?? []}
+              />
             </Reveal>
           ))}
         </div>

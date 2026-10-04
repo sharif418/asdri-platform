@@ -2,24 +2,28 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Award, FlaskConical, GraduationCap, ScrollText, Sprout } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { langPath, type Lang } from "@/lib/locale";
 import { PageHero } from "@/components/shared/page-hero";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { StatCounter } from "@/components/shared/stat-counter";
 import { CourseCard, kindLabels } from "@/components/academics/course-card";
-import { courses, featuredCourses, studentDevelopmentPrograms } from "@/content/courses";
-import { instituteStats } from "@/content/stats";
+import { getCourses, getFeaturedCourses, getSdpPrograms } from "@/lib/content/courses";
+import { getInstituteStats } from "@/lib/content/stats";
+import { alternatesFor, type Lang, langPath } from "@/lib/locale";
+import { env } from "@/lib/env";
 import { toBnDigits } from "@/lib/format";
 import { pick } from "@/types";
 import type { CourseKind } from "@/types";
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  const { canonical, languages } = alternatesFor("/academics", env.siteUrl);
   return {
-    title: "একাডেমিক পরিচিতি | Academic Overview",
+    title: isBn ? "একাডেমিক পরিচিতি | আস-সুন্নাহ ইনস্টিটিউট" : "Academic Overview | As-Sunnah Institute",
     description:
       "আস-সুন্নাহ ইনস্টিটিউটের একাডেমিক কাঠামো — ৭টি কোর্স, ৪ ধরনের কর্মসূচি ও শিক্ষার্থী উন্নয়ন কার্যক্রম (SDP)।",
-    alternates: { canonical: "/academics" },
+    alternates: { canonical, languages },
   };
 }
 
@@ -30,16 +34,21 @@ const kindIcons: Record<CourseKind, LucideIcon> = {
   training: FlaskConical,
 };
 
-const kindCounts = (Object.keys(kindLabels) as CourseKind[]).map((kind) => ({
-  kind,
-  count: courses.filter((course) => course.kind === kind).length,
-}));
-
 /** /academics — academic overview: course kinds, featured courses, SDP intro, CTA. */
 export default async function AcademicsPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
-  const enrolled = instituteStats.find((stat) => stat.id === "currently-enrolled");
+  const [courses, featuredCourses, studentDevelopmentPrograms, instituteStats] = await Promise.all([
+    getCourses(),
+    getFeaturedCourses(),
+    getSdpPrograms(),
+    getInstituteStats(),
+  ]);
+  const enrolled = instituteStats.find((stat) => stat.id === "currently-enrolled") ?? instituteStats[4];
   const totalSdpHours = studentDevelopmentPrograms.reduce((sum, program) => sum + program.hours, 0);
+  const kindCounts = (Object.keys(kindLabels) as CourseKind[]).map((kind) => ({
+    kind,
+    count: courses.filter((course) => course.kind === kind).length,
+  }));
 
   return (
     <>
@@ -179,7 +188,9 @@ export default async function AcademicsPage({ params }: { params: Promise<{ lang
               href={langPath(lang, "/academics/courses")}
               className="inline-flex min-h-11 items-center gap-2 rounded-full bg-gold-gradient px-8 text-sm font-semibold text-gold-foreground shadow-md transition-all outline-none hover:opacity-95 focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
-              {lang === "bn" ? "সব ৭টি কোর্স দেখুন" : "Browse All 7 Courses"}
+              {lang === "bn"
+                ? `সব ${toBnDigits(courses.length)}টি কোর্স দেখুন`
+                : `Browse All ${courses.length} Courses`}
               <ArrowRight aria-hidden className="h-4 w-4" />
             </Link>
           </Reveal>

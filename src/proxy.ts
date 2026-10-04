@@ -25,10 +25,10 @@ const RESERVED = [
 
 function isReserved(pathname: string): boolean {
   if (RESERVED.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return true;
-  // static files: /logo.svg, /images/hero.png, /favicon.ico, /fonts.css …
+  // static files: /logo.svg, /images/hero.png, /favicon.ico, /manifest.webmanifest …
   if (pathname.startsWith("/images/") || pathname.startsWith("/icons/")) return true;
   const last = pathname.split("/").pop() ?? "";
-  return /\.[a-zA-Z0-9]{2,8}$/.test(last);
+  return /\.[a-zA-Z0-9]{2,12}$/.test(last);
 }
 
 function securityHeaders(res: NextResponse, isProd: boolean): NextResponse {

@@ -3,7 +3,7 @@ import { ArrowRight, FlaskConical, Landmark, HelpCircle, Venus, Globe, ShieldAle
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { StarMotif } from "@/components/shared/ornaments";
-import { clarificationTopics } from "@/content/research";
+import { getClarificationTopics } from "@/lib/content/research";
 import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { Language } from "@/types";
@@ -18,7 +18,8 @@ const topicIcons: Record<string, typeof FlaskConical> = {
 };
 
 /** Intellectual refutations & research highlights band. */
-export function ResearchHighlights({ lang }: { lang: Language }) {
+export async function ResearchHighlights({ lang }: { lang: Language }) {
+  const clarificationTopics = await getClarificationTopics();
   return (
     <section className="relative overflow-hidden bg-emerald-deep py-16 text-ivory sm:py-24">
       <div aria-hidden className="pattern-lattice-light absolute inset-0" />

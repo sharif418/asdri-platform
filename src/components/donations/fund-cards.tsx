@@ -2,6 +2,7 @@
 
 import { Check, Gift, GraduationCap, HandCoins, Sparkles } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { FundView } from "@/lib/content/funds";
 import type { FundType, Language, LocalizedText } from "@/types";
 import { pick } from "@/types";
 import { cn } from "@/lib/utils";
@@ -10,6 +11,8 @@ interface FundCardsProps {
   selected: FundType;
   onSelect: (fund: FundType) => void;
   lang: Language;
+  /** DB-driven fund rows (key/title/description). */
+  funds: FundView[];
 }
 
 interface FundOption {
@@ -20,58 +23,39 @@ interface FundOption {
   note: LocalizedText;
 }
 
-const fundOptions: FundOption[] = [
-  {
-    id: "zakat",
+/** Chrome (icon + note) for each known fund key. */
+const FUND_CHROME: Record<FundType, { icon: LucideIcon; note: LocalizedText }> = {
+  zakat: {
     icon: HandCoins,
-    title: { bn: "যাকাত ফান্ড", en: "Zakat Fund" },
-    description: {
-      bn: "শতভাগ যাকাত পাওয়ার যোগ্য অস্বচ্ছল শিক্ষার্থীদের ফ্রি শিক্ষা, আবাসন ও খাবারে ব্যয় হয়।",
-      en: "Spent entirely on zakat-eligible students' free education, housing, and meals.",
-    },
     note: { bn: "শতভাগ যাকাত-যোগ্য খাত", en: "100% zakat-eligible" },
   },
-  {
-    id: "sponsor",
+  sponsor: {
     icon: GraduationCap,
-    title: { bn: "শিক্ষার্থী স্পন্সর", en: "Sponsor a Student" },
-    description: {
-      bn: "গোপনীয়তা-সংরক্ষিত তালিকা থেকে নির্দিষ্ট শিক্ষার্থীর পুরো বছর বা মাসের দায়িত্ব নিন।",
-      en: "Take on a specific student's annual or monthly cost from the privacy-protected list.",
-    },
     note: { bn: "সেমিস্টারভিত্তিক প্রগতি রিপোর্ট", en: "Semesterly progress reports" },
   },
-  {
-    id: "general",
+  general: {
     icon: Gift,
-    title: { bn: "সাধারণ অনুদান", en: "General Donation" },
-    description: {
-      bn: "ইনস্টিটিউটের উন্নয়ন, লাইব্রেরি, প্রযুক্তি খাত ও পরিচালন ব্যয়ে অবদান রাখুন।",
-      en: "Contribute to institute development, library, technology, and operating costs.",
-    },
     note: { bn: "সাদাকায়ে জারিয়া", en: "Ongoing charity (sadaqah jariyah)" },
   },
-  {
-    id: "scholarship",
+  scholarship: {
     icon: Sparkles,
-    title: { bn: "স্কলারশিপ ফান্ড", en: "Scholarship Fund" },
-    description: {
-      bn: "মেধাবী শিক্ষার্থীদের এককালীন বা মাসিক বৃত্তি প্রদানের জন্য নিবেদিত ফান্ড।",
-      en: "A dedicated fund for one-time or monthly scholarships for talented students.",
-    },
     note: { bn: "মেধাবীদের জন্য নিবেদিত", en: "For talented students" },
   },
-];
+};
 
 /** Selectable fund category cards that drive the donation form state. */
-export function FundCards({ selected, onSelect, lang }: FundCardsProps) {
+export function FundCards({ selected, onSelect, lang, funds }: FundCardsProps) {
+  const options: FundOption[] = funds.map((fund) => {
+    const chrome = FUND_CHROME[fund.key];
+    return { id: fund.key, icon: chrome.icon, title: fund.title, description: fund.description, note: chrome.note };
+  });
   return (
     <div
       role="radiogroup"
       aria-label={lang === "bn" ? "ফান্ড নির্বাচন করুন" : "Choose a fund"}
       className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
     >
-      {fundOptions.map((fund) => {
+      {options.map((fund) => {
         const Icon = fund.icon;
         const isSelected = selected === fund.id;
         return (

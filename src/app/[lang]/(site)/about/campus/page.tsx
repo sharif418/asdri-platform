@@ -1,27 +1,32 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { langPath, type Lang } from "@/lib/locale";
 import { PageHero } from "@/components/shared/page-hero";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal } from "@/components/shared/reveal";
 import { CampusLifeGrid } from "@/components/about/campus-life-grid";
 import { FacilitiesGrid } from "@/components/about/facilities-grid";
 import { CampusAddress } from "@/components/about/campus-address";
-import { campusIntro } from "@/content/about";
+import { getCampusIntro } from "@/lib/content/about";
+import { alternatesFor, type Lang, langPath } from "@/lib/locale";
+import { env } from "@/lib/env";
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  const { canonical, languages } = alternatesFor("/about/campus", env.siteUrl);
   return {
-    title: "ক্যাম্পাস ও সুবিধাসমূহ | Campus & Facilities",
+    title: isBn ? "ক্যাম্পাস ও সুবিধাসমূহ | আস-সুন্নাহ ইনস্টিটিউট" : "Campus & Facilities | As-Sunnah Institute",
     description:
       "সাঁতারকুলে অবস্থিত আস-সুন্নাহ ইনস্টিটিউটের আবাসিক ক্যাম্পাস — লাইব্রেরি, কম্পিউটার ল্যাব, আবাসন ও আধ্যাত্মিক পরিবেশ।",
-    alternates: { canonical: "/about/campus" },
+    alternates: { canonical, languages },
   };
 }
 
 /** /about/campus — campus life grid, facilities, residential campus address. */
 export default async function CampusPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  const campusIntro = await getCampusIntro();
 
   return (
     <>

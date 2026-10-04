@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BookOpenCheck, FlaskConical, GraduationCap, Landmark, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { langPath, type Lang } from "@/lib/locale";
 import { PageHero } from "@/components/shared/page-hero";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal } from "@/components/shared/reveal";
 import { LeadershipGrid } from "@/components/about/leadership-grid";
-import { orgStructure } from "@/content/about";
+import { getOrgStructure } from "@/lib/content/about";
+import { alternatesFor, type Lang, langPath } from "@/lib/locale";
+import { env } from "@/lib/env";
 import { pick } from "@/types";
 
 const orgIcons: Record<string, LucideIcon> = {
@@ -18,18 +19,22 @@ const orgIcons: Record<string, LucideIcon> = {
   "book-open-check": BookOpenCheck,
 };
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  const { canonical, languages } = alternatesFor("/about/leadership", env.siteUrl);
   return {
-    title: "নেতৃত্ব ও প্রশাসন | Leadership & Administration",
+    title: isBn ? "নেতৃত্ব ও প্রশাসন | আস-সুন্নাহ ইনস্টিটিউট" : "Leadership & Administration | As-Sunnah Institute",
     description:
       "আস-সুন্নাহ ইনস্টিটিউটের নেতৃত্ব দল ও প্রশাসনিক কাঠামো — চেয়ারম্যান, ইনচার্জ, কো-অর্ডিনেটর ও সাংগঠনিক কাঠামো।",
-    alternates: { canonical: "/about/leadership" },
+    alternates: { canonical, languages },
   };
 }
 
 /** /about/leadership — leadership team cards + organizational structure. */
 export default async function LeadershipPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  const orgStructure = await getOrgStructure();
 
   return (
     <>

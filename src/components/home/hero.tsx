@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Bismillah, StarMotif } from "@/components/shared/ornaments";
-import { siteConfig } from "@/content/site";
+import { useSiteConfig } from "@/components/providers/site-config-provider";
 import { useLanguage } from "@/components/providers/language-provider";
 import { langPath } from "@/lib/locale";
 import type { Language } from "@/types";
@@ -26,6 +26,7 @@ interface HeroProps {
 /** Full-bleed hero — campus backdrop, bismillah, headline, dual CTAs, video dialog. */
 export function Hero({ lang }: HeroProps) {
   const { t } = useLanguage();
+  const siteConfig = useSiteConfig();
   const [videoOpen, setVideoOpen] = useState(false);
 
   const copy = {

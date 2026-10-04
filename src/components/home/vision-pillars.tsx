@@ -3,15 +3,16 @@ import { BookOpen, GitMerge, Sprout, ArrowRight } from "lucide-react";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { CornerOrnament } from "@/components/shared/ornaments";
-import { corePillars, visionStatement } from "@/content/stats";
+import { getCorePillars, getVisionStatement } from "@/lib/content/stats";
 import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { Language } from "@/types";
 
 const pillarIcons = { "book-open": BookOpen, "git-merge": GitMerge, sprout: Sprout } as const;
 
-/** Vision & core pillars section. */
-export function VisionPillars({ lang }: { lang: Language }) {
+/** Vision & core pillars section (site.vision setting). */
+export async function VisionPillars({ lang }: { lang: Language }) {
+  const [visionStatement, corePillars] = await Promise.all([getVisionStatement(), getCorePillars()]);
   return (
     <section className="py-16 sm:py-24">
       <div className="container-site">
@@ -26,7 +27,7 @@ export function VisionPillars({ lang }: { lang: Language }) {
 
         <Stagger className="mt-12 grid gap-6 md:grid-cols-3">
           {corePillars.map((pillar) => {
-            const Icon = pillarIcons[pillar.icon as keyof typeof pillarIcons];
+            const Icon = pillarIcons[pillar.icon as keyof typeof pillarIcons] ?? BookOpen;
             return (
               <RevealItem key={pillar.id}>
                 <article className="group relative h-full overflow-hidden rounded-xl border bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:border-gold/50 hover:shadow-lg hover:shadow-emerald-950/10">

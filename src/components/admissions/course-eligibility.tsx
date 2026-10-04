@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, GraduationCap, Hourglass } from "lucide-react";
-import { courses } from "@/content/courses";
+import { EmptyState } from "@/components/shared/empty-state";
+import { getCourses } from "@/lib/content/courses";
 import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { Language } from "@/types";
@@ -9,7 +10,11 @@ import type { Language } from "@/types";
  * Per-course eligibility note cards — derived from the live course catalog
  * so admission requirements always stay in sync with academics.
  */
-export function CourseEligibility({ lang }: { lang: Language }) {
+export async function CourseEligibility({ lang }: { lang: Language }) {
+  const courses = await getCourses();
+  if (courses.length === 0) {
+    return <EmptyState lang={lang} subject={{ bn: "কোর্স", en: "courses" }} />;
+  }
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {courses.map((course) => (

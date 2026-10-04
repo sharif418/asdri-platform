@@ -1,25 +1,41 @@
 import type { Metadata } from "next";
+import { alternatesFor, langPath, type Lang } from "@/lib/locale";
+import { isFeatureEnabled } from "@/lib/settings";
+import { ModuleUnavailable } from "@/components/shared/module-unavailable";
+import { env } from "@/lib/env";
 import Link from "next/link";
 import { ArrowRight, BookMarked } from "lucide-react";
-import { langPath, type Lang } from "@/lib/locale";
 import { PageHero } from "@/components/shared/page-hero";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { GoldRule } from "@/components/shared/ornaments";
 import { JournalCard } from "@/components/research/journal-card";
-import { publications, downloadItems } from "@/content/research";
-import { siteConfig } from "@/content/site";
+import { getPublications, getDownloadItems } from "@/lib/content/research";
+import { getSiteConfig } from "@/lib/content/site";
 import { pick } from "@/types";
 
-export const metadata: Metadata = {
-  title: `লাইব্রেরি ও জার্নাল — ${siteConfig.nameBn}`,
-  description:
-    "আস-সুন্নাহ জার্নাল ও গবেষণা বার্তা — মেটাডেটা, সাইটেশন জেনারেটর (APA/Chicago/MLA) ও ডিজিটাল রিডারসহ লাইব্রেরি ক্যাটালগ।",
-};
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const siteConfig = await getSiteConfig();
+  const { canonical, languages } = alternatesFor("/research/library", env.siteUrl);
+  return {
+    title: lang === "bn" ? `লাইব্রেরি ও জার্নাল — ${siteConfig.nameBn}` : `Library & Journals — ${siteConfig.nameEn}`,
+    description:
+      lang === "bn"
+        ? "আস-সুন্নাহ জার্নাল ও গবেষণা বার্তা — মেটাডেটা, সাইটেশন জেনারেটর (APA/Chicago/MLA) ও ডিজিটাল রিডারসহ লাইব্রেরি ক্যাটালগ।"
+        : "As-Sunnah journals and research bulletins — a library catalog with metadata, an APA/Chicago/MLA citation generator, and a digital reader.",
+    alternates: { canonical, languages },
+  };
+}
 
 /** Library & journals — catalog cards with citation generator and reader. */
 export default async function LibraryPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  if (!(await isFeatureEnabled("research"))) {
+    return <ModuleUnavailable lang={lang} moduleLabelBn="লাইব্রেরি ও জার্নাল" moduleLabelEn="Library & journals" />;
+  }
+  const [publications, downloadItems] = await Promise.all([getPublications(), getDownloadItems()]);
+  const siteConfig = await getSiteConfig();
   const journals = publications.filter((item) => item.type === "journal");
   const referenceFiles = downloadItems.filter((item) => item.category === "prospectus" || item.category === "syllabus");
 
@@ -104,7 +120,7 @@ export default async function LibraryPage({ params }: { params: Promise<{ lang: 
             {referenceFiles.map((file) => (
               <RevealItem key={file.id}>
                 <a
-                  href={file.url}
+                  href={file.url ?? "#"}
                   download
                   className="group flex items-center justify-between gap-4 rounded-xl border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-md"
                 >

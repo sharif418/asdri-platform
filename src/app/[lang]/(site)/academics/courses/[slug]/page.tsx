@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, BookOpenCheck, Layers } from "lucide-react";
-import { langPath, type Lang } from "@/lib/locale";
 import { PageHero } from "@/components/shared/page-hero";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal } from "@/components/shared/reveal";
@@ -12,35 +11,36 @@ import { CurriculumTabs } from "@/components/academics/curriculum-tabs";
 import { ObjectivesChecklist, OutcomesList } from "@/components/academics/course-sections";
 import { PysSpecializations } from "@/components/academics/pys-specializations";
 import { kindLabels } from "@/components/academics/course-card";
-import { courses, getCourse } from "@/content/courses";
+import { getCourseBySlug } from "@/lib/content/courses";
+import { alternatesFor, type Lang, langPath } from "@/lib/locale";
+import { env } from "@/lib/env";
 import { pick } from "@/types";
 
 interface CoursePageProps {
   params: Promise<{ lang: Lang; slug: string }>;
 }
 
-export function generateStaticParams() {
-  return courses.map((course) => ({ slug: course.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: CoursePageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const course = getCourse(slug);
+  const { slug, lang } = await params;
+  const course = await getCourseBySlug(slug);
   if (!course) return {};
+  const { canonical, languages } = alternatesFor(`/academics/courses/${course.slug}`, env.siteUrl);
   return {
-    title: `${course.titleBn} | ${course.titleEn}`,
-    description: pick(course.summary, "bn"),
-    alternates: { canonical: `/academics/courses/${course.slug}` },
+    title: lang === "bn" ? `${course.titleBn} | আস-সুন্নাহ ইনস্টিটিউট` : `${course.titleEn} | As-Sunnah Institute`,
+    description: pick(course.summary, lang),
+    alternates: { canonical, languages },
   };
 }
 
 /** /academics/courses/[slug] — full course detail template. */
 export default async function CourseDetailPage({ params }: CoursePageProps) {
   const { slug, lang } = await params;
-  const course = getCourse(slug);
+  const course = await getCourseBySlug(slug);
   if (!course) notFound();
 
-  const isPys = course.slug === "preparatory-year-for-specialization";
+  const isPys = (course.code ?? course.slug) === "PYS" || (course.specializations ?? []).length > 0;
   const courseTitle = lang === "bn" ? course.titleBn : course.titleEn;
 
   return (
@@ -166,7 +166,7 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
                   />
                 </Reveal>
                 <Reveal delay={0.1} className="mt-8">
-                  <PysSpecializations lang={lang} />
+                  <PysSpecializations lang={lang} specializations={(course.specializations ?? [])} />
                 </Reveal>
               </section>
             ) : null}

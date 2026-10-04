@@ -5,7 +5,7 @@ import type { Language } from "@/types";
 
 interface UrgentStripProps {
   lang: Language;
-  notice: { slug: string; titleBn: string; titleEn: string };
+  notice: { slug: string; title: { bn: string; en: string } };
 }
 
 /**
@@ -33,7 +33,7 @@ export function UrgentStrip({ lang, notice }: UrgentStripProps) {
         </span>
         <span aria-hidden className="hidden h-4 w-px bg-gold/40 sm:block" />
         <span className="truncate text-[13px] font-semibold text-foreground">
-          {bn ? notice.titleBn : notice.titleEn}
+          {bn ? notice.title.bn : notice.title.en}
         </span>
         <ChevronRight
           aria-hidden

@@ -91,7 +91,12 @@ function buildPeople(): PersonSeed[] {
     });
   }
 
-  const teamKeyById: Record<string, string> = { "teachers-panel": "teachers-panel" };
+  const teamKeyById: Record<string, string> = {
+    "teachers-panel": "teachers-panel",
+    "arabic-team": "arabic-team",
+    "tajweed-team": "tajweed-team",
+    "language-team": "language-support",
+  };
   for (const group of facultyGroups) {
     const key = teamKeyById[group.id] ?? "language-support";
     for (const member of group.members) {

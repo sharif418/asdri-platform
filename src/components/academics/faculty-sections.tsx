@@ -1,8 +1,9 @@
 import { BookMarked, GraduationCap } from "lucide-react";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { SectionHeading } from "@/components/shared/section-heading";
+import { EmptyState } from "@/components/shared/empty-state";
 import { Badge } from "@/components/ui/badge";
-import { facultyGroups } from "@/content/faculty";
+import { getFacultyGroups } from "@/lib/content/people";
 import { toBnDigits } from "@/lib/format";
 import { pick } from "@/types";
 import type { FacultyGroup, Language } from "@/types";
@@ -44,7 +45,12 @@ function GroupCard({ group, lang }: { group: FacultyGroup; lang: Language }) {
 }
 
 /** Full faculty directory — teacher's panel, Arabic team, Tajweed team, language depts. */
-export function FacultyDirectory({ lang }: { lang: Language }) {
+export async function FacultyDirectory({ lang }: { lang: Language }) {
+  const allGroups = await getFacultyGroups();
+  const facultyGroups = allGroups.filter((group) => group.members.length > 0);
+  if (facultyGroups.length === 0) {
+    return <EmptyState lang={lang} subject={{ bn: "শিক্ষক", en: "faculty members" }} />;
+  }
   return (
     <div className="space-y-16">
       {facultyGroups.map((group, groupIndex) => (

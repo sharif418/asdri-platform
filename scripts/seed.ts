@@ -78,10 +78,10 @@ async function attachMedia(mediaByPath: Map<string, string>): Promise<void> {
   // blog covers
   const coverBySlug: Record<string, string> = {
     "scientism-science-or-faith": "/images/blog-science.png",
-    "secularism-the-invisible-religion": "/images/blog-secularism.png",
-    "atheism-skepticism-answer": "/images/blog-atheism.png",
-    "feminism-rights-or-rebellion": "/images/blog-feminism.png",
-    "orientalism-colonial-lens": "/images/blog-orientalism.png",
+    "secularism-critique-islamic-perspective": "/images/blog-secularism.png",
+    "atheism-skepticism-response": "/images/blog-atheism.png",
+    "women-rights-islam-feminist-objections": "/images/blog-feminism.png",
+    "orientalism-hadith-criticism-review": "/images/blog-orientalism.png",
   };
   for (const [slug, cover] of Object.entries(coverBySlug)) {
     const mediaId = mediaByPath.get(cover);

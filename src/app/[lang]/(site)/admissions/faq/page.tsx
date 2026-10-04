@@ -1,22 +1,31 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, MessageCircleQuestion } from "lucide-react";
-import { langPath, type Lang } from "@/lib/locale";
 import { PageHero } from "@/components/shared/page-hero";
 import { Reveal } from "@/components/shared/reveal";
 import { FaqExplorer } from "@/components/admissions/faq-explorer";
-import { faqGroups } from "@/content/admission";
-import { siteConfig } from "@/content/site";
+import { getFaqGroups } from "@/lib/content/admission";
+import { getSiteConfig } from "@/lib/content/site";
+import { alternatesFor, type Lang, langPath } from "@/lib/locale";
+import { env } from "@/lib/env";
 
-export const metadata: Metadata = {
-  title: `সচরাচর জিজ্ঞাসা (FAQ) — ${siteConfig.nameBn}`,
-  description:
-    "ভর্তি, কোর্স ও অনুদান সংক্রান্ত সচরাচর জিজ্ঞাসার উত্তর — আস-সুন্নাহ দাওয়াহ অ্যান্ড রিসার্চ ইনস্টিটিউট।",
-};
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  const siteConfig = await getSiteConfig();
+  const { canonical, languages } = alternatesFor("/admissions/faq", env.siteUrl);
+  return {
+    title: isBn ? `সচরাচর জিজ্ঞাসা (FAQ) — ${siteConfig.shortBn}` : `FAQ — ${siteConfig.shortEn}`,
+    description:
+      "ভর্তি, কোর্স ও অনুদান সংক্রান্ত সচরাচর জিজ্ঞাসার উত্তর — আস-সুন্নাহ দাওয়াহ অ্যান্ড রিসার্চ ইনস্টিটিউট।",
+    alternates: { canonical, languages },
+  };
+}
 
 /** FAQ — tabbed groups with smooth accordions. */
 export default async function FaqPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  const [faqGroups, siteConfig] = await Promise.all([getFaqGroups(), getSiteConfig()]);
 
   return (
     <>

@@ -14,7 +14,8 @@ import {
 } from "lucide-react";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
-import { courses } from "@/content/courses";
+import { EmptyState } from "@/components/shared/empty-state";
+import { getFeaturedCourses } from "@/lib/content/courses";
 import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { Course, Language } from "@/types";
@@ -38,7 +39,8 @@ const kindLabels: Record<Course["kind"], { bn: string; en: string }> = {
 };
 
 /** Featured programs — card grid of the institute's courses. */
-export function FeaturedPrograms({ lang }: { lang: Language }) {
+export async function FeaturedPrograms({ lang }: { lang: Language }) {
+  const courses = await getFeaturedCourses();
   return (
     <section className="bg-parchment py-16 sm:py-24 dark:bg-secondary/30">
       <div className="container-site">
@@ -56,6 +58,11 @@ export function FeaturedPrograms({ lang }: { lang: Language }) {
         </Reveal>
 
         <Stagger className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {courses.length === 0 ? (
+            <div className="sm:col-span-2 lg:col-span-3">
+              <EmptyState lang={lang} subject={{ bn: "কোর্স", en: "courses" }} />
+            </div>
+          ) : null}
           {courses.map((course) => {
             const Icon = courseIcons[course.icon] ?? GraduationCap;
             return (

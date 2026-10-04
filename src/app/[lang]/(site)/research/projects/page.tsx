@@ -1,24 +1,38 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, FolderKanban, GraduationCap } from "lucide-react";
-import { langPath, type Lang } from "@/lib/locale";
 import { PageHero } from "@/components/shared/page-hero";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { ProjectCard } from "@/components/research/project-card";
 import { CallForPapers } from "@/components/research/call-for-papers";
-import { researchProjects } from "@/content/research";
-import { siteConfig } from "@/content/site";
+import { getResearchProjects } from "@/lib/content/research";
+import { getSiteConfig } from "@/lib/content/site";
+import { alternatesFor, type Lang, langPath } from "@/lib/locale";
+import { isFeatureEnabled } from "@/lib/settings";
+import { ModuleUnavailable } from "@/components/shared/module-unavailable";
+import { env } from "@/lib/env";
 
-export const metadata: Metadata = {
-  title: `গবেষণা প্রকল্প ও ফেলোশিপ — ${siteConfig.nameBn}`,
-  description:
-    "চলমান গবেষণা প্রকল্পের অগ্রগতি, কল ফর পেপার্স (ইনস্টিটিউট জার্নাল) এবং ফেলোশিপ ও গবেষণা-সহযোগিতার সুযোগ।",
-};
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  const siteConfig = await getSiteConfig();
+  const { canonical, languages } = alternatesFor("/research/projects", env.siteUrl);
+  return {
+    title: isBn ? `গবেষণা প্রকল্প ও ফেলোশিপ — ${siteConfig.shortBn}` : `Research Projects & Fellowships — ${siteConfig.shortEn}`,
+    description:
+      "চলমান গবেষণা প্রকল্পের অগ্রগতি, কল ফর পেপার্স (ইনস্টিটিউট জার্নাল) এবং ফেলোশিপ ও গবেষণা-সহযোগিতার সুযোগ।",
+    alternates: { canonical, languages },
+  };
+}
 
 /** Research projects & fellowships. */
 export default async function ProjectsPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  if (!(await isFeatureEnabled("research"))) {
+    return <ModuleUnavailable lang={lang} moduleLabelBn="গবেষণা প্রকল্প" moduleLabelEn="Research projects" />;
+  }
+  const researchProjects = await getResearchProjects();
   const ongoing = researchProjects.filter((p) => p.status === "ongoing");
   const upcoming = researchProjects.filter((p) => p.status === "upcoming");
 

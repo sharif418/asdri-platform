@@ -1,20 +1,36 @@
 import type { Metadata } from "next";
 import { langPath, type Lang } from "@/lib/locale";
-import { blogArticles } from "@/content/blog";
+import { isFeatureEnabled } from "@/lib/settings";
+import { ModuleUnavailable } from "@/components/shared/module-unavailable";
+import { getBlogArticles } from "@/lib/content/blog";
+import { alternatesFor } from "@/lib/locale";
+import { env } from "@/lib/env";
 import { PageHero } from "@/components/shared/page-hero";
 import { Reveal } from "@/components/shared/reveal";
 import { BlogExplorer } from "@/components/media/blog-explorer";
 import { toBnDigits } from "@/lib/format";
 
-export const metadata: Metadata = {
-  title: "ব্লগ ও প্রবন্ধ | আস-সুন্নাহ ইনস্টিটিউট",
-  description:
-    "সমকালীন ফিতনা ও সংশয় নিরসন, তুলনামূলক ধর্মতত্ত্ব, তাফসীর ও হাদীস গবেষণা — ইনস্টিটিউটের গবেষকদের প্রামাণ্য প্রবন্ধ।",
-};
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const { canonical, languages } = alternatesFor("/media/blog", env.siteUrl);
+  return {
+    title: lang === "bn" ? "ব্লগ ও প্রবন্ধ" : "Blog & Essays",
+    description:
+      lang === "bn"
+        ? "সমকালীন ফিতনা ও সংশয় নিরসন, তুলনামূলক ধর্মতত্ত্ব, তাফসীর ও হাদীস গবেষণা — ইনস্টিটিউটের গবেষকদের প্রামাণ্য প্রবন্ধ।"
+        : "Contemporary fitnah and doubt resolution, comparative religion, tafsir and hadith research — evidenced essays by the institute's researchers.",
+    alternates: { canonical, languages },
+    robots: { index: true, follow: true },
+  };
+}
 
 export default async function BlogIndexPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  if (!(await isFeatureEnabled("blog"))) {
+    return <ModuleUnavailable lang={lang} moduleLabelBn="ব্লগ ও প্রবন্ধ" moduleLabelEn="Blog & essays" />;
+  }
 
+  const blogArticles = await getBlogArticles();
   const articles = blogArticles.map((article) => ({
     slug: article.slug,
     title: article.title,

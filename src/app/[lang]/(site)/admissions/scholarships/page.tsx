@@ -1,22 +1,30 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, BedDouble, HandCoins, Library, MoonStar, NotebookPen, UtensilsCrossed, Wallet } from "lucide-react";
-import { langPath, type Lang } from "@/lib/locale";
 import { PageHero } from "@/components/shared/page-hero";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { Bismillah, CornerOrnament, StarMotif } from "@/components/shared/ornaments";
-import { scholarshipInfo, facilities } from "@/content/admission";
-import { siteConfig } from "@/content/site";
+import { getFacilities, getScholarshipInfo } from "@/lib/content/admission";
+import { getSiteConfig } from "@/lib/content/site";
+import { alternatesFor, type Lang, langPath } from "@/lib/locale";
+import { env } from "@/lib/env";
 import { toBnDigits } from "@/lib/format";
 import { pick } from "@/types";
 import type { Language, LocalizedText } from "@/types";
 
-export const metadata: Metadata = {
-  title: `স্কলারশিপ ও আর্থিক সহায়তা — ${siteConfig.nameBn}`,
-  description:
-    "যাকাত ফান্ড থেকে পরিচালিত ১০০% স্কলারশিপ — মেধাবী ও অস্বচ্ছল শিক্ষার্থীদের আবাসন, খাবার ও টিউশনসহ সম্পূর্ণ ব্যয়ভার।",
-};
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  const siteConfig = await getSiteConfig();
+  const { canonical, languages } = alternatesFor("/admissions/scholarships", env.siteUrl);
+  return {
+    title: isBn ? `স্কলারশিপ ও আর্থিক সহায়তা — ${siteConfig.shortBn}` : `Scholarships & Financial Aid — ${siteConfig.shortEn}`,
+    description:
+      "যাকাত ফান্ড থেকে পরিচালিত ১০০% স্কলারশিপ — মেধাবী ও অস্বচ্ছল শিক্ষার্থীদের আবাসন, খাবার ও টিউশনসহ সম্পূর্ণ ব্যয়ভার।",
+    alternates: { canonical, languages },
+  };
+}
 
 const facilityIcons: Record<string, typeof BedDouble> = {
   "bed-double": BedDouble,
@@ -28,6 +36,7 @@ const facilityIcons: Record<string, typeof BedDouble> = {
 /** Scholarships & financial aid — the 100% zakat-funded program. */
 export default async function ScholarshipsPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
+  const [scholarshipInfo, facilities] = await Promise.all([getScholarshipInfo(), getFacilities()]);
 
   const coveredItems: { icon: typeof BedDouble; title: LocalizedText; note: LocalizedText }[] = [
     {
