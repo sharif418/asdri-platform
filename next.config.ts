@@ -14,6 +14,17 @@ const nextConfig: NextConfig = {
     remotePatterns: [],
   },
   serverExternalPackages: ["@prisma/client"],
+  experimental: {
+    // app/global-not-found.tsx answers every 404 (unknown routes and
+    // notFound() calls) with a real HTTP 404 status + branded UI.
+    globalNotFound: true,
+  },
+  async redirects() {
+    return [
+      // /admin/login has never been a real page — staff sign in at /login.
+      { source: "/admin/login", destination: "/login", permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;

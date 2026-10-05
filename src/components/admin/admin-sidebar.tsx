@@ -6,17 +6,11 @@ import { useState } from "react";
 import {
   Archive,
   BadgeCheck,
-  Bell,
   BookOpenCheck,
-  Boxes,
-  CalendarCheck,
   ClipboardList,
-  FileDown,
-  Flag,
   HandCoins,
   Images,
   LayoutDashboard,
-  ListChecks,
   Mail,
   Megaphone,
   MessageSquareQuote,
@@ -25,7 +19,6 @@ import {
   PanelLeftOpen,
   PenLine,
   ScrollText,
-  Settings,
   UserCog,
   Users,
   Video,
@@ -130,17 +123,6 @@ const NAV: AdminNavItem[] = [
     ],
   },
   {
-    href: "/admin/content",
-    label: "পেজ কনটেন্ট",
-    icon: FileDown,
-    roles: ["ADMIN", "EDITOR"],
-    children: [
-      { href: "/admin/content/home", label: "হোম সেকশন ও পরিসংখ্যান" },
-      { href: "/admin/content/faqs", label: "সচরাচর প্রশ্ন" },
-      { href: "/admin/content/admission", label: "ভর্তি প্রক্রিয়া ও স্কলারশিপ" },
-    ],
-  },
-  {
     href: "/admin/media",
     label: "মিডিয়া লাইব্রেরি",
     icon: Archive,
@@ -158,17 +140,6 @@ const NAV: AdminNavItem[] = [
   },
   { href: "/admin/users", label: "ইউজার ও রোল", icon: UserCog, roles: ["ADMIN"] },
   { href: "/admin/audit", label: "অডিট লগ", icon: BadgeCheck, roles: ["ADMIN"] },
-  {
-    href: "/admin/settings",
-    label: "সাইট সেটিংস",
-    icon: Settings,
-    roles: ["ADMIN"],
-    children: [
-      { href: "/admin/settings/identity", label: "পরিচিতি ও যোগাযোগ" },
-      { href: "/admin/settings/menus", label: "নেভিগেশন মেনু" },
-      { href: "/admin/settings/flags", label: "ফিচার ফ্ল্যাগ" },
-    ],
-  },
 ];
 
 export function AdminSidebar({ role, unread }: { role: UserRole; unread: number }) {
