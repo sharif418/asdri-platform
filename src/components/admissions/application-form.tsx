@@ -52,7 +52,12 @@ async function uploadDoc(file: File, kind: "IMAGE" | "DOCUMENT"): Promise<Upload
   const form = new FormData();
   form.append("file", file);
   form.append("kind", kind);
-  const res = await fetch("/api/admissions/documents", { method: "POST", body: form });
+  // The upload route is CSRF-guarded like every other mutating route (round 3).
+  const res = await fetch("/api/admissions/documents", {
+    method: "POST",
+    body: form,
+    headers: { "x-csrf-token": csrfToken() },
+  });
   const json = (await res.json()) as { ok: boolean; error?: string; data?: { mediaId: string } };
   if (!res.ok || !json.ok || !json.data) {
     throw new Error(json.error ?? "আপলোড ব্যর্থ");

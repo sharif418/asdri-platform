@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { getSession, verifyCsrf } from "@/lib/auth";
 import { audit } from "@/lib/audit";
 import { isFeatureEnabled } from "@/lib/settings";
+import { isSameOrigin, rateLimit } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
 /**
  * Public application submission (requires an applicant account so the
  * candidate can track status). One active application per intake per user.
+ * Round 3: same-origin + CSRF (double-submit) + rate limit — these routes
+ * carry national-ID scans, so they get the same guards as admin mutations.
  */
 
 const educationSchema = z.object({
@@ -57,13 +60,28 @@ function trackingNo(): string {
 }
 
 export async function POST(request: NextRequest): Promise<Response> {
-  if (!(await isFeatureEnabled("admissions"))) {
-    return NextResponse.json({ ok: false, error: "অনলাইন আবেদন বর্তমানে বন্ধ আছে।" }, { status: 403 });
+  if (!isSameOrigin(request)) {
+    return NextResponse.json({ ok: false, error: "অননুমোদিত উৎস।" }, { status: 403 });
   }
 
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ ok: false, error: "আবেদন করতে অ্যাকাউন্টে লগইন করুন।" }, { status: 401 });
+  }
+
+  // Per-USER sliding window (an authenticated route: keying on the account is
+  // stricter than IP — IP rotation cannot bypass it).
+  const limiter = rateLimit({ key: "admissions-applications", identifier: session.user.id, limit: 5, windowMs: 10 * 60_000 });
+  if (!limiter.ok) {
+    return NextResponse.json({ ok: false, error: "অনেকবার আবেদনের চেষ্টা হয়েছে, কিছুক্ষণ পর আবার করুন।" }, { status: 429 });
+  }
+
+  if (!(await isFeatureEnabled("admissions"))) {
+    return NextResponse.json({ ok: false, error: "অনলাইন আবেদন বর্তমানে বন্ধ আছে।" }, { status: 403 });
+  }
+
+  if (!verifyCsrf(session.session, request.headers.get("x-csrf-token") ?? "")) {
+    return NextResponse.json({ ok: false, error: "নিরাপত্তা টোকেন মেলেনি — পেজ রিফ্রেশ করে আবার চেষ্টা করুন।" }, { status: 403 });
   }
   if (session.user.role !== "APPLICANT" && session.user.role !== "ADMIN") {
     return NextResponse.json({ ok: false, error: "এই অ্যাকাউন্ট দিয়ে আবেদন করা যাবে না।" }, { status: 403 });
@@ -109,6 +127,18 @@ export async function POST(request: NextRequest): Promise<Response> {
   for (const doc of d.documents) {
     if (!ownedIds.has(doc.mediaId)) {
       return NextResponse.json({ ok: false, error: "আপলোড করা ডকুমেন্ট পাওয়া যায়নি — আবার আপলোড করুন।" }, { status: 400 });
+    }
+  }
+
+  // The photo gets the same ownership + kind check as the documents (round 3:
+  // it was previously stored unchecked — any media id could be attached).
+  if (d.photoMediaId) {
+    const photo = await db.media.findFirst({
+      where: { id: d.photoMediaId, uploadedById: session.user.id, kind: "IMAGE" },
+      select: { id: true },
+    });
+    if (!photo) {
+      return NextResponse.json({ ok: false, error: "আপলোড করা ছবিটি পাওয়া যায়নি — আবার আপলোড করুন।" }, { status: 400 });
     }
   }
 

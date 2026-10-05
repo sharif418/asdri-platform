@@ -24,14 +24,16 @@ function callbackSignature(
   trackingCode: string,
   status: "COMPLETED" | "FAILED",
   providerTxnId: string | null,
+  ts: number,
 ): string {
   return createHmac("sha256", callbackSecret())
-    .update(`${trackingCode}|${status}|${providerTxnId ?? ""}`)
+    .update(`${trackingCode}|${status}|${providerTxnId ?? ""}|${ts}`)
     .digest("hex");
 }
 
-function checkoutGrantSignature(trackingCode: string): string {
-  return createHmac("sha256", callbackSecret()).update(trackingCode).digest("hex");
+/** Round 3: callback bodies carry a fresh epoch-ms timestamp (±15 min window). */
+function nowTs(): number {
+  return Date.now();
 }
 
 const { POST } = await import("@/app/api/donations/route");
@@ -67,6 +69,10 @@ interface DonationResponse {
   };
 }
 
+/** Tracking codes captured from THIS file's POSTs (other suites create donations too). */
+let tracking1 = "";
+let tracking2 = "";
+
 beforeAll(async () => {
   await db.fund.create({
     data: { key: "general", nameBn: "সাধারণ ফান্ড", nameEn: "General Fund" },
@@ -87,16 +93,27 @@ describe("POST /api/donations (intent + payment instructions)", () => {
     expect(first.data.paymentInfo.bkash.length).toBeGreaterThan(0);
     expect(first.data.paymentInfo.bank).toBeTruthy();
 
-    // The sandbox checkout grant: hex HMAC over the tracking code alone.
-    expect(first.data.checkoutUrl).toBe(
-      `/checkout/${first.data.trackingCode}?sig=${checkoutGrantSignature(first.data.trackingCode)}`,
+    // Round 3: the sandbox checkout grant is an expiring signed link —
+    // sig = HMAC(secret, `${code}|${exp}`), exp = epoch seconds (24h TTL).
+    const grantMatch = /^\/checkout\/(DN-\d{4}-\d{6})\?sig=([0-9a-f]{64})&exp=(\d{10})$/.exec(
+      first.data.checkoutUrl ?? "",
     );
+    expect(grantMatch).not.toBeNull();
+    if (grantMatch) {
+      const [, code, sig, exp] = grantMatch;
+      expect(code).toBe(first.data.trackingCode);
+      const expectedSig = createHmac("sha256", callbackSecret()).update(`${code}|${exp}`).digest("hex");
+      expect(sig).toBe(expectedSig);
+      expect(Number(exp) * 1000).toBeGreaterThan(Date.now()); // not already expired
+      expect(Number(exp) * 1000).toBeLessThanOrEqual(Date.now() + 24 * 3600 * 1000 + 5000);
+    }
 
     const donation = await db.donation.findUniqueOrThrow({
       where: { trackingCode: first.data.trackingCode },
       include: { transactions: true, fund: true },
     });
     expect(donation.status).toBe("PENDING");
+    tracking1 = first.data.trackingCode;
     expect(donation.receiptNo).toBe(first.data.receiptNo);
     expect(donation.amount).toBe(1500);
     expect(donation.donorEmail).toBe("donor-one@example.com");
@@ -137,6 +154,7 @@ describe("POST /api/donations (intent + payment instructions)", () => {
     const json = (await res.json()) as DonationResponse;
     expect(json.data.trackingCode).not.toBe(first.data.trackingCode);
     expect(json.data.receiptNo).not.toBe(first.data.receiptNo);
+    tracking2 = json.data.trackingCode;
   });
 });
 
@@ -145,12 +163,8 @@ describe("POST /api/donations/callback (signed gateway callback)", () => {
   let donation2: { id: string; trackingCode: string };
 
   beforeAll(async () => {
-    const rows = await db.donation.findMany({
-      orderBy: { createdAt: "asc" },
-      select: { id: true, trackingCode: true },
-    });
-    donation1 = rows[0];
-    donation2 = rows[1];
+    donation1 = await db.donation.findUniqueOrThrow({ where: { trackingCode: tracking1 } });
+    donation2 = await db.donation.findUniqueOrThrow({ where: { trackingCode: tracking2 } });
   });
 
   test("a bad signature is rejected with 403 and leaves the donation PENDING (audit trail kept)", async () => {
@@ -159,6 +173,7 @@ describe("POST /api/donations/callback (signed gateway callback)", () => {
         trackingCode: donation1.trackingCode,
         status: "COMPLETED",
         providerTxnId: "TXN-EVIL",
+        ts: nowTs(),
         signature: "0".repeat(64),
       }),
     );
@@ -181,7 +196,8 @@ describe("POST /api/donations/callback (signed gateway callback)", () => {
         trackingCode: donation1.trackingCode,
         status: "COMPLETED",
         providerTxnId: "TXN-GOOD-1",
-        signature: callbackSignature(donation1.trackingCode, "COMPLETED", "TXN-GOOD-1"),
+        ts: nowTs(),
+        signature: callbackSignature(donation1.trackingCode, "COMPLETED", "TXN-GOOD-1", nowTs()),
       }),
     );
     expect(res.status).toBe(200);
@@ -199,7 +215,10 @@ describe("POST /api/donations/callback (signed gateway callback)", () => {
     expect(verified?.signatureValid).toBe(true);
     expect(donation.receiptSentAt).not.toBeNull();
 
-    const outbox = await db.outboxEmail.findMany({ where: { kind: "donation.receipt" } });
+    // Scoped to this donor: other suites (payments-security) queue receipts too.
+    const outbox = await db.outboxEmail.findMany({
+      where: { kind: "donation.receipt", to: { in: ["donor-one@example.com", "donor-two@example.com"] } },
+    });
     expect(outbox).toHaveLength(1);
     expect(outbox[0].to).toBe("donor-one@example.com");
     expect(outbox[0].subject).toContain(donation.receiptNo ?? "");
@@ -213,14 +232,19 @@ describe("POST /api/donations/callback (signed gateway callback)", () => {
         trackingCode: donation1.trackingCode,
         status: "COMPLETED",
         providerTxnId: "TXN-GOOD-1",
-        signature: callbackSignature(donation1.trackingCode, "COMPLETED", "TXN-GOOD-1"),
+        ts: nowTs(),
+        signature: callbackSignature(donation1.trackingCode, "COMPLETED", "TXN-GOOD-1", nowTs()),
       }),
     );
     expect(res.status).toBe(200);
 
     const after = await db.paymentTransaction.count({ where: { donationId: donation1.id } });
     expect(after).toBe(before);
-    expect(await db.outboxEmail.count({ where: { kind: "donation.receipt" } })).toBe(1);
+    expect(
+      await db.outboxEmail.count({
+        where: { kind: "donation.receipt", to: { in: ["donor-one@example.com", "donor-two@example.com"] } },
+      }),
+    ).toBe(1);
   });
 
   test("a late FAILED callback never downgrades a COMPLETED donation", async () => {
@@ -229,7 +253,8 @@ describe("POST /api/donations/callback (signed gateway callback)", () => {
         trackingCode: donation1.trackingCode,
         status: "FAILED",
         providerTxnId: "TXN-LATE-FAIL",
-        signature: callbackSignature(donation1.trackingCode, "FAILED", "TXN-LATE-FAIL"),
+        ts: nowTs(),
+        signature: callbackSignature(donation1.trackingCode, "FAILED", "TXN-LATE-FAIL", nowTs()),
       }),
     );
     expect(res.status).toBe(200);
@@ -248,7 +273,8 @@ describe("POST /api/donations/callback (signed gateway callback)", () => {
       jsonRequest(callbackUrl, {
         trackingCode: unknown,
         status: "COMPLETED",
-        signature: callbackSignature(unknown, "COMPLETED", null),
+        ts: nowTs(),
+        signature: callbackSignature(unknown, "COMPLETED", null, nowTs()),
       }),
     );
     expect(res.status).toBe(404);
@@ -260,7 +286,8 @@ describe("POST /api/donations/callback (signed gateway callback)", () => {
         trackingCode: donation2.trackingCode,
         status: "FAILED",
         providerTxnId: "TXN-FAIL-2",
-        signature: callbackSignature(donation2.trackingCode, "FAILED", "TXN-FAIL-2"),
+        ts: nowTs(),
+        signature: callbackSignature(donation2.trackingCode, "FAILED", "TXN-FAIL-2", nowTs()),
       }),
     );
     expect(res.status).toBe(200);
@@ -282,7 +309,8 @@ describe("POST /api/donations/callback (signed gateway callback)", () => {
         trackingCode: donation2.trackingCode,
         status: "COMPLETED",
         providerTxnId: "TXN-RETRY-2",
-        signature: callbackSignature(donation2.trackingCode, "COMPLETED", "TXN-RETRY-2"),
+        ts: nowTs(),
+        signature: callbackSignature(donation2.trackingCode, "COMPLETED", "TXN-RETRY-2", nowTs()),
       }),
     );
     expect(res.status).toBe(200);
@@ -291,7 +319,9 @@ describe("POST /api/donations/callback (signed gateway callback)", () => {
     expect(donation.status).toBe("COMPLETED");
     expect(donation.paidAt).not.toBeNull();
     // the second donor's receipt is queued as well
-    const outbox = await db.outboxEmail.findMany({ where: { kind: "donation.receipt" } });
+    const outbox = await db.outboxEmail.findMany({
+      where: { kind: "donation.receipt", to: { in: ["donor-one@example.com", "donor-two@example.com"] } },
+    });
     expect(outbox).toHaveLength(2);
     expect(outbox.map((o) => o.to).sort()).toEqual(["donor-one@example.com", "donor-two@example.com"].sort());
   });

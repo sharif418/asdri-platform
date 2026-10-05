@@ -20,16 +20,15 @@ interface SandboxCheckoutProps {
     donorName: string;
     isAnonymous: boolean;
   };
-  /** Pre-signed gateway payload (the signature is computed server-side). */
-  callback: { providerTxnId: string; signature: string };
 }
 
 /**
  * The sandbox gateway's checkout island — gateway-styled summary plus the
- * confirm button that submits the server-signed completion payload to
- * /api/donations/callback (the exact contract a real gateway will POST).
+ * confirm button. Round 3: it submits ONLY the tracking code to
+ * /api/donations/sandbox-complete; the completion HMAC is computed and used
+ * server-side, so no signature ever reaches the browser.
  */
-export function SandboxCheckout({ lang, donation, callback }: SandboxCheckoutProps) {
+export function SandboxCheckout({ lang, donation }: SandboxCheckoutProps) {
   const bn = lang === "bn";
   const [state, setState] = useState<"idle" | "paying" | "done" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
@@ -40,15 +39,10 @@ export function SandboxCheckout({ lang, donation, callback }: SandboxCheckoutPro
     if (state === "paying") return;
     setState("paying");
     try {
-      const res = await fetch("/api/donations/callback", {
+      const res = await fetch("/api/donations/sandbox-complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          trackingCode: donation.trackingCode,
-          status: "COMPLETED",
-          providerTxnId: callback.providerTxnId,
-          signature: callback.signature,
-        }),
+        body: JSON.stringify({ code: donation.trackingCode }),
       });
       // Public envelope: jsonOk → { data }, jsonError → { error } — no ok flag.
       const json = (await res.json()) as { data?: { status?: string; message?: string }; error?: string };

@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { hashPassword, createSession } from "@/lib/auth";
 import { installCookieMock, jsonRequest, csrfJsonRequest } from "../helpers/auth-forge";
+
 import type { Intake, Course, User, Application } from "@prisma/client";
 
 /**
@@ -200,13 +201,13 @@ describe("POST /api/admissions/applications (public submission)", () => {
 
   test("401 without a session", async () => {
     setCookie(undefined);
-    const res = await POST(jsonRequest(url, { ...validApplicationBody, intakeId: intake.id }));
+    const res = await POST(csrfJsonRequest(url, { ...validApplicationBody, intakeId: intake.id }, applicantSession.csrfToken));
     expect(res.status).toBe(401);
   });
 
   test("403 for a staff role that is not APPLICANT/ADMIN", async () => {
     setCookie(editorSession.cookieValue);
-    const res = await POST(jsonRequest(url, { ...validApplicationBody, intakeId: intake.id }));
+    const res = await POST(csrfJsonRequest(url, { ...validApplicationBody, intakeId: intake.id }, applicantSession.csrfToken));
     expect(res.status).toBe(403);
   });
 
@@ -215,18 +216,18 @@ describe("POST /api/admissions/applications (public submission)", () => {
       data: { courseId: course.id, year: 2025, status: "CLOSED", isPublished: true },
     });
     setCookie(applicantSession.cookieValue);
-    const res = await POST(jsonRequest(url, { ...validApplicationBody, intakeId: closed.id }));
+    const res = await POST(csrfJsonRequest(url, { ...validApplicationBody, intakeId: closed.id }, applicantSession.csrfToken));
     expect(res.status).toBe(409);
   });
 
   test("400 when the declaration is not accepted or the phone is malformed", async () => {
     setCookie(applicantSession.cookieValue);
     const noDeclaration = await POST(
-      jsonRequest(url, { ...validApplicationBody, intakeId: intake.id, declarationAccepted: false }),
+      csrfJsonRequest(url, { ...validApplicationBody, intakeId: intake.id, declarationAccepted: false }, applicantSession.csrfToken),
     );
     expect(noDeclaration.status).toBe(400);
     const badPhone = await POST(
-      jsonRequest(url, { ...validApplicationBody, intakeId: intake.id, phone: "12345" }),
+      csrfJsonRequest(url, { ...validApplicationBody, intakeId: intake.id, phone: "12345" }, applicantSession.csrfToken),
     );
     expect(badPhone.status).toBe(400);
     const body = (await badPhone.json()) as { fields?: Record<string, string> };
@@ -235,7 +236,7 @@ describe("POST /api/admissions/applications (public submission)", () => {
 
   test("201 happy path creates the application, education row, timeline event and audit entry", async () => {
     setCookie(applicantSession.cookieValue);
-    const res = await POST(jsonRequest(url, { ...validApplicationBody, intakeId: intake.id }));
+    const res = await POST(csrfJsonRequest(url, { ...validApplicationBody, intakeId: intake.id }, applicantSession.csrfToken));
     expect(res.status).toBe(201);
     const json = (await res.json()) as { ok: boolean; data: { trackingNo: string; id: string } };
     expect(json.ok).toBe(true);
@@ -262,7 +263,7 @@ describe("POST /api/admissions/applications (public submission)", () => {
 
   test("409 on a duplicate submission for the same intake", async () => {
     setCookie(applicantSession.cookieValue);
-    const res = await POST(jsonRequest(url, { ...validApplicationBody, intakeId: intake.id }));
+    const res = await POST(csrfJsonRequest(url, { ...validApplicationBody, intakeId: intake.id }, applicantSession.csrfToken));
     expect(res.status).toBe(409);
     const json = (await res.json()) as { data?: { trackingNo: string } };
     expect(json.data?.trackingNo).toBe(submitted.trackingNo);
