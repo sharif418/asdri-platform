@@ -65,7 +65,7 @@ interface DbArticle {
   bodyEn: string;
   readingMinutes: number | null;
   publishedAt: Date | null;
-  category: { nameBn: string; nameEn: string } | null;
+  category: { slug: string; nameBn: string; nameEn: string } | null;
   author: { nameBn: string; nameEn: string; titleBn: string; titleEn: string } | null;
   coverMedia: { key: string } | null;
 }
@@ -81,7 +81,7 @@ const ARTICLE_SELECT = {
   readingMinutes: true,
   publishedAt: true,
   isPublished: true,
-  category: { select: { nameBn: true, nameEn: true } },
+  category: { select: { slug: true, nameBn: true, nameEn: true } },
   author: { select: { nameBn: true, nameEn: true, titleBn: true, titleEn: true } },
   coverMedia: { select: { key: true } },
 } as const;
@@ -89,6 +89,7 @@ const ARTICLE_SELECT = {
 function toArticle(row: DbArticle, index: number): BlogArticle {
   const authorBn = row.author?.nameBn || AUTHOR_FALLBACK_BN;
   const authorEn = row.author?.nameEn || row.author?.nameBn || AUTHOR_FALLBACK_EN;
+  const topicKey = row.category?.slug.startsWith("clar-") ? row.category.slug : undefined;
   return {
     slug: row.slug,
     title: { bn: row.titleBn, en: row.titleEn || row.titleBn },
@@ -107,6 +108,7 @@ function toArticle(row: DbArticle, index: number): BlogArticle {
     cover: row.coverMedia ? `/api/media/${row.coverMedia.key}` : rotateFallback(COVER_FALLBACKS, index),
     contentBn: toMarkdown(row.bodyBn),
     contentEn: row.bodyEn ? toMarkdown(row.bodyEn) : undefined,
+    topicKey,
   };
 }
 

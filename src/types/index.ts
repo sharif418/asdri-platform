@@ -190,6 +190,11 @@ export interface BlogArticle {
   cover: string;
   contentBn: string; // markdown (Bengali primary)
   contentEn?: string;
+  /**
+   * সংশয় নিরসন topic slug (`clar-<topicId>`) when the article belongs to one
+   * of the six clarification tracks — powers the blog topic filter (?topic=).
+   */
+  topicKey?: string;
 }
 
 export interface VideoItem {

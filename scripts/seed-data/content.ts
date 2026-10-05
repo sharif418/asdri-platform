@@ -321,10 +321,12 @@ export async function seedContent(db: Db): Promise<void> {
     });
   }
 
-  // blog: categories from article category labels
+  // blog: categories from article category labels (সংশয় নিরসন articles are
+  // categorized by their topic's `clar-` category instead — see below)
   const categoryKeys = new Map<string, string>();
   const seenCategories = new Set<string>();
   for (const article of blogArticles) {
+    if (article.topicKey) continue;
     const catKey = article.category.bn;
     if (seenCategories.has(catKey)) continue;
     seenCategories.add(catKey);
@@ -343,6 +345,25 @@ export async function seedContent(db: Db): Promise<void> {
       where: { OR: [{ nameBn: article.author }, { nameEn: article.author }] },
       select: { id: true },
     });
+    // সংশয় নিরসন articles attach to their topic's `clar-` category (the
+    // canonical topic rows are upserted below from clarificationTopics).
+    const clarCategory = article.topicKey
+      ? await db.postCategory.upsert({
+          where: { slug: article.topicKey },
+          update: { nameBn: article.category.bn, nameEn: article.category.en },
+          create: {
+            slug: article.topicKey,
+            nameBn: article.category.bn,
+            nameEn: article.category.en,
+            sortOrder:
+              50 +
+              Math.max(
+                0,
+                clarificationTopics.findIndex((topic) => `clar-${topic.id}` === article.topicKey),
+              ),
+          },
+        })
+      : null;
     const data = {
       titleBn: article.title.bn,
       titleEn: article.title.en,
@@ -353,7 +374,7 @@ export async function seedContent(db: Db): Promise<void> {
       readingMinutes: article.readMinutes,
       publishedAt: new Date(article.publishedAt),
       isPublished: true,
-      categoryId: categoryKeys.get(article.category.bn) ?? null,
+      categoryId: clarCategory?.id ?? categoryKeys.get(article.category.bn) ?? null,
       authorId: authorPerson?.id ?? null,
       views: Math.floor(Math.random() * 900) + 120,
     };

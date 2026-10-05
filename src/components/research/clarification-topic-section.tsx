@@ -103,10 +103,10 @@ export function ClarificationTopicSection({
             ))}
           </ul>
           <Link
-            href={langPath(lang, "/media/blog")}
+            href={langPath(lang, `/media/blog?topic=clar-${topic.id}`)}
             className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary transition-colors hover:text-gold"
           >
-            {lang === "bn" ? "সব আর্টিকেল দেখুন" : "Browse all articles"}
+            {lang === "bn" ? "এই বিষয়ের আর্টিকেল পড়ুন" : "Read this topic's articles"}
             <ArrowUpRight aria-hidden className="h-3.5 w-3.5" />
           </Link>
         </div>

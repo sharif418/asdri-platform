@@ -1,4 +1,5 @@
 import type { BlogArticle } from "@/types";
+import { clarificationArticles } from "./blog-clarifications";
 
 /** Research blog articles — Bengali-first with English summaries. */
 export const blogArticles: BlogArticle[] = [
@@ -202,6 +203,7 @@ export const blogArticles: BlogArticle[] = [
 
 মুস্তাফা আল-আজমীর 'Studies in Early Hadith Literature' দেখিয়ে দিয়েছে — প্রাচ্যবিদ অনুমানের জবাব প্রামাণ্য দলিল দিয়ে দেওয়া সম্ভব। আজ প্রয়োজন সেই ধারাবাহিকতায় গবেষণা — যা আস-সুন্নাহ ইনস্টিটিউটের গবেষণা প্রকল্পের অন্যতম লক্ষ্য।`,
   },
+  ...clarificationArticles,
 ];
 
 export function getArticle(slug: string): BlogArticle | undefined {
