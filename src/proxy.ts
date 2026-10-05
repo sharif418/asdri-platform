@@ -73,6 +73,13 @@ export function proxy(request: NextRequest): NextResponse {
     return securityHeaders(NextResponse.next(), isProd);
   }
 
+  // Already-prefixed paths pass through. In the production server the rewritten request
+  // re-enters the proxy, so without this check "/" becomes /bn/bn/bn/... until the
+  // request line overflows (431). Dev mode does not re-enter, which hid the bug.
+  if (pathname === "/bn" || pathname.startsWith("/bn/")) {
+    return securityHeaders(NextResponse.next(), isProd);
+  }
+
   // /en/... passes through as the [lang]=en route
   if (pathname === "/en" || pathname.startsWith("/en/")) {
     return securityHeaders(NextResponse.next(), isProd);

@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { Amiri, Cormorant_Garamond, Hind_Siliguri, Tiro_Bangla } from "next/font/google";
 import "../globals.css";
+
+// Public pages render on request: the image is built before the database exists.
+export const dynamic = "force-dynamic";
 import { Toaster } from "@/components/ui/toaster";
 import { LanguageProvider } from "@/components/providers/language-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";

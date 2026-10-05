@@ -38,7 +38,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN bunx prisma generate
 
-ARG DATABASE_URL
+# DATABASE_URL is not needed at build: every page renders on request.
+ARG DATABASE_URL=postgresql://build:build@127.0.0.1:1/build
 ARG SESSION_SECRET=0000000000000000000000000000000000000000000000000000000000000000
 ARG PAYMENT_CALLBACK_SECRET=1111111111111111111111111111111111111111111111111111111111111111
 ARG NEXT_PUBLIC_SITE_URL=https://assunnahinstitute.org
@@ -72,6 +73,13 @@ COPY --from=build --chown=nextjs:nextjs /app/node_modules ./node_modules
 # Migrations + schema for the boot-time deploy step.
 COPY --from=build --chown=nextjs:nextjs /app/prisma ./prisma
 COPY --chown=nextjs:nextjs docker/entrypoint.sh ./docker-entrypoint.sh
+# Seed-on-first-boot support (SEED_ON_BOOT=1): the seed is TypeScript that imports from src/
+# and reads public/images, so those travel with the image. Bucket bootstrap for S3 stores
+# that do not auto-create buckets (RustFS, MinIO).
+COPY --from=build --chown=nextjs:nextjs /app/scripts ./scripts
+COPY --from=build --chown=nextjs:nextjs /app/src ./src
+COPY --from=build --chown=nextjs:nextjs /app/public ./public
+COPY --from=build --chown=nextjs:nextjs /app/tsconfig.json /app/package.json ./
 
 # Writable local-disk storage fallback (no-op when S3_* env is set).
 RUN mkdir -p /app/storage-local && chown -R nextjs:nextjs /app/storage-local /app/docker-entrypoint.sh \

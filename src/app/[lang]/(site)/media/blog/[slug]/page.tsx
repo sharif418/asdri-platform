@@ -22,11 +22,6 @@ interface ArticlePageProps {
   params: Promise<{ lang: Lang; slug: string }>;
 }
 
-export async function generateStaticParams(): Promise<{ slug: string }[]> {
-  const articles = await getBlogArticles();
-  return articles.map((article) => ({ slug: article.slug }));
-}
-
 export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
   const { slug, lang } = await params;
   const article = await getArticleBySlug(slug);
