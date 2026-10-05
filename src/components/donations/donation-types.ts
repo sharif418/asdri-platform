@@ -55,6 +55,8 @@ export interface ReceiptData {
   createdAt: string;
   paymentInfo: PaymentInfo;
   message: string;
+  /** Signed sandbox gateway link (null when a real gateway is configured). */
+  checkoutUrl: string | null;
 }
 
 const BN_DIGIT_MAP = "০১২৩৪৫৬৭৮৯";

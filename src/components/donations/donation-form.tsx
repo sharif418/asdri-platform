@@ -131,7 +131,7 @@ export function DonationForm({ fundType, initialAmount, lang, fundLabels, paymen
         }),
       });
       const payload: {
-        data?: { receiptNo: string; message: string; paymentInfo: PaymentInfo };
+        data?: { receiptNo: string; message: string; paymentInfo: PaymentInfo; checkoutUrl?: string | null };
         error?: string;
         fields?: Record<string, string>;
       } = await res.json();
@@ -160,6 +160,7 @@ export function DonationForm({ fundType, initialAmount, lang, fundLabels, paymen
         createdAt: new Date().toISOString(),
         paymentInfo: payload.data.paymentInfo,
         message: payload.data.message,
+        checkoutUrl: payload.data.checkoutUrl ?? null,
       });
     } catch {
       toast({ title: t("toast.error"), variant: "destructive" });

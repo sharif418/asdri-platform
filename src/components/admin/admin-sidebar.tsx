@@ -117,15 +117,16 @@ const NAV: AdminNavItem[] = [
   },
   {
     href: "/admin/finance",
-    label: "আর্থিক ব্যবস্থাপনা",
+    label: "আর্থিক বিভাগ",
     icon: HandCoins,
     flag: "donations",
     roles: ["ADMIN", "FINANCE"],
     children: [
-      { href: "/admin/finance/donations", label: "ডোনেশন লেজার" },
+      { href: "/admin/finance/donations", label: "অনুদান তালিকা" },
       { href: "/admin/finance/campaigns", label: "ক্যাম্পেইন" },
-      { href: "/admin/finance/funds", label: "ফান্ডসমূহ" },
-      { href: "/admin/finance/manual", label: "ম্যানুয়াল এন্ট্রি" },
+      { href: "/admin/finance/funds", label: "ফান্ড" },
+      { href: "/admin/finance/ledger", label: "ম্যানুয়াল লেজার" },
+      { href: "/admin/finance/outbox", label: "আউটবক্স" },
     ],
   },
   {
