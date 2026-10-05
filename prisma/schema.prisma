@@ -552,6 +552,7 @@ model FatwaQuestion {
   isPrivate   Boolean   @default(false)
   status      FatwaQStatus @default(PENDING)
   answer      String?
+  note        String? // office note — rejection reason / internal remark
   answeredById String?
   answeredBy  User?     @relation("FatwaAnswerer", fields: [answeredById], references: [id], onDelete: SetNull)
   answeredAt  DateTime?
