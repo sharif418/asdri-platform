@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Target } from "lucide-react";
+import Link from "next/link";
+import { HandCoins, Target } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { formatCompactTaka, formatTaka } from "@/lib/format";
+import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { FundingCampaign, Language } from "@/types";
 
@@ -97,6 +99,19 @@ export function CampaignsSection({ lang }: { lang: Language }) {
                         <span className="text-muted-foreground">
                           {bn ? "লক্ষ্য" : "Target"}: {formatTaka(campaign.targetAmount, lang)}
                         </span>
+                      </div>
+                      <div className="mt-4 border-t pt-3.5">
+                        <Link
+                          href={`${langPath(lang, "/support")}?campaign=${encodeURIComponent(campaign.slug)}#donation-form`}
+                          className="group/cta inline-flex min-h-11 w-full items-center justify-between rounded-xl border border-gold/40 bg-gold/[0.06] px-4 py-2.5 text-[13px] font-bold text-gold transition-all hover:border-gold/60 hover:bg-gold/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50"
+                          aria-label={`${bn ? "এই ক্যাম্পেইনে অনুদান দিন" : "Donate to this campaign"}: ${pick(campaign.title, lang)}`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <HandCoins aria-hidden className="h-4 w-4" />
+                            {bn ? "এই ক্যাম্পেইনে অনুদান দিন" : "Donate to this campaign"}
+                          </span>
+                          <span className="transition-transform group-hover/cta:translate-x-0.5" aria-hidden>→</span>
+                        </Link>
                       </div>
                     </article>
                   </RevealItem>

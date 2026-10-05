@@ -42,6 +42,14 @@ export interface PaymentInfo {
   bank: string;
 }
 
+/** A targetable campaign offered on the donation form (public view). */
+export interface CampaignOption {
+  slug: string;
+  title: { bn: string; en: string };
+  /** The fund this campaign belongs to — donations must target that fund. */
+  fundKey: FundType;
+}
+
 /** Receipt payload rendered in the post-submit success dialog. */
 export interface ReceiptData {
   receiptNo: string;

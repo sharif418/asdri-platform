@@ -12,6 +12,8 @@ import {
   Send,
   ShieldCheck,
   Star,
+  Target,
+  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,6 +35,7 @@ import {
   CURRENCY_OPTIONS,
   formatAmount,
   parseAmount,
+  type CampaignOption,
   type CurrencyCode,
   type PaymentInfo,
   type ReceiptData,
@@ -49,6 +52,9 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 interface DonationFormProps {
   fundType: FundType;
   initialAmount: number | null;
+  /** Selected campaign (from ?campaign=slug) — locks the fund to the campaign's fund. */
+  campaign: CampaignOption | null;
+  onClearCampaign: () => void;
   lang: Language;
   /** DB-driven fund labels (title per fund key). */
   fundLabels: Record<FundType, { bn: string; en: string }>;
@@ -66,8 +72,17 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   );
 }
 
-/** The donation form: amount presets, currency, donor details, sponsor mode. */
-export function DonationForm({ fundType, initialAmount, lang, fundLabels, payment, onSuccess }: DonationFormProps) {
+/** The donation form: amount presets, currency, donor details, sponsor mode, campaign targeting. */
+export function DonationForm({
+  fundType,
+  initialAmount,
+  campaign,
+  onClearCampaign,
+  lang,
+  fundLabels,
+  payment,
+  onSuccess,
+}: DonationFormProps) {
   const { t } = useLanguage();
   const bn = lang === "bn";
   const fundLabel = fundLabels[fundType][lang];
@@ -119,6 +134,7 @@ export function DonationForm({ fundType, initialAmount, lang, fundLabels, paymen
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fundType,
+          ...(campaign ? { campaignSlug: campaign.slug } : {}),
           amount: numericAmount,
           currency,
           donorName: donorName.trim(),
@@ -189,6 +205,31 @@ export function DonationForm({ fundType, initialAmount, lang, fundLabels, paymen
             {fundLabel}
           </Badge>
         </div>
+
+        {/* Campaign targeting chip — set via ?campaign=slug (campaign card CTA). */}
+        {campaign ? (
+          <div
+            role="status"
+            className="mt-5 flex items-center gap-2.5 rounded-xl border border-gold/40 bg-gold/[0.07] px-3.5 py-2.5"
+          >
+            <Target aria-hidden className="h-4 w-4 shrink-0 text-gold" />
+            <p className="min-w-0 flex-1 text-[13px] leading-snug">
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-gold">
+                {bn ? "ক্যাম্পেইন" : "Campaign"}
+              </span>
+              <span className="block truncate font-semibold">{campaign.title[lang]}</span>
+            </p>
+            <button
+              type="button"
+              onClick={onClearCampaign}
+              aria-label={bn ? "ক্যাম্পেইন বাদ দিন" : "Remove campaign targeting"}
+              title={bn ? "ক্যাম্পেইন বাদ দিন" : "Remove campaign targeting"}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-gold/15 hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50"
+            >
+              <X aria-hidden className="h-4 w-4" />
+            </button>
+          </div>
+        ) : null}
 
         {/* Sponsor student picker */}
         {isSponsor ? (

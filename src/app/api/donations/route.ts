@@ -89,9 +89,32 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
     }
 
+    // Optional campaign targeting: the donation carries campaignId so the
+    // public progress bars (raised = Σ COMPLETED per campaign) count it.
+    let campaignId: string | null = null;
+    if (input.campaignSlug) {
+      const campaign = await db.campaign.findUnique({
+        where: { slug: input.campaignSlug },
+        select: { id: true, fundId: true, fund: { select: { key: true } }, isPublished: true, endsAt: true },
+      });
+      const now = new Date();
+      if (!campaign || !campaign.isPublished || (campaign.endsAt && campaign.endsAt < now)) {
+        return jsonError("ক্যাম্পেইনটি বর্তমানে চালু নেই", "VALIDATION", 400, {
+          campaignSlug: "ক্যাম্পেইনটি শেষ বা নিষ্ক্রিয় হয়ে গেছে",
+        });
+      }
+      if (campaign.fund.key !== input.fundType) {
+        return jsonError("ক্যাম্পেইনটি অন্য ফান্ডের অধীনে", "VALIDATION", 400, {
+          fundType: "এই ক্যাম্পেইনে অনুদান দিতে ফান্ড বদলে দিন",
+        });
+      }
+      campaignId = campaign.id;
+    }
+
     const provider = env.paymentProvider;
     const donation = await createDonation({
       fund: { connect: { id: fund.id } },
+      ...(campaignId ? { campaign: { connect: { id: campaignId } } } : {}),
       amount: input.amount,
       currency: input.currency,
       donorName: input.donorName,
@@ -110,6 +133,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           // captured on the payment trail instead (see worklog note).
           rawPayload: {
             fundType: input.fundType,
+            ...(input.campaignSlug ? { campaignSlug: input.campaignSlug } : {}),
             amount: input.amount,
             currency: input.currency,
             anonymous: input.anonymous,
