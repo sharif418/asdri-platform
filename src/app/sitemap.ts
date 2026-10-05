@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import type { MetadataRoute } from "next";
 import { db } from "@/lib/db";
 import { getEnabledFlags } from "@/lib/settings";

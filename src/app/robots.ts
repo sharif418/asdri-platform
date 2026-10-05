@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import type { MetadataRoute } from "next";
 
 /** Canonical site origin — NEXT_PUBLIC_SITE_URL env override wins when set. */
