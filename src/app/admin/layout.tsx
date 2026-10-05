@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { Hind_Siliguri, Tiro_Bangla } from "next/font/google";
+import { hindSiliguri, tiroBangla } from "@/lib/fonts";
 import "../globals.css";
 import { getSession, isStaff } from "@/lib/auth";
 import { getEnabledFlags } from "@/lib/settings";
@@ -21,20 +21,6 @@ export const metadata: Metadata = {
   description: "আস-সুন্নাহ দাওয়াহ অ্যান্ড রিসার্চ ইনস্টিটিউট কনটেন্ট ব্যবস্থাপনা প্যানেল।",
   robots: { index: false, follow: false },
 };
-
-const tiroBangla = Tiro_Bangla({
-  variable: "--font-heading",
-  subsets: ["bengali", "latin"],
-  weight: "400",
-  display: "swap",
-});
-
-const hindSiliguri = Hind_Siliguri({
-  variable: "--font-body",
-  subsets: ["bengali", "latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  display: "swap",
-});
 
 /**
  * Admin root layout — its own <html> (Bangla-only, separate from the public

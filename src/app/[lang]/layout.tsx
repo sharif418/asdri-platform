@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
-import { Amiri, Cormorant_Garamond, Hind_Siliguri, Tiro_Bangla } from "next/font/google";
+import { amiri, cormorant, hindSiliguri, tiroBangla } from "@/lib/fonts";
 import "../globals.css";
 
 // Public pages render on request: the image is built before the database exists.
@@ -12,35 +12,6 @@ import { ServiceWorkerRegister } from "@/components/providers/sw-register";
 import { isLang, type Lang } from "@/lib/locale";
 import { env } from "@/lib/env";
 import { siteConfig } from "@/content/site";
-
-const tiroBangla = Tiro_Bangla({
-  variable: "--font-heading",
-  subsets: ["bengali", "latin"],
-  weight: "400",
-  display: "swap",
-});
-
-const hindSiliguri = Hind_Siliguri({
-  variable: "--font-body",
-  subsets: ["bengali", "latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  display: "swap",
-});
-
-const amiri = Amiri({
-  variable: "--font-arabic",
-  subsets: ["arabic", "latin"],
-  weight: ["400", "700"],
-  display: "swap",
-});
-
-const cormorant = Cormorant_Garamond({
-  variable: "--font-latin-display",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
-  display: "swap",
-});
 
 export function generateStaticParams(): Array<{ lang: string }> {
   return [{ lang: "bn" }, { lang: "en" }];
