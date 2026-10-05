@@ -93,7 +93,7 @@ export function MessagesList({ messages }: { messages: MessageRow[] }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+    <div className="overflow-clip rounded-2xl border bg-card shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-secondary/30 px-4 py-2.5">
         <p className="text-[12.5px] font-semibold text-muted-foreground">
           {formatNumber(rows.length, "bn")} টি বার্তা · অপঠিত {formatNumber(unread, "bn")}

@@ -5,10 +5,22 @@ import { getSession, roleCan } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { formatDate, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { AdminPager } from "@/components/admin/admin-pager";
 
 export const metadata = { title: "গবেষণা প্রকল্প" };
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+const PAGE_SIZE = 12;
+
+function buildQuery(base: Record<string, string | undefined>, page: number): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(base)) {
+    if (value) params.set(key, value);
+  }
+  params.set("page", String(page));
+  return `/admin/research/projects?${params.toString()}`;
+}
 
 /** Research projects admin — progress, call-for-papers, deadlines. */
 export default async function AdminResearchProjectsPage({ searchParams }: { searchParams: SearchParams }) {
@@ -17,21 +29,28 @@ export default async function AdminResearchProjectsPage({ searchParams }: { sear
 
   const sp = await searchParams;
   const q = (typeof sp.q === "string" ? sp.q : "").trim().slice(0, 120);
+  const page = Math.max(1, Number.parseInt(typeof sp.page === "string" ? sp.page : "1", 10) || 1);
+  const where = q ? { OR: [{ titleBn: { contains: q } }, { titleEn: { contains: q } }] } : undefined;
 
-  const projects = await db.researchProject.findMany({
-    where: q ? { OR: [{ titleBn: { contains: q } }, { titleEn: { contains: q } }] } : undefined,
-    orderBy: [{ sortOrder: "asc" }, { progress: "desc" }],
-    take: 100,
-    select: {
-      id: true,
-      titleBn: true,
-      progress: true,
-      statusBn: true,
-      isCallForPapers: true,
-      deadline: true,
-      isPublished: true,
-    },
-  });
+  const [total, projects] = await Promise.all([
+    db.researchProject.count({ where }),
+    db.researchProject.findMany({
+      where,
+      orderBy: [{ sortOrder: "asc" }, { progress: "desc" }],
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+      select: {
+        id: true,
+        titleBn: true,
+        progress: true,
+        statusBn: true,
+        isCallForPapers: true,
+        deadline: true,
+        isPublished: true,
+      },
+    }),
+  ]);
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -117,6 +136,14 @@ export default async function AdminResearchProjectsPage({ searchParams }: { sear
           ))}
         </div>
       )}
+
+      <AdminPager
+        page={page}
+        pageCount={pageCount}
+        total={total}
+        unit="প্রকল্প"
+        buildHref={(next) => buildQuery({ q: q || undefined }, next)}
+      />
     </div>
   );
 }

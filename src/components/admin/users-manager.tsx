@@ -226,7 +226,7 @@ export function UsersManager({ users }: { users: UserRow[] }) {
         />
       )}
 
-      <section className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+      <section className="overflow-clip rounded-2xl border bg-card shadow-sm">
         <div className="border-b bg-secondary/30 px-4 py-2.5">
           <p className="text-[12.5px] font-semibold text-muted-foreground">
             মোট {formatNumber(rows.length, "bn")} টি অ্যাকাউন্ট · নিজের অ্যাকাউন্ট নিষ্ক্রিয় বা মুছে ফেলা যায় না

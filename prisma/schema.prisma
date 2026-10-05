@@ -962,16 +962,17 @@ model NewsletterSubscriber {
 /// Mail outbox — every email the system sends (log driver in dev, smtp in
 /// prod writes here too) so receipts can be re-sent and audited.
 model OutboxEmail {
-  id        String   @id @default(cuid())
-  to        String
-  subject   String
-  body      String
-  html      String
-  kind      String // donation.receipt | application.submitted | fatwa.answered …
-  payload   Json? // template data
-  sentAt    DateTime?
-  error     String?
-  createdAt DateTime @default(now())
+  id               String    @id @default(cuid())
+  to               String
+  subject          String
+  body             String
+  html             String
+  kind             String // donation.receipt | application.submitted | fatwa.answered …
+  payload          Json? // template data
+  sentAt           DateTime?
+  providerMessageId String? // SMTP server's message id when actually delivered
+  error            String?
+  createdAt        DateTime @default(now())
 
   @@index([kind, createdAt(sort: Desc)])
   @@index([sentAt])

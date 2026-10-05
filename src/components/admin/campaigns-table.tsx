@@ -97,7 +97,7 @@ export function CampaignsTable({ campaigns, funds }: { campaigns: CampaignRowDat
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+    <div className="overflow-clip rounded-2xl border bg-card shadow-sm">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-secondary/30 text-left text-[11.5px] uppercase tracking-wide text-muted-foreground">

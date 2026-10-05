@@ -68,6 +68,16 @@ PR stack (all **open**, awaiting client review — never self-merged):
   albums, videos, fatwa categories/entries/questions workflow, research (publications +
   projects), download resources, inbox (messages + subscribers), users + reset-password,
   feature flags, audit log + CSV, dashboard with live counts.
+- **Numbered deep pagination everywhere** (PR #11 + round 19): the shared AdminPager
+  (windowed 1 … p-1 p p+1 … last, Bengali numerals, filter-preserving hrefs) serves all
+  eight long lists — donations, ledger, applications, subscribers, messages (PR #11) and
+  fatwa/questions (15/page), notices (20/page), research/projects (12/page) (round 19).
+  Every `take:100` cap is gone. E2E: 23/16/13 seeded-then-deleted TMP rows paged 20+3 /
+  15+1 / 12+1 with filter preservation (`?status=PENDING&page=`) — `qa-r19-notices-pager.png`.
+- **Sticky table headers** (round 19): `#admin-main` thead pins at 3.5rem under the h-14
+  topbar (both shells); wrappers `overflow-hidden` → `overflow-clip` so sticky isn't
+  neutralised by a non-scrolling scrollport. Geometry-verified (thead_top = 56px at
+  scrollY 404) — `qa-r19-sticky-thead.png`; officer confirm dialogs re-verified live.
 - Every mutation audited (`AuditLog`) and CSRF-guarded. Evidence: E2E from the admin-cms
   phase (worklog Task IDs 6–15) + the qa-ship integration matrix.
 
@@ -98,13 +108,21 @@ PR stack (all **open**, awaiting client review — never self-merged):
   ledger with per-fund balances + CSV, outbox viewer (render + requeue).
   Evidence: coordinator E2E — donate ৳১,৫০০ → ASDRI-R-000005 → signed checkout → confirm →
   ledger ৳৮,৮০০ + outbox row; ledger entry + CSV export; bad-signature error state;
-  mobile 390px (worklog Task 6-b).
+  mobile 390px (worklog Task 6-b). Round-19 regression after the mail refactor: second
+  full loop DN-2026-000002 → COMPLETED → receipt ASDRI-R-000002 in the outbox.
+- **SMTP delivery driver** (round 19, env-gated): `MAIL_DRIVER=smtp` + `SMTP_URL` delivers
+  via a lazily-imported nodemailer transporter **first**, then records the same outbox row
+  with `sentAt` + `providerMessageId`; failures stay soft (error on the row, retryable —
+  the money path can never break on a mail outage). Migration `20261005070000` adds the
+  column; `MAIL_FROM` env with a no-reply default; unit-tested both drivers (144 suite).
 
 ## 7. QA / ship — DONE (with the two sandbox-unverifiable items marked PARTIAL below)
 
-- **Tests: DONE.** 121 tests / 464 assertions, 8 files, all green in ~2s
-  (`bun run test`). Unit: Bengali numerals/taka/dates, locale + proxy logic, zod
-  validators, receipt email, both HMAC contracts. Integration (against a dedicated
+- **Tests: DONE.** 144 tests / 541 assertions, 11 files, all green in ~2s on this branch
+  (`bun run test`; main is at 121/464/8 — PR #11 adds the search/pager suite +21, round 19
+  adds the mail-driver pair +2). Unit: Bengali numerals/taka/dates, locale + proxy logic, zod
+  validators, receipt email, both HMAC contracts, db-search tokens/fallback, pager window
+  algorithm. Integration (against a dedicated
   `asdri_test` database, dev DB verified untouched): full role matrix, session lifecycle,
   admissions status machine **through the real route handlers**, donation money loop
   through the real handlers.
