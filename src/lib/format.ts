@@ -45,15 +45,31 @@ const BN_MONTHS = [
   "ডিসেম্বর",
 ] as const;
 
+const EN_MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+] as const;
+
 /** Format an ISO date as "১৫ জানুয়ারি ২০২৫" (bn) or "15 January 2025" (en). */
 export function formatDate(iso: string | Date, lang: Language): string {
   const date = typeof iso === "string" ? new Date(iso) : iso;
   if (Number.isNaN(date.getTime())) return "";
   const day = date.getDate();
-  const month = BN_MONTHS[date.getMonth()];
   const year = date.getFullYear();
-  if (lang === "bn") return `${toBnDigits(day)} ${month} ${toBnDigits(year)}`;
-  return `${day} ${month} ${year}`;
+  if (lang === "bn") {
+    return `${toBnDigits(day)} ${BN_MONTHS[date.getMonth()]} ${toBnDigits(year)}`;
+  }
+  return `${day} ${EN_MONTHS[date.getMonth()]} ${year}`;
 }
 
 /** Relative "days ago" label for notice freshness. */
@@ -76,9 +92,9 @@ export function isNewNotice(iso: string | Date): boolean {
 export function formatMonthYear(iso: string | Date, lang: Language): string {
   const date = typeof iso === "string" ? new Date(iso) : iso;
   if (Number.isNaN(date.getTime())) return "";
-  const month = BN_MONTHS[date.getMonth()];
   const year = date.getFullYear();
-  return lang === "bn" ? `${month} ${toBnDigits(year)}` : `${month} ${year}`;
+  if (lang === "bn") return `${BN_MONTHS[date.getMonth()]} ${toBnDigits(year)}`;
+  return `${EN_MONTHS[date.getMonth()]} ${year}`;
 }
 
 /** Estimated reading time in minutes for a body of text. */

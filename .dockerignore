@@ -1,0 +1,23 @@
+# Build context exclusions — keep the image small and secrets out.
+node_modules
+.next
+.git
+.github
+.qa
+db
+storage-local
+dev.log
+server.log
+upload
+download
+skills
+tool-results
+agent-ctx
+docs
+tests
+tsconfig.tsbuildinfo
+.env
+.env.local
+Dockerfile
+docker-compose.yml
+.dockerignore
