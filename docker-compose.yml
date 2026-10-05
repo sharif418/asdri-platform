@@ -1,0 +1,116 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ASDRI local/production stack (Coolify-compatible).
+#
+# FIRST BOOT (postgres must be reachable while the app image builds, because
+# the public pages prerender their DB content during `next build`):
+#   1. docker compose up -d postgres          # wait for healthy
+#   2. docker compose up -d --build app       # build connects via
+#      host.docker.internal:5432 (extra_hosts host-gateway)
+#
+# Subsequent boots: plain `docker compose up -d --build app` works because
+# postgres is already running.
+#
+# The app container applies migrations automatically on boot (entrypoint), so
+# the first `up` also creates the schema. Set real secrets in .env — the app
+# refuses to start in production without them (see src/lib/env.ts).
+#
+# MinIO (S3-compatible storage) is OPTIONAL: the app falls back to local-disk
+# storage (volume below) when no S3_* env is set. To use it:
+#   docker compose --profile s3 up -d
+# and add S3_ENDPOINT/S3_ACCESS_KEY/S3_SECRET_KEY/S3_BUCKET=asdri-uploads
+# to .env.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  app:
+    build:
+      context: .
+      extra_hosts:
+        # lets the BUILD stage reach the postgres service via the host's
+        # published port (Linux needs the explicit host-gateway mapping)
+        - "host.docker.internal:host-gateway"
+      args:
+        DATABASE_URL: postgresql://asdri:${POSTGRES_PASSWORD:-asdri}@host.docker.internal:5432/${POSTGRES_DB:-asdri}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://assunnahinstitute.org}
+    image: asdri-platform
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://asdri:${POSTGRES_PASSWORD:-asdri}@postgres:5432/${POSTGRES_DB:-asdri}
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env (openssl rand -hex 32)}
+      PAYMENT_CALLBACK_SECRET: ${PAYMENT_CALLBACK_SECRET:?set PAYMENT_CALLBACK_SECRET in .env (openssl rand -hex 32)}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://assunnahinstitute.org}
+      MAIL_DRIVER: ${MAIL_DRIVER:-log}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-sandbox}
+      # S3 (optional — leave unset to use the local-disk driver):
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
+    volumes:
+      - app-storage:/app/storage-local
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: asdri
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-asdri}
+      POSTGRES_DB: ${POSTGRES_DB:-asdri}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U asdri -d ${POSTGRES_DB:-asdri}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # publish for the app's BUILD stage (host.docker.internal:5432); tighten
+    # or remove in production if the compose network is the only consumer
+    ports:
+      - "5432:5432"
+
+  # Optional S3-compatible object storage (see header comment).
+  minio:
+    image: minio/minio:latest
+    profiles: ["s3"]
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:?set S3_ACCESS_KEY to use the s3 profile}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?set S3_SECRET_KEY to use the s3 profile}
+    ports:
+      - "9100:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      # official MinIO liveness endpoint (image ships curl)
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot bucket bootstrap for MinIO (s3 profile).
+  minio-init:
+    image: minio/mc:latest
+    profiles: ["s3"]
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set asdri http://minio:9000 ${S3_ACCESS_KEY} ${S3_SECRET_KEY} &&
+      mc mb --ignore-existing asdri/${S3_BUCKET:-asdri-uploads} &&
+      echo '[minio-init] bucket ready'
+      "
+
+volumes:
+  pgdata:
+  app-storage:
+  minio-data:

@@ -1,0 +1,76 @@
+# CI — lint, typecheck, test, build on every push and pull request.
+#
+# The test suite provisions its own throwaway database: tests/preload.ts
+# connects to the service's `postgres` admin database, drops + recreates
+# `asdri_test` and applies the committed migrations BEFORE any test module
+# imports @/lib/db, so the dev-style DATABASE_URL below never points the
+# suite at anything but the throwaway DB.
+#
+# The build step runs `next build` with NODE_ENV=production, which makes
+# src/lib/env.ts refuse to boot without real-format secrets — hence the
+# hex values below (CI-only, no real secrets).
+
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: asdri
+          POSTGRES_PASSWORD: asdri
+          POSTGRES_DB: asdri_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U asdri -d asdri_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://asdri:asdri@localhost:5432/asdri_test
+      SESSION_SECRET: c14d0e2f6a8b4c9d3e5f7a1b6c8d0e2f4a6b8c9d0e2f4a6b8c9d0e2f4a6b8c9d
+      PAYMENT_CALLBACK_SECRET: a7f1c9b3e5d2a4c6b8e0f2d4a6c8b0e2f4a6c8d0e2f4a6b8c9d0e2f4a6b
+      MAIL_DRIVER: log
+      PAYMENT_PROVIDER: sandbox
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Test (isolated asdri_test database)
+        run: bun run test
+
+      - name: Prisma client
+        run: bunx prisma generate
+
+      - name: Seed (content + CI admin, so static generation sees real data)
+        run: bun scripts/seed.ts
+        env:
+          SEED_ADMIN_EMAIL: ci-admin@assunnah-institute.org
+          SEED_ADMIN_PASSWORD: ci-only-admin-password-2026
+
+      - name: Build
+        run: bunx next build

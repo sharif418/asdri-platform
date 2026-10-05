@@ -13,6 +13,7 @@
     "db:reset": "prisma migrate reset",
     "db:seed": "bun scripts/seed.ts",
     "typecheck": "tsc --noEmit",
+    "test": "bun test",
     "db:deploy": "prisma migrate deploy"
   },
   "dependencies": {

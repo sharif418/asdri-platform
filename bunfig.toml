@@ -1,0 +1,9 @@
+# Bun runtime configuration.
+#
+# [test] registers the test-database preload so every `bun test` /
+# `bun run test` invocation provisions the isolated `asdri_test` database
+# BEFORE any test module imports @/lib/db (see tests/preload.ts). Using
+# bunfig instead of `--preload tests/preload.ts` because bun resolves a
+# relative --preload per test file when no test path is passed.
+[test]
+preload = ["./tests/preload.ts"]
