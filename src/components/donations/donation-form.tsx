@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { StarMotif } from "@/components/shared/ornaments";
-import { PaymentChannels } from "./payment-channels";
+import { PaymentChannels, type PaymentChannelInfo } from "./payment-channels";
 import { SponsorPicker } from "./sponsor-picker";
 import {
   CURRENCY_OPTIONS,
@@ -52,6 +52,8 @@ interface DonationFormProps {
   lang: Language;
   /** DB-driven fund labels (title per fund key). */
   fundLabels: Record<FundType, { bn: string; en: string }>;
+  /** DB-driven payment channel numbers (live summary panel). */
+  payment: PaymentChannelInfo;
   onSuccess: (receipt: ReceiptData) => void;
 }
 
@@ -65,7 +67,7 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 }
 
 /** The donation form: amount presets, currency, donor details, sponsor mode. */
-export function DonationForm({ fundType, initialAmount, lang, fundLabels, onSuccess }: DonationFormProps) {
+export function DonationForm({ fundType, initialAmount, lang, fundLabels, payment, onSuccess }: DonationFormProps) {
   const { t } = useLanguage();
   const bn = lang === "bn";
   const fundLabel = fundLabels[fundType][lang];
@@ -460,7 +462,7 @@ export function DonationForm({ fundType, initialAmount, lang, fundLabels, onSucc
                 {bn ? "পেমেন্ট মাধ্যম" : "Payment channels"}
               </p>
               <div className="mt-3 text-ivory">
-                <PaymentChannels lang={lang} tone="on-dark" />
+                <PaymentChannels lang={lang} tone="on-dark" payment={payment} />
               </div>
             </div>
 

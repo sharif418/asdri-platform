@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { FundCards } from "./fund-cards";
 import { DonationForm } from "./donation-form";
 import { ReceiptDialog } from "./receipt-dialog";
+import type { PaymentChannelInfo } from "./payment-channels";
 import type { ReceiptData } from "./donation-types";
 import type { FundView } from "@/lib/content/funds";
 import type { FundType, Language } from "@/types";
@@ -16,13 +17,15 @@ interface DonationPortalProps {
   funds: FundView[];
   /** DB-driven label lookup merged with static fallbacks. */
   fundLabels: Record<FundType, { bn: string; en: string }>;
+  /** DB-driven payment channel numbers (donation form summary panel). */
+  payment: PaymentChannelInfo;
 }
 
 /**
  * The interactive donation portal: selectable fund cards drive the form
  * below; a successful submission opens the payment-instructions receipt dialog.
  */
-export function DonationPortal({ initialFund, initialAmount, lang, funds, fundLabels }: DonationPortalProps) {
+export function DonationPortal({ initialFund, initialAmount, lang, funds, fundLabels, payment }: DonationPortalProps) {
   const [fund, setFund] = useState<FundType>(initialFund);
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
 
@@ -42,6 +45,7 @@ export function DonationPortal({ initialFund, initialAmount, lang, funds, fundLa
           initialAmount={initialAmount}
           lang={lang}
           fundLabels={fundLabels}
+          payment={payment}
           onSuccess={setReceipt}
         />
         <ReceiptDialog receipt={receipt} lang={lang} fundLabels={fundLabels} onClose={() => setReceipt(null)} />

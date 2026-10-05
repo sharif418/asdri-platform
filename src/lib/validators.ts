@@ -68,6 +68,26 @@ export const donationSchema = z.object({
 });
 export type DonationInput = z.infer<typeof donationSchema>;
 
+/* ————————————— Donations: sandbox payment callback ————————————— */
+
+export const PAYMENT_CALLBACK_STATUS_VALUES = ["COMPLETED", "FAILED"] as const;
+
+/** Signed sandbox-gateway callback body (signature = HMAC-SHA256 over
+ *  `${trackingCode}|${status}|${providerTxnId ?? ""}` with the callback secret). */
+export const paymentCallbackSchema = z.object({
+  trackingCode: z
+    .string()
+    .trim()
+    .regex(/^DN-\d{4}-\d{6}$/, "সঠিক ট্র্যাকিং কোড দিন (যেমন: DN-2026-000001)"),
+  status: z.enum(PAYMENT_CALLBACK_STATUS_VALUES),
+  providerTxnId: z.string().trim().max(120).optional().or(z.literal("")),
+  signature: z
+    .string()
+    .trim()
+    .regex(/^[0-9a-fA-F]{64}$/, "সঠিক স্বাক্ষর (hex) দিন"),
+});
+export type PaymentCallbackInput = z.infer<typeof paymentCallbackSchema>;
+
 /* ————————————— Auth ————————————— */
 
 export const loginSchema = z.object({
