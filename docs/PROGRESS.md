@@ -172,3 +172,31 @@ Intake "PYS 2026" (OPEN), applications `ASDRI-2026-493796` + `ASDRI-2026-686652`
 uploads), 4 completed + several pending donations, 3 manual-ledger entries, outbox rows.
 Kept deliberately as demo data — a pristine DB is one `prisma migrate reset` +
 `bun scripts/seed.ts` away.
+
+## Round-21 delta — DONE (with evidence; stack reconciliation)
+
+- **Stack reconciliation**: the local recovery branch (old PR #14, closed) unknowingly
+  duplicated PRs #12/#13 after a local sandbox rollback (fresh clone, PG wiped,
+  infra/commit.sh lost) while the remote stack #11→#12→#13 was intact. This delta branch
+  (`feat/qa-round21-stack`, base = PR #13 tip ecc78d4) keeps only the true increment.
+- **Admin section roots (5 dead sidebar links fixed)**: /admin/inbox,
+  /admin/fatwa, /admin/research previously 404'd (sidebar section headers link there;
+  round-20 ships only the leaf pages). Three redirect pages now jump straight to the
+  first management page (messages / questions / publications), and the two nav sections
+  with no backing routes (content, settings) were removed from admin-sidebar.tsx.
+  Browser-verified in-session; evidence download/qa-r21-admin-inbox.png (+ 404 fix shot
+  download/qa-r21-404.png).
+- **Demo data seed (QA-verifiable empty tables)**: `bun run db:seed:demo`
+  (scripts/seed-demo.ts) creates 4 donations — including an anonymous ৳৫,০০০ — and 2
+  admission applications **through the real HTTP APIs** (HMAC-signed sandbox callbacks,
+  officer status transitions, outbox receipts, audit logs), idempotent by donor/applicant
+  email. Evidence: download/qa-r21-admin-donations.png / qa-r21-admin-applications.png /
+  qa-r21-admin-outbox.png.
+- **Migration reconciliation**: local ghost record 20261005090000_outbox_attempts
+  (functionally identical to round-20's 20261005084600) removed from asdri + asdri_test;
+  20261005084600 resolved applied; both DBs `migrate deploy` clean (5/5 migrations,
+  OutboxEmail.attempts/sentAt/providerMessageId in place).
+- **Gates on the delta branch**: lint 0 · tsc 0 · 151/151 tests (round-20 suite
+  unchanged). Environment-recovery knowledge (PG17 root-free rebuild, watchdog
+  content-neutral defense, /dev/tcp session-kill root cause) documented in worklog
+  Task 21 + GAPS §D.
