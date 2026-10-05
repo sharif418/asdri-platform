@@ -145,3 +145,37 @@ Intake "PYS 2026" (OPEN), applications `ASDRI-2026-493796` + `ASDRI-2026-686652`
 uploads), 4 completed + several pending donations, 3 manual-ledger entries, outbox rows.
 Kept deliberately as demo data — a pristine DB is one `prisma migrate reset` +
 `bun scripts/seed.ts` away.
+
+## 8. Round-21 — DONE (sandbox rollback recovery + QA fixes + feature batch; branch `feat/qa-round19`, PR #14 → `feat/search-engine-2`)
+
+> Environment first: the sandbox was rolled back to round-18 state (PG 17 wiped, .env on SQLite,
+> infra/commit.sh gone). Full root-free rebuild completed (PG 17 at /home/z/pglocal:5433, 3
+> migrations re-deployed, content re-seeded, 142 tests green) before any new work.
+
+- **Round-19 recovery — DONE** (`bfd06e7`): the branch lost to the rollback was rebuilt from the
+  /tmp/my-project snapshot — AdminPager rollout (notices/questions/projects), SMTP delivery driver
+  (env-gated `MAIL_DRIVER=smtp`, `sentAt`+`providerMessageId` migration), sticky admin table
+  headers. Validated by the `.pending_clone.json` sync record; 144/144 tests after restore.
+- **QA-found bugs fixed — DONE** (`be6a216`): soft-404 (HTTP 200 + branded UI) → **real 404** via
+  `experimental.globalNotFound` + `global-not-found.tsx`, (site)/loading.tsx status-swallow and
+  the redundant catch-all deleted (verified: `curl -o /dev/null -w %{http_code}` → 404 on a bogus
+  path, branded page renders). Admin sidebar dead links repaired: /admin/inbox, /admin/fatwa,
+  /admin/research section roots redirect to their first child; content/settings nav items
+  removed; /admin/login → /login (307).
+- **Outbox retry — DONE** (`1eb07d3`): `OutboxEmail.attempts` column (migration), retry API
+  action (`PATCH action:"retry"`), admin পুনরায় পাঠান button + চেষ্টা column. Browser-verified
+  end-to-end: toast "চেষ্টা সংখ্যা: ১", row flips কিউতে→পাঠানো. 8 new integration tests.
+- **RSS + demo data — DONE** (`fd332a1`, `ba076e0`): RSS feed isPublished-only + footer RSS ফিড
+  link; `scripts/seed-demo.ts` (`db:seed:demo`) creates 4 donations (incl. anonymous ৳৫,০০০) +
+  2 applications through the **real APIs** (idempotent) — verified visible in admin tables.
+- **Bangla clarification content — DONE** (`8f78a22`): 6 new সংশয় নিরসন articles (blog grid
+  5→11 posts) across clar-scientism/secularism/atheism/feminism/orientalism/lgbtq-gender; gold
+  topic-filter chips (`?topic=clar-*`, server-side, aria-current, counts) verified live-filtering
+  in the browser; clarification page topic blocks now cross-link with real DB article counts.
+- **SEO/a11y — DONE** (`fd5fd0c`, `19bef60`): bilingual `generateMetadata` (bn+en titles/
+  descriptions + hreflang) on support/notices/login/checkout; localized aria-labels
+  (mainNav/mobileNav/openMenu/backToTop); campaign লক্ষ্য: label collapse fix.
+- **Gates — DONE**: lint 0 · tsc 0 · **152/152 tests** (was 144; +8 outbox-retry integration
+  tests; 573 expects, 12 files) · dev server 200 · 10/10 browser QA checks pass with 0 console
+  errors (mobile 390px no horizontal scroll, sticky footer) · 14 QA screenshots
+  (download/qa-r21-*.png). PR #14 opened — never self-merged.
