@@ -48,6 +48,8 @@ export const CURRENCY_VALUES = ["BDT", "USD", "EUR", "SAR"] as const;
 
 export const donationSchema = z.object({
   fundType: z.enum(FUND_TYPE_VALUES),
+  // Optional campaign targeting — resolved to campaignId by the API.
+  campaignSlug: z.string().trim().min(1).max(120).optional().or(z.literal("")),
   amount: z
     .number({ message: "সঠিক পরিমাণ লিখুন" })
     .min(10, "সর্বনিম্ন ১০ টাকা")

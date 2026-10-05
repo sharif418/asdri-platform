@@ -42,14 +42,25 @@ export function ApplicationOfficerPanel({
   const [saving, setSaving] = useState(false);
   const [noting, setNoting] = useState(false);
 
-  const noteOnlyPossible = OFFICER_STATUSES.includes(currentStatus);
-
   async function patch(payload: Record<string, unknown>): Promise<boolean> {
     const res = await fetch(`/api/admin/applications/${applicationId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", "x-csrf-token": csrfToken() },
       body: JSON.stringify(payload),
     });
+    return readOk(res);
+  }
+
+  async function postNote(payload: Record<string, unknown>): Promise<boolean> {
+    const res = await fetch(`/api/admin/applications/${applicationId}/events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-csrf-token": csrfToken() },
+      body: JSON.stringify(payload),
+    });
+    return readOk(res);
+  }
+
+  async function readOk(res: Response): Promise<boolean> {
     const json = (await res.json().catch(() => null)) as { ok?: boolean; error?: string; fields?: Record<string, string> } | null;
     if (!res.ok || !json?.ok) {
       const firstField = json?.fields ? Object.values(json.fields)[0] : null;
@@ -93,7 +104,8 @@ export function ApplicationOfficerPanel({
     }
     setNoting(true);
     try {
-      const ok = await patch({ status: currentStatus, note: note.trim(), ...(reviewNote.trim() ? { reviewNote: reviewNote.trim() } : {}) });
+      // Note-only events work at ANY status (unlike the status PATCH).
+      const ok = await postNote({ note: note.trim(), ...(reviewNote.trim() ? { reviewNote: reviewNote.trim() } : {}) });
       if (ok) {
         toast({ title: "মন্তব্য যোগ হয়েছে — প্রক্রিয়ার ধাপে দেখা যাবে" });
         setNote("");
@@ -181,21 +193,15 @@ export function ApplicationOfficerPanel({
           {saving ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <Save aria-hidden className="h-4 w-4" />}
           স্ট্যাটাস বদলান
         </button>
-        {noteOnlyPossible ? (
-          <button
-            type="button"
-            onClick={onNoteOnly}
-            disabled={noting}
-            className="inline-flex min-h-11 items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-secondary disabled:opacity-50"
-          >
-            {noting ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <MessageSquarePlus aria-hidden className="h-4 w-4" />}
-            শুধু মন্তব্য যোগ
-          </button>
-        ) : (
-          <span className="text-[11.5px] text-muted-foreground">
-            এই স্ট্যাসে শুধু-মন্তব্য যোগ করতে হলে আগে স্ট্যাটাস বদলান।
-          </span>
-        )}
+        <button
+          type="button"
+          onClick={onNoteOnly}
+          disabled={noting}
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-secondary disabled:opacity-50"
+        >
+          {noting ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <MessageSquarePlus aria-hidden className="h-4 w-4" />}
+          শুধু মন্তব্য যোগ
+        </button>
       </div>
 
       <div className="mt-3">

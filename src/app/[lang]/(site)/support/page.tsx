@@ -15,6 +15,8 @@ import { FUND_TYPES } from "@/types";
 import type { FundType } from "@/types";
 import { getFunds, getFundLabels } from "@/lib/content/funds";
 import { getSiteConfig } from "@/lib/content/site";
+import { db } from "@/lib/db";
+import type { CampaignOption } from "@/components/donations/donation-types";
 
 export const metadata: Metadata = {
   title: "সাপোর্ট করুন — অনুদান পোর্টাল",
@@ -24,7 +26,23 @@ export const metadata: Metadata = {
 
 interface SupportPageProps {
   params: Promise<{ lang: Lang }>;
-  searchParams: Promise<{ fund?: string; amount?: string }>;
+  searchParams: Promise<{ fund?: string; amount?: string; campaign?: string | string[] }>;
+}
+
+/** Open, targetable campaigns for the donation form (?campaign=slug preselects). */
+async function getTargetableCampaigns(): Promise<CampaignOption[]> {
+  const now = new Date();
+  const rows = await db.campaign.findMany({
+    where: { isPublished: true, OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    select: { slug: true, titleBn: true, titleEn: true, fund: { select: { key: true } } },
+    take: 12,
+  });
+  return rows.map((row) => ({
+    slug: row.slug,
+    title: { bn: row.titleBn, en: row.titleEn },
+    fundKey: row.fund.key as FundType,
+  }));
 }
 
 /** Transparency pillars — how the institute safeguards every taka. */
@@ -80,8 +98,14 @@ export default async function SupportPage({ params, searchParams }: SupportPageP
     Number.isFinite(parsedAmount) && parsedAmount >= 10 && parsedAmount <= 10_000_000
       ? Math.round(parsedAmount)
       : null;
+  const campaignParam = Array.isArray(sp.campaign) ? sp.campaign[0] : sp.campaign;
 
-  const [funds, fundLabels, siteConfig] = await Promise.all([getFunds(), getFundLabels(), getSiteConfig()]);
+  const [funds, fundLabels, siteConfig, campaigns] = await Promise.all([
+    getFunds(),
+    getFundLabels(),
+    getSiteConfig(),
+    getTargetableCampaigns(),
+  ]);
   const payment: PaymentChannelInfo = siteConfig.payment;
 
   return (
@@ -100,7 +124,16 @@ export default async function SupportPage({ params, searchParams }: SupportPageP
       />
 
       {/* Fund selector + donation form + receipt dialog */}
-      <DonationPortal initialFund={fund} initialAmount={initialAmount} lang={lang} funds={funds} fundLabels={fundLabels} payment={payment} />
+      <DonationPortal
+        initialFund={fund}
+        initialAmount={initialAmount}
+        lang={lang}
+        funds={funds}
+        fundLabels={fundLabels}
+        payment={payment}
+        campaigns={campaigns}
+        initialCampaignSlug={campaignParam ?? null}
+      />
 
       {/* Live campaigns */}
       <CampaignsSection lang={lang} />
