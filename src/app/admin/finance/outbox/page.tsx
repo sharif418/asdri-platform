@@ -29,7 +29,7 @@ export default async function AdminOutboxPage({ searchParams }: { searchParams: 
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
-      select: { id: true, kind: true, to: true, subject: true, body: true, html: true, sentAt: true, error: true, createdAt: true },
+      select: { id: true, kind: true, to: true, subject: true, body: true, html: true, sentAt: true, error: true, attempts: true, createdAt: true },
     }),
     db.outboxEmail.groupBy({ by: ["kind"], _count: { _all: true } }),
   ]);
@@ -44,6 +44,7 @@ export default async function AdminOutboxPage({ searchParams }: { searchParams: 
     html: row.html,
     sentAt: row.sentAt?.toISOString() ?? null,
     error: row.error,
+    attempts: row.attempts,
     createdAt: row.createdAt.toISOString(),
   }));
 

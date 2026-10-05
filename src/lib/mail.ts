@@ -12,6 +12,9 @@ import { env } from "@/lib/env";
  * records the same row with sentAt / providerMessageId — a send failure
  * keeps the row unsent with the error message, so nothing is lost and a
  * later pass can retry. Callers never branch on the driver.
+ *
+ * Every real delivery attempt (queue-time smtp send, admin "retry" action)
+ * goes through deliverOutboxEmail and bumps the row's `attempts` counter.
  */
 
 export interface OutboxEmailInput {
@@ -44,34 +47,7 @@ async function smtpTransporter(): Promise<Transporter | null> {
 
 /** Queue one email: smtp driver attempts delivery first, log driver only persists. */
 export async function queueOutboxEmail(input: OutboxEmailInput): Promise<void> {
-  let sentAt: Date | null = null;
-  let providerMessageId: string | null = null;
-  let error: string | null = null;
-
-  if (env.mailDriver === "smtp") {
-    const transporter = await smtpTransporter();
-    if (!transporter) {
-      error = env.smtpUrl ? "smtp transporter unavailable" : "MAIL_DRIVER=smtp but SMTP_URL is unset";
-    } else {
-      try {
-        const info = await transporter.sendMail({
-          from: env.mailFrom,
-          to: input.to,
-          subject: input.subject,
-          text: input.body,
-          html: input.html,
-        });
-        sentAt = new Date();
-        providerMessageId = info.messageId ?? null;
-      } catch (cause) {
-        // Deliberately soft: the money path (donation callbacks) must never
-        // fail because a mail server hiccuped — the row stays retryable.
-        error = cause instanceof Error ? cause.message : String(cause);
-      }
-    }
-  }
-
-  await db.outboxEmail.create({
+  const email = await db.outboxEmail.create({
     data: {
       to: input.to,
       subject: input.subject,
@@ -79,11 +55,100 @@ export async function queueOutboxEmail(input: OutboxEmailInput): Promise<void> {
       html: input.html,
       kind: input.kind,
       payload: input.payload as Prisma.InputJsonValue | undefined,
-      sentAt,
-      providerMessageId,
-      error,
     },
   });
+  if (env.mailDriver === "smtp") {
+    // First delivery attempt at queue time — shared with the admin retry
+    // path. A send failure keeps the row unsent (error recorded, attempts
+    // counted) so a later retry can pick it up.
+    await deliverOutboxEmail(email.id);
+  }
+}
+
+/* ————————— delivery attempts (queue-time + admin retry) ————————— */
+
+/** Fields one delivery attempt needs — queue input or a stored row. */
+export interface DeliverableEmail {
+  to: string;
+  subject: string;
+  body: string;
+  html: string;
+}
+
+export interface DeliveryOutcome {
+  sentAt: Date | null;
+  providerMessageId: string | null;
+  error: string | null;
+}
+
+/** One delivery attempt through the active driver — no DB writes. */
+async function attemptDelivery(email: DeliverableEmail): Promise<DeliveryOutcome> {
+  if (env.mailDriver !== "smtp") {
+    // Log driver: the row itself is the delivery record, so an explicitly
+    // requested attempt (the admin retry) marks the message delivered.
+    // Queue-time never reaches this branch — queueOutboxEmail only calls
+    // delivery under the smtp driver.
+    return { sentAt: new Date(), providerMessageId: null, error: null };
+  }
+  const transporter = await smtpTransporter();
+  if (!transporter) {
+    return {
+      sentAt: null,
+      providerMessageId: null,
+      error: env.smtpUrl ? "smtp transporter unavailable" : "MAIL_DRIVER=smtp but SMTP_URL is unset",
+    };
+  }
+  try {
+    const info = await transporter.sendMail({
+      from: env.mailFrom,
+      to: email.to,
+      subject: email.subject,
+      text: email.body,
+      html: email.html,
+    });
+    return { sentAt: new Date(), providerMessageId: info.messageId ?? null, error: null };
+  } catch (cause) {
+    // Deliberately soft: the money path (donation callbacks) must never
+    // fail because a mail server hiccuped — the row stays retryable.
+    return {
+      sentAt: null,
+      providerMessageId: null,
+      error: cause instanceof Error ? cause.message : String(cause),
+    };
+  }
+}
+
+export type DeliverOutboxResult =
+  | { ok: false; reason: "not-found" | "already-sent" }
+  | { ok: true; sent: boolean; attempts: number; error: string | null };
+
+/**
+ * Attempt immediate delivery of one stored outbox email (the admin retry
+ * path). Every attempt increments `attempts`; success stamps sentAt and
+ * clears the last error, failure records the message and keeps the row
+ * retryable. Already-sent rows are refused — a retry must never
+ * double-deliver.
+ */
+export async function deliverOutboxEmail(id: string): Promise<DeliverOutboxResult> {
+  const email = await db.outboxEmail.findUnique({
+    where: { id },
+    select: { id: true, to: true, subject: true, body: true, html: true, sentAt: true },
+  });
+  if (!email) return { ok: false, reason: "not-found" };
+  if (email.sentAt) return { ok: false, reason: "already-sent" };
+
+  const outcome = await attemptDelivery(email);
+  const row = await db.outboxEmail.update({
+    where: { id },
+    data: {
+      attempts: { increment: 1 },
+      sentAt: outcome.sentAt,
+      providerMessageId: outcome.providerMessageId,
+      error: outcome.error,
+    },
+    select: { attempts: true },
+  });
+  return { ok: true, sent: outcome.sentAt !== null, attempts: row.attempts, error: outcome.error };
 }
 
 export interface DonationReceiptInput {

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Loader2, RefreshCw } from "lucide-react";
+import { Eye, Loader2, RefreshCw, Send } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -13,7 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { outboxKindLabel } from "@/lib/finance-labels";
-import { formatDate } from "@/lib/format";
+import { formatDate, toBnDigits } from "@/lib/format";
 
 export interface OutboxRowData {
   id: string;
@@ -24,6 +24,7 @@ export interface OutboxRowData {
   html: string;
   sentAt: string | null;
   error: string | null;
+  attempts: number;
   createdAt: string;
 }
 
@@ -81,7 +82,7 @@ function OutboxViewDialog({ email }: { email: OutboxRowData }) {
   );
 }
 
-/** Outbox email viewer — read-mostly table with a safe preview + re-queue. */
+/** Outbox email viewer — read-mostly table with a safe preview, re-queue and retry. */
 export function OutboxTable({ emails }: { emails: OutboxRowData[] }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -101,6 +102,41 @@ export function OutboxTable({ emails }: { emails: OutboxRowData[] }) {
         return;
       }
       toast({ title: "ইমেইল আবার কিউতে যোগ হয়েছে" });
+      router.refresh();
+    } catch {
+      toast({ title: "নেটওয়ার্ক সমস্যা — আবার চেষ্টা করুন", variant: "destructive" });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function onRetry(email: OutboxRowData) {
+    if (busyId) return;
+    setBusyId(email.id);
+    try {
+      const res = await fetch(`/api/admin/outbox/${email.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-csrf-token": csrfToken() },
+        body: JSON.stringify({ action: "retry" }),
+      });
+      const json = (await res.json()) as {
+        ok: boolean;
+        error?: string;
+        data?: { sent: boolean; attempts: number; error: string | null };
+      };
+      if (!res.ok || !json.ok) {
+        toast({ title: json.error ?? "পাঠানো যায়নি", variant: "destructive" });
+        return;
+      }
+      if (json.data?.sent) {
+        toast({ title: "ইমেইল পাঠানো হয়েছে", description: `চেষ্টা সংখ্যা: ${toBnDigits(json.data.attempts)}` });
+      } else {
+        toast({
+          title: "পাঠানো যায়নি — পরে আবার চেষ্টা করুন",
+          description: json.data?.error ?? undefined,
+          variant: "destructive",
+        });
+      }
       router.refresh();
     } catch {
       toast({ title: "নেটওয়ার্ক সমস্যা — আবার চেষ্টা করুন", variant: "destructive" });
@@ -129,6 +165,7 @@ export function OutboxTable({ emails }: { emails: OutboxRowData[] }) {
             <th className="px-4 py-3 font-semibold">প্রাপক ও বিষয়</th>
             <th className="hidden px-4 py-3 font-semibold md:table-cell">তৈরি</th>
             <th className="px-4 py-3 font-semibold">অবস্থা</th>
+            <th className="hidden px-4 py-3 font-semibold sm:table-cell">চেষ্টা</th>
             <th className="px-4 py-3 text-right font-semibold">অ্যাকশন</th>
           </tr>
         </thead>
@@ -160,6 +197,7 @@ export function OutboxTable({ emails }: { emails: OutboxRowData[] }) {
                     <span className="rounded-full bg-gold/15 px-2 py-0.5 text-[10.5px] font-bold text-gold">কিউতে</span>
                   )}
                 </td>
+                <td className="hidden px-4 py-3 text-[12px] text-muted-foreground sm:table-cell">{toBnDigits(email.attempts)}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-1.5">
                     {busy ? (
@@ -167,6 +205,17 @@ export function OutboxTable({ emails }: { emails: OutboxRowData[] }) {
                     ) : (
                       <>
                         <OutboxViewDialog email={email} />
+                        {!email.sentAt && (
+                          <button
+                            type="button"
+                            onClick={() => onRetry(email)}
+                            aria-label={`${email.subject} পুনরায় পাঠান`}
+                            title="পুনরায় পাঠান (এখনই একবার ডেলিভারি চেষ্টা)"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                          >
+                            <Send aria-hidden className="h-4 w-4" />
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => onResend(email)}

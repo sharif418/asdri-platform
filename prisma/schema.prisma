@@ -971,7 +971,8 @@ model OutboxEmail {
   payload          Json? // template data
   sentAt           DateTime?
   providerMessageId String? // SMTP server's message id when actually delivered
-  error            String?
+  error            String? // last delivery failure message
+  attempts         Int       @default(0) // delivery attempts (queue-time + admin retries)
   createdAt        DateTime @default(now())
 
   @@index([kind, createdAt(sort: Desc)])
