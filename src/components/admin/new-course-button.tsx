@@ -79,7 +79,6 @@ export function NewCourseButton() {
             <input
               value={titleBn}
               onChange={(e) => setTitleBn(e.target.value)}
-              dir="rtl"
               placeholder="সার্টিফিকেট কোর্স ইন ইসলামিক স্টাডিজ"
               className="mt-1 w-full rounded-lg border bg-background px-3 py-2 font-heading text-[15px]"
             />

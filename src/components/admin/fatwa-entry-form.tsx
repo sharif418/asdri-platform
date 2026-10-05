@@ -11,6 +11,7 @@ import { BilingualField, LanguageStatus } from "@/components/admin/ui/bilingual-
 import { RichTextEditor } from "@/components/admin/ui/rich-text-editor";
 import { sanitizeRichTextPreview } from "@/lib/sanitize";
 import { slugifyTitle } from "@/lib/slug";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 
 export interface FatwaEntryFormValues {
   id?: string;
@@ -102,7 +103,7 @@ export function FatwaEntryForm({
 
   async function onDelete() {
     if (deleting || mode !== "edit" || !values.id) return;
-    if (!window.confirm("ফতোয়াটি স্থায়ীভাবে মুছে ফেলা হবে (ব্যাংক থেকেই সরে যাবে)। নিশ্চিত?")) return;
+    if (!(await adminConfirm({ title: "ফতোয়াটি স্থায়ীভাবে মুছে ফেলা হবে (ব্যাংক থেকেই সরে যাবে)। নিশ্চিত?" }))) return;
     setDeleting(true);
     try {
       const res = await fetch(`/api/admin/fatwa-entries/${values.id}`, {
@@ -133,7 +134,6 @@ export function FatwaEntryForm({
                   onChange={(e) => set("questionBn", e.target.value)}
                   rows={3}
                   placeholder="বাংলায় প্রশ্নটি লিখুন"
-                  dir="rtl"
                   required
                   className="w-full resize-y rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
                 />
@@ -154,7 +154,7 @@ export function FatwaEntryForm({
         <BilingualField label="উত্তর (ফতোয়া)" hint="প্রামাণ্য দলিলসহ গবেষণা বোর্ডের উত্তর — রিচ টেক্সট।">
           {(active) =>
             active === "bn" ? (
-              <RichTextEditor value={values.answerBn} onChange={(html) => set("answerBn", html)} placeholder="উত্তর লিখুন…" dir="rtl" minHeight={220} />
+              <RichTextEditor value={values.answerBn} onChange={(html) => set("answerBn", html)} placeholder="উত্তর লিখুন…" minHeight={220} />
             ) : (
               <RichTextEditor value={values.answerEn} onChange={(html) => set("answerEn", html)} placeholder="Write the answer…" minHeight={220} />
             )
@@ -184,7 +184,6 @@ export function FatwaEntryForm({
           <input
             value={values.answeredBy}
             onChange={(e) => set("answeredBy", e.target.value)}
-            dir="rtl"
             placeholder="যেমন: গবেষণা বোর্ড, আস-সুন্নাহ ইনস্টিটিউট"
             className="mt-1.5 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:border-primary/50"
           />

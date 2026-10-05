@@ -12,6 +12,7 @@ import { RichTextEditor } from "@/components/admin/ui/rich-text-editor";
 import { MediaPicker, type PickedMedia } from "@/components/admin/ui/media-picker";
 import { sanitizeRichTextPreview } from "@/lib/sanitize";
 import { slugifyTitle } from "@/lib/slug";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 
 export interface PersonFormValues {
   id?: string;
@@ -104,7 +105,7 @@ export function PersonForm({ initial, teams, mode }: { initial: PersonFormValues
 
   async function onDelete() {
     if (deleting || mode !== "edit" || !values.id) return;
-    if (!window.confirm(`'${values.nameBn}' প্রোফাইলটি স্থায়ীভাবে মুছে ফেলা হবে। নিশ্চিত?`)) return;
+    if (!(await adminConfirm({ title: `'${values.nameBn}' প্রোফাইলটি স্থায়ীভাবে মুছে ফেলা হবে। নিশ্চিত?` }))) return;
     setDeleting(true);
     try {
       const res = await fetch(`/api/admin/people/${values.id}`, {
@@ -133,7 +134,6 @@ export function PersonForm({ initial, teams, mode }: { initial: PersonFormValues
                 value={values.nameBn}
                 onChange={(e) => set("nameBn", e.target.value)}
                 placeholder="বাংলা নাম"
-                dir="rtl"
                 required
                 className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
               />
@@ -155,7 +155,6 @@ export function PersonForm({ initial, teams, mode }: { initial: PersonFormValues
                 value={values.titleBn}
                 onChange={(e) => set("titleBn", e.target.value)}
                 placeholder="উস্তাজ, ফিকহ"
-                dir="rtl"
                 className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-sm outline-none focus:border-primary/50"
               />
             ) : (
@@ -176,7 +175,6 @@ export function PersonForm({ initial, teams, mode }: { initial: PersonFormValues
                 value={values.roleTitleBn}
                 onChange={(e) => set("roleTitleBn", e.target.value)}
                 placeholder="সিনিয়র লেকচারার, ফিকহ বিভাগ"
-                dir="rtl"
                 className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-sm outline-none focus:border-primary/50"
               />
             ) : (
@@ -197,7 +195,6 @@ export function PersonForm({ initial, teams, mode }: { initial: PersonFormValues
                 value={values.subjectsBn}
                 onChange={(e) => set("subjectsBn", e.target.value)}
                 placeholder="উসুলুল ফিকহ, ফিকহ, আরবি"
-                dir="rtl"
                 className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-sm outline-none focus:border-primary/50"
               />
             ) : (
@@ -214,7 +211,7 @@ export function PersonForm({ initial, teams, mode }: { initial: PersonFormValues
         <BilingualField label="জীবনবৃত্তান্ত">
           {(active) =>
             active === "bn" ? (
-              <RichTextEditor value={values.bioBn} onChange={(html) => set("bioBn", html)} placeholder="শিক্ষা ও অভিজ্ঞতা…" dir="rtl" minHeight={160} />
+              <RichTextEditor value={values.bioBn} onChange={(html) => set("bioBn", html)} placeholder="শিক্ষা ও অভিজ্ঞতা…" minHeight={160} />
             ) : (
               <RichTextEditor value={values.bioEn} onChange={(html) => set("bioEn", html)} placeholder="Education & experience…" minHeight={160} />
             )

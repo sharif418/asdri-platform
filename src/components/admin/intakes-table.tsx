@@ -10,6 +10,7 @@ import { IntakeDialog, intakeFormInitial, type IntakeCourseOption } from "@/comp
 import { intakeStatusChip, intakeStatusLabel } from "@/lib/admission-labels";
 import { formatDate, toBnDigits } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 
 export interface IntakeRowData {
   id: string;
@@ -90,7 +91,7 @@ export function IntakesTable({ intakes, courses }: { intakes: IntakeRowData[]; c
 
   async function onDelete(intake: IntakeRowData) {
     if (busyId) return;
-    if (!window.confirm(`${intake.courseCode} ${intake.year} ইনটেকটি মুছে ফেলা হবে। নিশ্চিত?`)) return;
+    if (!(await adminConfirm({ title: `${intake.courseCode} ${intake.year} ইনটেকটি মুছে ফেলা হবে। নিশ্চিত?` }))) return;
     setBusyId(intake.id);
     try {
       const res = await fetch(`/api/admin/intakes/${intake.id}`, {
@@ -147,7 +148,7 @@ export function IntakesTable({ intakes, courses }: { intakes: IntakeRowData[]; c
   }
 
   return (
-    <div className="overflow-clip rounded-2xl border bg-card shadow-sm">
+    <div className="overflow-x-auto overflow-y-clip rounded-2xl border bg-card shadow-sm">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-secondary/30 text-left text-[11.5px] uppercase tracking-wide text-muted-foreground">

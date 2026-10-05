@@ -75,7 +75,7 @@ export function VideoTheater({ videos, lang }: VideoTheaterProps) {
           )}
         >
           {lang === "bn" ? "সব প্লেলিস্ট" : "All playlists"}
-          <span className="ml-1.5 opacity-70">{toBnDigits(videos.length)}</span>
+          <span className="ml-1.5 opacity-70">{lang === "bn" ? toBnDigits(videos.length) : videos.length}</span>
         </button>
         {playlists.map((key) => {
           const label = pick(videos.find((v) => v.playlist.bn === key)?.playlist ?? { bn: key, en: key }, lang);
@@ -96,7 +96,7 @@ export function VideoTheater({ videos, lang }: VideoTheaterProps) {
               )}
             >
               {label}
-              <span className="ml-1.5 opacity-70">{toBnDigits(count)}</span>
+              <span className="ml-1.5 opacity-70">{lang === "bn" ? toBnDigits(count) : count}</span>
             </button>
           );
         })}

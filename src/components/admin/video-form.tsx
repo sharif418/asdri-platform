@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { BilingualField, LanguageStatus } from "@/components/admin/ui/bilingual-field";
 import { youtubeThumbUrl } from "@/lib/youtube";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 
 export interface VideoFormValues {
   id?: string;
@@ -89,7 +90,7 @@ export function VideoForm({
 
   async function onDelete() {
     if (deleting || mode !== "edit" || !values.id) return;
-    if (!window.confirm(`'${values.titleBn}' ভিডিওটি তালিকা থেকে মুছে ফেলা হবে। নিশ্চিত?`)) return;
+    if (!(await adminConfirm({ title: `'${values.titleBn}' ভিডিওটি তালিকা থেকে মুছে ফেলা হবে। নিশ্চিত?` }))) return;
     setDeleting(true);
     try {
       const res = await fetch(`/api/admin/videos/${values.id}`, { method: "DELETE", headers: { "x-csrf-token": csrfToken() } });
@@ -115,7 +116,6 @@ export function VideoForm({
                 value={values.titleBn}
                 onChange={(e) => set("titleBn", e.target.value)}
                 placeholder="ভিডিওর বাংলা শিরোনাম"
-                dir="rtl"
                 required
                 className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
               />
@@ -138,7 +138,6 @@ export function VideoForm({
                 onChange={(e) => set("descriptionBn", e.target.value)}
                 rows={3}
                 placeholder="১–২ লাইনের বিবরণ"
-                dir="rtl"
                 className="w-full resize-y rounded-lg border bg-card px-3.5 py-2.5 text-sm outline-none focus:border-primary/50"
               />
             ) : (

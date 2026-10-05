@@ -137,7 +137,7 @@ export function FundDialog({
           <div className="grid gap-3.5 sm:grid-cols-2">
             <div>
               <label className="text-sm font-semibold">নাম (বাংলা) *</label>
-              <input value={values.nameBn} onChange={(e) => set("nameBn", e.target.value)} dir="rtl" className={inputClass} />
+              <input value={values.nameBn} onChange={(e) => set("nameBn", e.target.value)} className={inputClass} />
             </div>
             <div>
               <label className="text-sm font-semibold">Name (English)</label>
@@ -146,7 +146,7 @@ export function FundDialog({
           </div>
           <div>
             <label className="text-sm font-semibold">বর্ণনা (বাংলা)</label>
-            <textarea value={values.descriptionBn} onChange={(e) => set("descriptionBn", e.target.value)} rows={2} dir="rtl" className={inputClass} />
+            <textarea value={values.descriptionBn} onChange={(e) => set("descriptionBn", e.target.value)} rows={2} className={inputClass} />
           </div>
           <div>
             <label className="text-sm font-semibold">Description (English)</label>

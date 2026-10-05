@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import { formatNumber } from "@/lib/format";
 import { MediaPicker, type PickedMedia } from "@/components/admin/ui/media-picker";
 import { cn } from "@/lib/utils";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 
 export interface AlbumImageRow {
   id: string;
@@ -119,7 +120,7 @@ export function AlbumImagesManager({ albumId, images }: { albumId: string; image
 
   async function remove(row: AlbumImageRow) {
     if (busyId) return;
-    if (!window.confirm(`'${row.filename}' ছবিটি অ্যালবাম থেকে সরানো হবে (মিডিয়া লাইব্রেরিতে থাকবে)। নিশ্চিত?`)) return;
+    if (!(await adminConfirm({ title: `'${row.filename}' ছবিটি অ্যালবাম থেকে সরানো হবে (মিডিয়া লাইব্রেরিতে থাকবে)। নিশ্চিত?` }))) return;
     setBusyId(row.id);
     try {
       const res = await fetch(`/api/admin/album-images/${row.id}`, {
@@ -198,7 +199,6 @@ export function AlbumImagesManager({ albumId, images }: { albumId: string; image
                     value={caption.bn}
                     onChange={(e) => patchCaption(row.id, { bn: e.target.value })}
                     placeholder="ক্যাপশন (বাংলা)"
-                    dir="rtl"
                     aria-label={`${row.filename} — বাংলা ক্যাপশন`}
                     className="w-full rounded-lg border bg-card px-2.5 py-1.5 text-[12px] outline-none focus:border-primary/50"
                   />

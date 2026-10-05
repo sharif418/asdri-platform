@@ -132,7 +132,6 @@ export function LedgerDialog({
             <input
               value={values.description}
               onChange={(e) => set("description", e.target.value)}
-              dir="rtl"
               maxLength={300}
               placeholder="বিদ্যুৎ বিল — অক্টোবর"
               className={inputClass}

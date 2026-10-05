@@ -89,7 +89,7 @@ export function GalleryExplorer({ photos, lang }: GalleryExplorerProps) {
         >
           <Images aria-hidden className="h-3.5 w-3.5" />
           {lang === "bn" ? "সব ছবি" : "All photos"}
-          <span className="ml-0.5 opacity-70">{toBnDigits(photos.length)}</span>
+          <span className="ml-0.5 opacity-70">{lang === "bn" ? toBnDigits(photos.length) : photos.length}</span>
         </button>
         {albums.map((key) => {
           const label = pick(photos.find((p) => p.album.bn === key)?.album ?? { bn: key, en: key }, lang);
@@ -112,7 +112,7 @@ export function GalleryExplorer({ photos, lang }: GalleryExplorerProps) {
               )}
             >
               {label}
-              <span className="ml-1.5 opacity-70">{toBnDigits(count)}</span>
+              <span className="ml-1.5 opacity-70">{lang === "bn" ? toBnDigits(count) : count}</span>
             </button>
           );
         })}
@@ -188,7 +188,7 @@ export function GalleryExplorer({ photos, lang }: GalleryExplorerProps) {
 
               <span className="absolute left-4 top-4 rounded-full bg-black/70 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
                 {lang === "bn"
-                  ? `${toBnDigits((openIndex ?? 0) + 1)} / ${toBnDigits(filtered.length)}`
+                  ? `${lang === "bn" ? toBnDigits((openIndex ?? 0) + 1) : (openIndex ?? 0) + 1} / ${lang === "bn" ? toBnDigits(filtered.length) : filtered.length}`
                   : `${(openIndex ?? 0) + 1} / ${filtered.length}`}
               </span>
             </div>

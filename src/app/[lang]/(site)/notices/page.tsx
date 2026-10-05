@@ -191,7 +191,7 @@ export default async function NoticesPage({
           en: "Admission, recruitment, academic, and general — every official institute circular in one chronological board, with full details and attachments one click away.",
         }}
         meta={{
-          textBn: `মোট ${toBnDigits(total)} টি নোটিশ`,
+          textBn: `মোট ${lang === "bn" ? toBnDigits(total) : total} টি নোটিশ`,
           textEn: `${total} notices`,
         }}
         breadcrumb={[{ label: { bn: "নোটিশ বোর্ড", en: "Notices" } }]}
@@ -249,7 +249,7 @@ export default async function NoticesPage({
           <div className="mx-auto mb-6 flex max-w-3xl flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground" role="status">
               {lang === "bn"
-                ? `${toBnDigits(total)} টি নোটিশ পাওয়া গেছে${q ? ` — “${q}” এর জন্য` : ""}`
+                ? `${lang === "bn" ? toBnDigits(total) : total} টি নোটিশ পাওয়া গেছে${q ? ` — “${q}” এর জন্য` : ""}`
                 : `${total} notices found${q ? ` for “${q}”` : ""}`}
             </p>
             <p className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground/80">
@@ -296,7 +296,7 @@ export default async function NoticesPage({
                     </h2>
                     <span aria-hidden className="h-px flex-1 bg-gold/30" />
                     <span className="text-[11px] font-semibold text-gold/80">
-                      {toBnDigits(pinnedNotices.length)} {lang === "bn" ? "টি" : ""}
+                      {lang === "bn" ? toBnDigits(pinnedNotices.length) : pinnedNotices.length} {lang === "bn" ? "টি" : ""}
                     </span>
                   </div>
                   <div className="space-y-3">
@@ -316,7 +316,7 @@ export default async function NoticesPage({
                     </h2>
                     <span aria-hidden className="h-px flex-1 bg-border" />
                     <span className="text-[11px] text-muted-foreground/70">
-                      {toBnDigits(group.items.length)} {lang === "bn" ? "টি" : ""}
+                      {lang === "bn" ? toBnDigits(group.items.length) : group.items.length} {lang === "bn" ? "টি" : ""}
                     </span>
                   </div>
                   <div className="space-y-3">

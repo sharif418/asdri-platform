@@ -56,7 +56,7 @@ export default async function MediaHubPage({ params }: { params: Promise<{ lang:
         bn: "সমকালীন ফিতনা, দর্শন ও গবেষণা-পদ্ধতি বিষয়ে ইনস্টিটিউটের গবেষকদের লেখা গভীর প্রামাণ্য প্রবন্ধ।",
         en: "In-depth evidenced essays by the institute's researchers on contemporary fitnah, philosophy, and methodology.",
       },
-      stat: toBnDigits(blogArticles.length),
+      stat: lang === "bn" ? toBnDigits(blogArticles.length) : String(blogArticles.length),
       statLabel: { bn: "টি প্রকাশিত প্রবন্ধ", en: "published essays" },
       images: [latest?.cover, blogArticles[1]?.cover, blogArticles[3]?.cover].filter((src): src is string => Boolean(src)),
       alt: { bn: "সর্বশেষ ব্লগ প্রবন্ধের প্রচ্ছদ", en: "Latest blog article covers" },
@@ -71,7 +71,7 @@ export default async function MediaHubPage({ params }: { params: Promise<{ lang:
         bn: "সংক্ষিপ্ত সংশয় নিরসন, পডকাস্ট সিরিজ, লেকচার ও খুতবা এবং সেমিনার রেকর্ডিংস।",
         en: "Quick doubt-resolution clips, podcast series, lectures & khutbah, and seminar recordings.",
       },
-      stat: toBnDigits(videoCount),
+      stat: lang === "bn" ? toBnDigits(videoCount) : String(videoCount),
       statLabel: { bn: "টি প্লেলিস্ট ভিডিও", en: "playlist videos" },
       images: [videos[0]?.thumbnail, videos[2]?.thumbnail, videos[3]?.thumbnail].filter((src): src is string => Boolean(src)),
       alt: { bn: "ভিডিও থাম্বনেইল", en: "Video thumbnails" },
@@ -86,7 +86,7 @@ export default async function MediaHubPage({ params }: { params: Promise<{ lang:
         bn: "আসন্ন অনুষ্ঠানের ঘোষণা, কাউন্টডাউন ও অতীত ইভেন্টের পূর্ণাঙ্গ প্রতিবেদন।",
         en: "Upcoming event announcements with countdown and full reports of past events.",
       },
-      stat: toBnDigits(upcomingCount),
+      stat: lang === "bn" ? toBnDigits(upcomingCount) : String(upcomingCount),
       statLabel: { bn: "টি আসন্ন ইভেন্ট", en: "upcoming events" },
       images: [newsItems[1]?.cover, newsItems[3]?.cover, newsItems[0]?.cover].filter((src): src is string => Boolean(src)),
       alt: { bn: "ইভেন্টের প্রচ্ছদ চিত্র", en: "Event cover images" },
@@ -101,7 +101,7 @@ export default async function MediaHubPage({ params }: { params: Promise<{ lang:
         bn: "ক্যাম্পাস, সেমিনার, ফিল্ডওয়ার্ক ও প্রশিক্ষণের মুহূর্তগুলো — অ্যালবামভিত্তিক সাজানো ফটো সংগ্রহ।",
         en: "Campus, seminars, fieldwork, and training moments — organized photo albums.",
       },
-      stat: toBnDigits(galleryCount),
+      stat: lang === "bn" ? toBnDigits(galleryCount) : String(galleryCount),
       statLabel: { bn: "টি ফটো", en: "photos" },
       images: [galleryPhotos[2]?.src, galleryPhotos[1]?.src, galleryPhotos[0]?.src].filter((src): src is string => Boolean(src)),
       alt: { bn: "গ্যালারি ফটো", en: "Gallery photos" },
@@ -262,7 +262,7 @@ export default async function MediaHubPage({ params }: { params: Promise<{ lang:
                     </p>
                     <div className="mt-auto flex items-center gap-2 pt-3 text-[12px] text-muted-foreground">
                       <Clock3 aria-hidden className="h-3.5 w-3.5 text-gold" />
-                      {toBnDigits(article.readMinutes)} {lang === "bn" ? "মিনিট" : "min"} · {formatDate(article.publishedAt, lang)}
+                      {lang === "bn" ? toBnDigits(article.readMinutes) : article.readMinutes} {lang === "bn" ? "মিনিট" : "min"} · {formatDate(article.publishedAt, lang)}
                     </div>
                   </Link>
                 </RevealItem>

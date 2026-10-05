@@ -7,6 +7,7 @@ import type { DonationStatus } from "@prisma/client";
 import { toast } from "@/hooks/use-toast";
 import { donationStatusChip, donationStatusLabel } from "@/lib/finance-labels";
 import { formatDate, formatTaka } from "@/lib/format";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 
 export interface DonationRowData {
   id: string;
@@ -42,7 +43,7 @@ export function DonationsTable({ donations }: { donations: DonationRowData[] }) 
 
   async function patch(donation: DonationRowData, body: Record<string, unknown>, confirmText: string | null, successTitle: string) {
     if (busyId) return;
-    if (confirmText && !window.confirm(confirmText)) return;
+    if (confirmText && !(await adminConfirm({ title: confirmText }))) return;
     setBusyId(donation.id);
     try {
       const res = await fetch(`/api/admin/donations/${donation.id}`, {
@@ -65,7 +66,7 @@ export function DonationsTable({ donations }: { donations: DonationRowData[] }) 
   }
 
   return (
-    <div className="overflow-clip rounded-2xl border bg-card shadow-sm">
+    <div className="overflow-x-auto overflow-y-clip rounded-2xl border bg-card shadow-sm">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-secondary/30 text-left text-[11.5px] uppercase tracking-wide text-muted-foreground">

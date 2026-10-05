@@ -95,7 +95,9 @@ function TopUtilityBar() {
             className="hidden items-center gap-1.5 transition-colors hover:text-gold sm:inline-flex"
           >
             <Phone aria-hidden className="h-3.5 w-3.5 text-gold" />
-            <span dir="ltr">{lang === "bn" ? "০৯টা–৫টা | +৮৮০ ১৮০৫-৪৩৭৯১০" : "9AM–5PM | +880 1805-437910"}</span>
+            <span dir="ltr">
+              {lang === "bn" ? "সকাল ৯টা–বিকাল ৫টা" : "9AM–5PM"} | {siteConfig.phone}
+            </span>
           </a>
           <a
             href={`mailto:${siteConfig.email}`}

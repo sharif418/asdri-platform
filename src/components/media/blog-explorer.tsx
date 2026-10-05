@@ -65,7 +65,7 @@ export function BlogExplorer({ articles, lang }: BlogExplorerProps) {
           )}
         >
           {lang === "bn" ? "সব প্রবন্ধ" : "All articles"}
-          <span className="ml-1.5 opacity-70">{toBnDigits(articles.length)}</span>
+          <span className="ml-1.5 opacity-70">{lang === "bn" ? toBnDigits(articles.length) : articles.length}</span>
         </button>
         {categories.map((key) => {
           const label = pick(
@@ -88,7 +88,7 @@ export function BlogExplorer({ articles, lang }: BlogExplorerProps) {
               )}
             >
               {label}
-              <span className="ml-1.5 opacity-70">{toBnDigits(count)}</span>
+              <span className="ml-1.5 opacity-70">{lang === "bn" ? toBnDigits(count) : count}</span>
             </button>
           );
         })}
@@ -150,7 +150,7 @@ export function BlogExplorer({ articles, lang }: BlogExplorerProps) {
                     </span>
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/10 px-2.5 py-1 font-semibold text-primary dark:text-gold">
                       <Clock3 aria-hidden className="h-3.5 w-3.5" />
-                      {toBnDigits(article.readMinutes)} {lang === "bn" ? "মিনিট পাঠ" : "min read"}
+                      {lang === "bn" ? toBnDigits(article.readMinutes) : article.readMinutes} {lang === "bn" ? "মিনিট পাঠ" : "min read"}
                     </span>
                   </div>
                 </div>

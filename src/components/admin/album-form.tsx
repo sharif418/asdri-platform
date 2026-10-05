@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { BilingualField, LanguageStatus } from "@/components/admin/ui/bilingual-field";
 import { MediaPicker, type PickedMedia } from "@/components/admin/ui/media-picker";
 import { slugifyTitle } from "@/lib/slug";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 
 export interface AlbumFormValues {
   id?: string;
@@ -82,7 +83,7 @@ export function AlbumForm({ initial, mode }: { initial: AlbumFormValues; mode: "
 
   async function onDelete() {
     if (deleting || mode !== "edit" || !values.id) return;
-    if (!window.confirm(`'${values.titleBn}' অ্যালবামটি এর সব ছবিসহ মুছে ফেলা হবে। নিশ্চিত?`)) return;
+    if (!(await adminConfirm({ title: `'${values.titleBn}' অ্যালবামটি এর সব ছবিসহ মুছে ফেলা হবে। নিশ্চিত?` }))) return;
     setDeleting(true);
     try {
       const res = await fetch(`/api/admin/albums/${values.id}`, { method: "DELETE", headers: { "x-csrf-token": csrfToken() } });
@@ -109,7 +110,6 @@ export function AlbumForm({ initial, mode }: { initial: AlbumFormValues; mode: "
                   value={values.titleBn}
                   onChange={(e) => set("titleBn", e.target.value)}
                   placeholder="বাংলা শিরোনাম"
-                  dir="rtl"
                   required
                   className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
                 />
@@ -132,7 +132,6 @@ export function AlbumForm({ initial, mode }: { initial: AlbumFormValues; mode: "
                   onChange={(e) => set("descriptionBn", e.target.value)}
                   rows={3}
                   placeholder="১–২ লাইনের বিবরণ"
-                  dir="rtl"
                   className="w-full resize-y rounded-lg border bg-card px-3.5 py-2.5 text-sm outline-none focus:border-primary/50"
                 />
               ) : (

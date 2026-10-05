@@ -13,6 +13,7 @@ import { MediaPicker, type PickedMedia } from "@/components/admin/ui/media-picke
 import { sanitizeRichTextPreview } from "@/lib/sanitize";
 import { slugifyTitle } from "@/lib/slug";
 import { toBnDigits } from "@/lib/format";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 
 export interface PostFormValues {
   id?: string;
@@ -156,7 +157,7 @@ export function PostForm({
 
   async function onDelete() {
     if (deleting || mode !== "edit" || !values.id) return;
-    if (!window.confirm(`'${values.titleBn}' পোস্টটি স্থায়ীভাবে মুছে ফেলা হবে। নিশ্চিত?`)) return;
+    if (!(await adminConfirm({ title: `'${values.titleBn}' পোস্টটি স্থায়ীভাবে মুছে ফেলা হবে। নিশ্চিত?` }))) return;
     setDeleting(true);
     try {
       const res = await fetch(`/api/admin/posts/${values.id}`, { method: "DELETE", headers: { "x-csrf-token": csrfToken() } });
@@ -182,7 +183,6 @@ export function PostForm({
                 value={values.titleBn}
                 onChange={(e) => set("titleBn", e.target.value)}
                 placeholder="বাংলা শিরোনাম লিখুন"
-                dir="rtl"
                 required
                 className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
               />
@@ -205,7 +205,6 @@ export function PostForm({
                 onChange={(e) => set("excerptBn", e.target.value)}
                 rows={2}
                 placeholder="২–৩ লাইনের সারসংক্ষেপ"
-                dir="rtl"
                 className="w-full resize-y rounded-lg border bg-card px-3.5 py-2.5 text-sm outline-none focus:border-primary/50"
               />
             ) : (
@@ -223,7 +222,7 @@ export function PostForm({
         <BilingualField label="মূল লেখা">
           {(active) =>
             active === "bn" ? (
-              <RichTextEditor value={values.bodyBn} onChange={(html) => set("bodyBn", html)} placeholder="আর্টিকলের মূল অংশ…" dir="rtl" />
+              <RichTextEditor value={values.bodyBn} onChange={(html) => set("bodyBn", html)} placeholder="আর্টিকলের মূল অংশ…" />
             ) : (
               <RichTextEditor value={values.bodyEn} onChange={(html) => set("bodyEn", html)} placeholder="Full article body…" />
             )
@@ -277,7 +276,6 @@ export function PostForm({
                 value={newCatBn}
                 onChange={(e) => setNewCatBn(e.target.value)}
                 placeholder="ক্যাটাগরির নাম (বাংলা)"
-                dir="rtl"
                 className="w-full rounded-lg border bg-card px-2.5 py-1.5 text-[12.5px] outline-none focus:border-primary/50"
               />
               <input

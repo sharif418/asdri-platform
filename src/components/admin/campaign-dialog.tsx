@@ -144,7 +144,6 @@ export function CampaignDialog({
             <input
               value={values.titleBn}
               onChange={(e) => set("titleBn", e.target.value)}
-              dir="rtl"
               placeholder="লাইব্রেরির জন্য ১০০০ নতুন বই"
               className={inputClass}
             />
@@ -193,7 +192,6 @@ export function CampaignDialog({
               value={values.descriptionBn}
               onChange={(e) => set("descriptionBn", e.target.value)}
               rows={3}
-              dir="rtl"
               placeholder="ক্যাম্পেইনের উদ্দেশ্য সংক্ষেপে লিখুন…"
               className={inputClass}
             />
