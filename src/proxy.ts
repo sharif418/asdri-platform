@@ -8,7 +8,9 @@ import { DEFAULT_LANG, isLang } from "@/lib/locale";
  *    claimed by /en, /api, /admin, static assets or special routes is
  *    internally rewritten to /bn/<path> (the URL the visitor sees never
  *    changes). /en/<path> passes through untouched. This gives every page
- *    two real, server-rendered URLs — one per language.
+ *    two real, server-rendered URLs — one per language. The signed sandbox
+ *    checkout lives at [lang]/checkout/[code], so /checkout/<code> flows
+ *    through the default-lang rewrite like every other public page.
  *
  * 2. OWASP security headers on every response.
  */
@@ -18,7 +20,6 @@ const RESERVED = [
   "/api",
   "/admin",
   "/en",
-  "/checkout", // hosted sandbox gateway callback paths
   "/offline",
   "/sw.js",
 ];

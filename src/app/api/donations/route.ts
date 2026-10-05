@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHmac } from "node:crypto";
 import { Prisma, type Donation } from "@prisma/client";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
@@ -53,6 +54,8 @@ async function createDonation(
  *
  * The row is created PENDING with its tracking + receipt codes and an
  * `initiated` PaymentTransaction; the signed sandbox callback completes it.
+ * When PAYMENT_PROVIDER=sandbox the response also carries `checkoutUrl` —
+ * the sandbox gateway page for this donation.
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!isSameOrigin(request)) {
@@ -124,6 +127,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           ? "আলহামদুলিল্লাহ! আপনার অনুদান রেকর্ড হয়েছে — আপনার নাম প্রকাশ্য তালিকায় “Anonymous” হিসেবে দেখানো হবে।"
           : "আলহামদুলিল্লাহ! আপনার অনুদান রেকর্ড হয়েছে — নিচের যেকোনো মাধ্যমে পেমেন্ট সম্পন্ন করুন।",
         paymentInfo: await paymentChannels(),
+        // Sandbox gateway link, signed so the checkout page can authenticate
+        // the code without a session. Signature choice: hex HMAC-SHA256 over
+        // the trackingCode alone (the intent identity); the page-level grant
+        // is deliberately narrower than the callback signature, which the
+        // checkout page computes server-side over
+        // `${trackingCode}|${status}|${providerTxnId}` — mirroring the
+        // callback route's exact signing input.
+        checkoutUrl:
+          provider === "sandbox"
+            ? `/checkout/${donation.trackingCode}?sig=${createHmac("sha256", env.paymentCallbackSecret)
+                .update(donation.trackingCode)
+                .digest("hex")}`
+            : null,
       },
       201,
     );

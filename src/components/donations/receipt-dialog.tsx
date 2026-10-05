@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDays, Check, CheckCircle2, Copy, MailCheck, Repeat, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { CalendarDays, Check, CheckCircle2, Copy, CreditCard, MailCheck, Repeat, ShieldCheck } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/format";
+import { langPath } from "@/lib/locale";
 import { formatAmount, type ReceiptData } from "./donation-types";
 import type { FundType, Language } from "@/types";
 
@@ -141,6 +143,17 @@ export function ReceiptDialog({ receipt, lang, fundLabels, onClose }: ReceiptDia
                 </div>
               ) : null}
             </dl>
+
+            {/* Sandbox gateway — complete the payment loop without a real gateway */}
+            {receipt.checkoutUrl ? (
+              <Link
+                href={langPath(lang, receipt.checkoutUrl)}
+                className="flex items-center justify-center gap-2 rounded-lg bg-gold-gradient px-4 py-3 text-[14px] font-bold text-gold-foreground shadow-md shadow-gold/20 transition-opacity hover:opacity-95"
+              >
+                <CreditCard aria-hidden className="h-4 w-4" />
+                {bn ? "স্যান্ডবক্সে পেমেন্ট সম্পন্ন করুন" : "Complete payment (sandbox)"}
+              </Link>
+            ) : null}
 
             {/* Payment instructions */}
             <div>
