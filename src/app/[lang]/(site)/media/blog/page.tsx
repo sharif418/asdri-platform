@@ -88,7 +88,7 @@ export default async function BlogIndexPage({
             <p className="text-sm text-muted-foreground">
               {lang === "bn"
                 ? `মোট ${toBnDigits(blogArticles.length)} টি গবেষণা-প্রবন্ধ${topicFilter ? ` — ${pick(topicFilter.name, lang)}` : ""} — ক্যাটাগরি অনুযায়ী ছাঁকুন`
-                : `${blogArticles.length} research essays${topicFilter ? ` in ${pick(topicFilter.name, lang)}` : ""} — filter by category`}
+                : `${blogArticles.length} research ${blogArticles.length === 1 ? "essay" : "essays"}${topicFilter ? ` in ${pick(topicFilter.name, lang)}` : ""} — filter by category`}
             </p>
           </Reveal>
 
