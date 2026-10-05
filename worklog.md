@@ -891,3 +891,34 @@ Task: 15-min cron round — QA first, then next-phase features from the close-ou
 - All gates green at round end: lint 0 · tsc 0 · 121/121 tests · browser console clean on touched pages · PR #10 (feat/donor-ship, stacked on #9) open, never self-merged; main + branch pushed.
 - Dev server OOM + stale-build-after-restart remain chronic (4GB) — if the dev server was restarted mid-edit, hard-reload pages before trusting UI state.
 - Next-phase candidates (remaining from GAPS §C): donation ledger deep pagination + audit CSV range paging; smtp driver on queueOutboxEmail; tsvector search; Bangla PDF receipts (headless Chromium); recurring-donation scheduler (needs schema column); agent-browser eval-submit helper in a scripts/ snippet for future rounds.
+
+---
+Task ID: 18 (search engine 2.0 round)
+Agent: main (coordinator, autonomous round)
+Task: QA-first sweep with agent-browser, then next-phase development per GAPS list: tsvector search upgrade, deep pagination, style-detail pass.
+
+## 项目当前状态描述/判断
+- Round start: dev server 200 · PG@5433 alive · tree clean at dd909e8 · 121 tests / lint 0 / tsc 0 · PR stack #1-#10 open (never self-merged). Phase STABLE.
+- Full QA sweep (agent-browser @1280px): bn+en home, /search, /notices, /support, /research/fatwa, /account, admin dashboard + finance (donations/ledger) + admissions (KPIs, applications 2 rows) — all healthy, console clean (only benign HMR/DevTools lines).
+- QA verdict: stable, with ONE real bug found → /search page DB queries used case-SENSITIVE `contains` (English `admission`: LIKE 0 vs ILIKE 2 — verified on live data). Plus one VLM-caught bug during the round: notice dialog rendered literal `<p>` tags from rich-HTML bodies.
+
+## 当前目标/已完成的修改/验证结果
+1. **Ranked tsvector search engine (PR #11, GAPS item #1)**
+   - Migration `20261005050845_search_tsvectors`: generated weighted tsvector columns on FatwaEntry + Notice (BN `'simple'` whitespace tokenisation, EN `'english'` stemming; question/title weight A > answer/body B; HTML stripped via immutable regexp_replace) + GIN indexes. Applied to dev DB via migrate deploy; exercised on asdri_test by the integration suite.
+   - New `src/lib/db-search.ts` (212 lines): parameterised ranked search (`ts_rank` sum over both language queries, multi-word AND via `websearch_to_tsquery`), memoised information_schema column detection, transparent token-AND ILIKE fallback for pre-migration DBs (fixes the EN case bug in both paths). `orderByIds` stitches ranked ids with hydrated Prisma rows.
+   - Wired: `GET /api/fatwa` (ranked path keeps FATWA_SELECT/toDto) + `/search` page queryDatabase.
+   - Live proof: `q=যাকাত নিসাব` → zakat fatwa (words non-contiguous — old substring engine: 0 results); `q=কিবলার দিক` → qiblah fatwa; `/en/search?q=admission` now lists BOTH Admission notices (was 0); EN stemming `donations`→`donat`.
+2. **AdminPager numbered deep pagination (GAPS item #2)** — new `src/components/admin/admin-pager.tsx` (windowed 1 … p-1 p p+1 … last, Bengali numerals, aria-current, disabled edge states, filter-preserving buildHref). Replaced hand-rolled prev/next on 5 lists: finance/donations, finance/ledger, admissions/applications, inbox/subscribers, inbox/messages. E2E with 28 seeded-then-deleted TMP- donations: 25 rows page 1, 9 rows page 2, prev/next disabled states, `status=COMPLETED&page=N` filter preservation.
+3. **Notice dialog official-pad parity** — print button (body.printing-notice CSS isolation generalised in globals.css alongside printing-fatwa; print-only masthead "আস-সুন্নাহ দাওয়াহ অ্যান্ড রিসার্চ ইনস্টিটিউট / দাপ্তরিক বিজ্ঞপ্তি" + Ref/slug + issued-date footer), Web Share/clipboard share with toast. **Fixed the `<p>` tag leak** via `richTextToPlain` at the single body render site. Verified live: hasHTML=false, printing-notice class toggles on print click. VLM re-review 6→(fix verified by DOM).
+4. **(site)/loading.tsx** — branded emerald/gold route-transition skeleton (hero band + 6-card grid, Skeleton-based).
+5. **Tests: 121 → 142 green** (+21: unit db-search 9 [tokens/fallback-where/orderByIds], unit admin-pager 3 [window algorithm incl. edge no-duplicate-neighbours], integration search 9 on real migrated PG: multi-word AND, AND-exclusion control, EN case-insensitivity, stemming, question>answer ranking, paging totals, notice title case, multi-field BN, HTML-strip negative probe). lint 0 · tsc 0 · browser console clean on all touched pages.
+6. **PR #11 opened** (feat/search-engine-2, base main) — never self-merged; remote main untouched at dd909e8.
+
+## 未解决问题或风险，建议下一阶段优先事项
+- **⚠ NEW OPERATIONAL RISK — cron race**: the round-17 15-min webDevReview cron (job 436861) fired mid-session and ran `git checkout main`, silently moving my working branch — my commit landed on local main (caught via reflog, recovered by cherry-pick 6b67a6f → 3eff026 onto the feature branch and resetting local main to dd909e8; remote never affected). RECOMMENDATION: delete/pause job 436861 or make its agent never touch the working tree while a session is active (cron tool was unavailable this round — could not delete it from here).
+- **Dev-server restart pattern (IMPORTANT for all future rounds)**: `nohup bun run dev &` WITHOUT subshell parens dies silently seconds after the Bash tool call exits (process-group kill; no OOM record, clean logs). The working pattern is exactly: `(cd /home/z/my-project && nohup bun run dev > /dev/null 2>&1 &)` — dev.sh tees to dev.log regardless. Also: run lint/tsc SERIALLY, never alongside browsing — the 4GB OOM killer took next-server once this round (anon-rss 2.1GB).
+- Migration adds DB columns intentionally absent from schema.prisma (generated columns are Prisma-invisible); `migrate deploy` clean on dev + test DBs; CI runs the same migrate path.
+- Accepted edge case: stopword-only English queries (e.g. `the`) return 0 rows; Bengali unaffected (`'simple'` has no stoplist).
+- Remaining GAPS next-phase candidates: smtp driver on queueOutboxEmail (env-gated), Bangla PDF receipts (headless Chromium), recurring-donation scheduler (needs schema), admin fatwa-questions/notices lists still `take:100` caps (no pager), agent-browser eval-submit helper snippet (this round re-proved the native-setter submit pattern — see round 17 notes).
+- Sandbox demo data unchanged except 28 TMP- donations created+deleted for pager E2E (verified deleted).
+
