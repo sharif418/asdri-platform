@@ -31,6 +31,9 @@ interface FeedNotice {
 
 async function fetchNotices(): Promise<FeedNotice[]> {
   return db.notice.findMany({
+    // Drafts (isPublished=false) never appear in the public feed — same rule
+    // as the notice board itself.
+    where: { isPublished: true },
     orderBy: { publishedAt: "desc" },
     take: 20,
     select: {

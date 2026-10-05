@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { Facebook, Mail, MapPin, Phone, Send, Youtube } from "lucide-react";
+import { Facebook, Mail, MapPin, Phone, Rss, Send, Youtube } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { InstituteLogo } from "@/components/shared/logo";
@@ -233,10 +233,21 @@ export function SiteFooter() {
             {year > 2025 ? `–${lang === "bn" ? "২০" + String(year).slice(2) : year}` : ""}{" "}
             {siteConfig.nameEn} — {t("footer.rights")}
           </p>
-          <p className="flex items-center gap-2">
-            <StarMotif className="h-3 w-3 text-gold/60" />
-            {t("footer.developedBy")}
-          </p>
+          <div className="flex items-center gap-5">
+            <a
+              href="/feed.xml"
+              aria-label="RSS ফিড"
+              title="RSS ফিড"
+              className="flex items-center gap-1.5 transition-colors hover:text-gold"
+            >
+              <Rss aria-hidden className="h-3.5 w-3.5" />
+              <span>RSS ফিড</span>
+            </a>
+            <p className="flex items-center gap-2">
+              <StarMotif className="h-3 w-3 text-gold/60" />
+              {t("footer.developedBy")}
+            </p>
+          </div>
         </div>
       </div>
     </footer>
