@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { OutboxEmail, Prisma } from "@prisma/client";
 import type { Transporter } from "nodemailer";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
@@ -42,33 +42,54 @@ async function smtpTransporter(): Promise<Transporter | null> {
   return sharedTransporter;
 }
 
+/** Outcome of exactly one delivery attempt (all soft-fail, never throws). */
+interface AttemptOutcome {
+  sentAt: Date | null;
+  providerMessageId: string | null;
+  error: string | null;
+}
+
+/** The message fields a send attempt needs, shared by queue + retry. */
+interface DeliverableMessage {
+  to: string;
+  subject: string;
+  body: string;
+  html: string;
+}
+
+/** One real SMTP send attempt. Deliberately soft: the money path (donation
+ *  callbacks) must never fail because a mail server hiccuped — the row stays
+ *  retryable with the reason recorded. */
+async function attemptSmtpDelivery(message: DeliverableMessage): Promise<AttemptOutcome> {
+  const transporter = await smtpTransporter();
+  if (!transporter) {
+    return {
+      sentAt: null,
+      providerMessageId: null,
+      error: env.smtpUrl ? "smtp transporter unavailable" : "MAIL_DRIVER=smtp but SMTP_URL is unset",
+    };
+  }
+  try {
+    const info = await transporter.sendMail({
+      from: env.mailFrom,
+      to: message.to,
+      subject: message.subject,
+      text: message.body,
+      html: message.html,
+    });
+    return { sentAt: new Date(), providerMessageId: info.messageId ?? null, error: null };
+  } catch (cause) {
+    return { sentAt: null, providerMessageId: null, error: cause instanceof Error ? cause.message : String(cause) };
+  }
+}
+
 /** Queue one email: smtp driver attempts delivery first, log driver only persists. */
 export async function queueOutboxEmail(input: OutboxEmailInput): Promise<void> {
-  let sentAt: Date | null = null;
-  let providerMessageId: string | null = null;
-  let error: string | null = null;
-
+  let outcome: AttemptOutcome = { sentAt: null, providerMessageId: null, error: null };
+  let attempts = 0; // the log driver persists without a send attempt
   if (env.mailDriver === "smtp") {
-    const transporter = await smtpTransporter();
-    if (!transporter) {
-      error = env.smtpUrl ? "smtp transporter unavailable" : "MAIL_DRIVER=smtp but SMTP_URL is unset";
-    } else {
-      try {
-        const info = await transporter.sendMail({
-          from: env.mailFrom,
-          to: input.to,
-          subject: input.subject,
-          text: input.body,
-          html: input.html,
-        });
-        sentAt = new Date();
-        providerMessageId = info.messageId ?? null;
-      } catch (cause) {
-        // Deliberately soft: the money path (donation callbacks) must never
-        // fail because a mail server hiccuped — the row stays retryable.
-        error = cause instanceof Error ? cause.message : String(cause);
-      }
-    }
+    outcome = await attemptSmtpDelivery(input);
+    attempts = 1; // the creation-time send was one delivery attempt
   }
 
   await db.outboxEmail.create({
@@ -79,9 +100,35 @@ export async function queueOutboxEmail(input: OutboxEmailInput): Promise<void> {
       html: input.html,
       kind: input.kind,
       payload: input.payload as Prisma.InputJsonValue | undefined,
-      sentAt,
-      providerMessageId,
-      error,
+      attempts,
+      sentAt: outcome.sentAt,
+      providerMessageId: outcome.providerMessageId,
+      error: outcome.error,
+    },
+  });
+}
+
+/**
+ * Perform one delivery attempt on an existing outbox row NOW (the finance
+ * "retry" action). smtp driver does a real send and records the outcome;
+ * log driver treats the row itself as the delivery record — delivered =
+ * logged, so the row is marked sent. Every call increments `attempts` and
+ * returns the updated row (sentAt/providerMessageId on success, the error
+ * text on failure — never throws, the caller stays in charge).
+ */
+export async function deliverOutboxEmail(row: OutboxEmail): Promise<OutboxEmail> {
+  const outcome: AttemptOutcome =
+    env.mailDriver === "smtp"
+      ? await attemptSmtpDelivery(row)
+      : { sentAt: new Date(), providerMessageId: null, error: null };
+
+  return db.outboxEmail.update({
+    where: { id: row.id },
+    data: {
+      attempts: { increment: 1 },
+      sentAt: outcome.sentAt,
+      providerMessageId: outcome.providerMessageId,
+      error: outcome.error,
     },
   });
 }

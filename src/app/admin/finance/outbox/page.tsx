@@ -29,7 +29,7 @@ export default async function AdminOutboxPage({ searchParams }: { searchParams: 
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
-      select: { id: true, kind: true, to: true, subject: true, body: true, html: true, sentAt: true, error: true, createdAt: true },
+      select: { id: true, kind: true, to: true, subject: true, body: true, html: true, attempts: true, sentAt: true, error: true, createdAt: true },
     }),
     db.outboxEmail.groupBy({ by: ["kind"], _count: { _all: true } }),
   ]);
@@ -42,6 +42,7 @@ export default async function AdminOutboxPage({ searchParams }: { searchParams: 
     subject: row.subject,
     body: row.body,
     html: row.html,
+    attempts: row.attempts,
     sentAt: row.sentAt?.toISOString() ?? null,
     error: row.error,
     createdAt: row.createdAt.toISOString(),
@@ -69,7 +70,7 @@ export default async function AdminOutboxPage({ searchParams }: { searchParams: 
           আউটবক্স
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          মোট {formatNumber(total, "bn")} ইমেইল · কিউতে {toBnDigits(queued)} টি — MAIL_DRIVER=log হলে পাঠানোর রেকর্ড হিসেবে এখানেই জমা থাকে, smtp ড্রাইভারে সরাসরি পাঠানো হয়।
+          মোট {formatNumber(total, "bn")} ইমেইল · কিউতে {toBnDigits(queued)} টি — MAIL_DRIVER=log হলে পাঠানোর রেকর্ড হিসেবে এখানেই জমা থাকে, smtp ড্রাইভারে সরাসরি পাঠানো হয়। ব্যর্থ/কিউতে থাকা সারিতে “এখনই আবার পাঠান” দিয়ে সরাসরি ডেলিভারি চেষ্টা করা যায়।
         </p>
       </div>
 
