@@ -15,8 +15,10 @@ import {
 import { db } from "@/lib/db";
 import type { NoticeCategory as DbNoticeCategory, NoticeStatus as DbNoticeStatus } from "@prisma/client";
 import type { Lang } from "@/lib/locale";
-import { langPath } from "@/lib/locale";
+import { langPath, alternatesFor } from "@/lib/locale";
 import { isFeatureEnabled } from "@/lib/settings";
+import { getSiteConfig } from "@/lib/content/site";
+import { env } from "@/lib/env";
 import { ModuleUnavailable } from "@/components/shared/module-unavailable";
 import { NOTICE_CATEGORIES, type Language, type NoticeCategory, type NoticeStatus } from "@/types";
 import { formatMonthYear, toBnDigits } from "@/lib/format";
@@ -30,11 +32,19 @@ import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "নোটিশ বোর্ড | আস-সুন্নাহ ইনস্টিটিউট",
-  description:
-    "ভর্তি, নিয়োগ, একাডেমিক ও সাধারণ — আস-সুন্নাহ দাওয়াহ অ্যান্ড রিসার্চ ইনস্টিটিউটের সকল দাপ্তরিক বিজ্ঞপ্তি।",
-};
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  const siteConfig = await getSiteConfig();
+  const { canonical, languages } = alternatesFor("/notices", env.siteUrl);
+  return {
+    title: isBn ? `নোটিশ বোর্ড — ${siteConfig.shortBn}` : `Notice Board — ${siteConfig.shortEn}`,
+    description: isBn
+      ? "ভর্তি, নিয়োগ, একাডেমিক ও সাধারণ — আস-সুন্নাহ দাওয়াহ অ্যান্ড রিসার্চ ইনস্টিটিউটের সকল দাপ্তরিক বিজ্ঞপ্তি।"
+      : "Admission, recruitment, academic, and general — every official announcement of the As-Sunnah Dawah and Research Institute.",
+    alternates: { canonical, languages },
+  };
+}
 
 const PAGE_SIZE = 10;
 

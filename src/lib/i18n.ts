@@ -126,6 +126,7 @@ const bn = {
 
   "footer.quickLinks": "দ্রুত লিংক",
   "footer.resources": "রিসোর্স",
+  "footer.rss": "RSS ফিড",
   "footer.contactInfo": "যোগাযোগ",
   "footer.rights": "সর্বস্বত্ব সংরক্ষিত",
   "footer.developedBy": "আস-সুন্নাহ ফাউন্ডেশনের তত্ত্বাবধানে নির্মিত",
@@ -152,6 +153,11 @@ const bn = {
   "search.actions": "দ্রুত কাজ",
   "search.hintKbd": "নেভিগেট করতে ↑↓ · বাছতে Enter",
   "search.shortcut": "Ctrl+K",
+
+  "a11y.mainNav": "প্রধান নেভিগেশন",
+  "a11y.mobileNav": "মোবাইল নেভিগেশন",
+  "a11y.openMenu": "মেনু খুলুন",
+  "a11y.backToTop": "উপরে যান",
 } as const;
 
 export type DictionaryKey = keyof typeof bn;
@@ -278,6 +284,7 @@ const en: Record<DictionaryKey, string> = {
 
   "footer.quickLinks": "Quick Links",
   "footer.resources": "Resources",
+  "footer.rss": "RSS Feed",
   "footer.contactInfo": "Contact",
   "footer.rights": "All rights reserved",
   "footer.developedBy": "Developed under the supervision of As-Sunnah Foundation",
@@ -304,6 +311,11 @@ const en: Record<DictionaryKey, string> = {
   "search.actions": "Quick Actions",
   "search.hintKbd": "Navigate with ↑↓ · Select with Enter",
   "search.shortcut": "Ctrl+K",
+
+  "a11y.mainNav": "Main navigation",
+  "a11y.mobileNav": "Mobile navigation",
+  "a11y.openMenu": "Open menu",
+  "a11y.backToTop": "Back to top",
 };
 
 export const dictionaries: Record<Language, Record<DictionaryKey, string>> = { bn, en };
