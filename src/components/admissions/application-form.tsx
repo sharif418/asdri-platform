@@ -28,9 +28,20 @@ interface EducationRow {
   result: string;
 }
 
+const APP_DOC_TYPE_OPTIONS = [
+  { value: "TRANSCRIPT", labelBn: "মার্কশিট", labelEn: "Transcript" },
+  { value: "CERTIFICATE", labelBn: "সনদপত্র", labelEn: "Certificate" },
+  { value: "NID", labelBn: "জাতীয় পরিচয়পত্র", labelEn: "National ID" },
+  { value: "CHARACTER", labelBn: "চারিত্রিক সনদ", labelEn: "Character certificate" },
+  { value: "OTHER", labelBn: "অন্যান্য", labelEn: "Other" },
+] as const;
+
+type AppDocTypeValue = (typeof APP_DOC_TYPE_OPTIONS)[number]["value"];
+
 interface UploadedFile {
   mediaId: string;
   filename: string;
+  docType: AppDocTypeValue;
 }
 
 function csrfToken(): string {
@@ -46,7 +57,7 @@ async function uploadDoc(file: File, kind: "IMAGE" | "DOCUMENT"): Promise<Upload
   if (!res.ok || !json.ok || !json.data) {
     throw new Error(json.error ?? "আপলোড ব্যর্থ");
   }
-  return { mediaId: json.data.mediaId, filename: file.name };
+  return { mediaId: json.data.mediaId, filename: file.name, docType: "TRANSCRIPT" as AppDocTypeValue };
 }
 
 const inputClass =
@@ -150,6 +161,7 @@ export function ApplicationForm({
           guardianPhone,
           guardianRelation,
           photoMediaId: photo?.mediaId ?? null,
+          documents: documents.map((doc) => ({ mediaId: doc.mediaId, type: doc.docType })),
           declarationAccepted: declaration,
           education: education
             .filter((row) => row.level.trim().length > 0)
@@ -407,11 +419,31 @@ export function ApplicationForm({
                 />
               </label>
               {documents.length > 0 && (
-                <ul className="mt-2 space-y-1">
+                <ul className="mt-2 space-y-1.5">
                   {documents.map((doc, i) => (
-                    <li key={i} className="flex items-center justify-between rounded-md bg-secondary/50 px-2.5 py-1.5 text-[12px]">
-                      <span className="truncate">{doc.filename}</span>
-                      <button type="button" onClick={() => setDocuments((list) => list.filter((_, j) => j !== i))} aria-label="সরান" className="text-destructive/70 hover:text-destructive">
+                    <li key={doc.mediaId} className="flex items-center gap-2 rounded-md bg-secondary/50 px-2.5 py-1.5 text-[12px]">
+                      <span className="min-w-0 flex-1 truncate">{doc.filename}</span>
+                      <label className="sr-only" htmlFor={`doc-type-${i}`}>{bn ? "ডকুমেন্টের ধরন" : "Document type"}</label>
+                      <select
+                        id={`doc-type-${i}`}
+                        value={doc.docType}
+                        onChange={(e) =>
+                          setDocuments((list) => list.map((x, j) => (j === i ? { ...x, docType: e.target.value as AppDocTypeValue } : x)))
+                        }
+                        className="h-8 rounded-md border bg-background px-1.5 text-[11.5px] outline-none focus:border-primary/50"
+                      >
+                        {APP_DOC_TYPE_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {bn ? opt.labelBn : opt.labelEn}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => setDocuments((list) => list.filter((_, j) => j !== i))}
+                        aria-label={bn ? "সরান" : "Remove"}
+                        className="flex h-8 w-8 items-center justify-center rounded-md text-destructive/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                      >
                         <Trash2 aria-hidden className="h-3.5 w-3.5" />
                       </button>
                     </li>
