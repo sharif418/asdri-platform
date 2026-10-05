@@ -97,7 +97,7 @@ export function CampaignsSection({ lang }: { lang: Language }) {
                           </span>
                         </span>
                         <span className="text-muted-foreground">
-                          {bn ? "লক্ষ্য" : "Target"}: {formatTaka(campaign.targetAmount, lang)}
+                          {bn ? "লক্ষ্য:" : "Target:"} {formatTaka(campaign.targetAmount, lang)}
                         </span>
                       </div>
                       <div className="mt-4 border-t pt-3.5">

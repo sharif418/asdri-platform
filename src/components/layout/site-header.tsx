@@ -194,7 +194,7 @@ function MobileNav({ onSearchClick }: { onSearchClick: () => void }) {
       <SheetTrigger asChild>
         <button
           type="button"
-          aria-label="মেনু খুলুন"
+          aria-label={t("a11y.openMenu")}
           className="inline-flex h-10 w-10 items-center justify-center rounded-md border text-foreground transition-colors hover:bg-secondary lg:hidden"
         >
           <Menu aria-hidden className="h-5 w-5" />
@@ -214,7 +214,7 @@ function MobileNav({ onSearchClick }: { onSearchClick: () => void }) {
             />
           </SheetTitle>
         </div>
-        <nav aria-label="মোবাইল নেভিগেশন" className="flex-1 px-4 py-4">
+        <nav aria-label={t("a11y.mobileNav")} className="flex-1 px-4 py-4">
           <button
             type="button"
             onClick={() => {
@@ -346,7 +346,7 @@ export function SiteHeader() {
             <LogoLockup nameBn={siteConfig.nameBn} nameEn={siteConfig.nameEn} parentBn={siteConfig.parentBn} />
           </Link>
 
-          <nav aria-label="প্রধান নেভিগেশন" className="hidden lg:block">
+          <nav aria-label={t("a11y.mainNav")} className="hidden lg:block">
             <NavigationMenu>
               <NavigationMenuList className="gap-0.5">
                 <NavigationMenuItem>

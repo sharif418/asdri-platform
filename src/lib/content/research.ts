@@ -107,16 +107,28 @@ export async function getPublications(): Promise<PublicationItem[]> {
   });
 }
 
-/** সংশয় নিরসন topics — settings hold descriptions/counts, PostCategory the titles. */
+/**
+ * সংশয় নিরসন topics — settings hold descriptions/video counts, PostCategory
+ * the titles. Article counts are derived from the DB (published ARTICLE posts
+ * per `clar-` category) instead of the static promo numbers.
+ */
 export async function getClarificationTopics(): Promise<ClarificationTopic[]> {
-  const [settingRows, categoryRows] = await Promise.all([
+  const [settingRows, categoryRows, articleCountRows] = await Promise.all([
     db.siteSetting.findMany({ where: { key: { startsWith: "clarification.topic." } }, select: { key: true, value: true } }),
     db.postCategory.findMany({
       where: { slug: { startsWith: "clar-" } },
       orderBy: { sortOrder: "asc" },
-      select: { slug: true, nameBn: true, nameEn: true },
+      select: { id: true, slug: true, nameBn: true, nameEn: true },
+    }),
+    db.post.groupBy({
+      by: ["categoryId"],
+      where: { kind: "ARTICLE", isPublished: true, category: { slug: { startsWith: "clar-" } } },
+      _count: { _all: true },
     }),
   ]);
+  const articlesByCategoryId = new Map<string | null, number>(
+    articleCountRows.map((row) => [row.categoryId, row._count._all]),
+  );
 
   const byId = new Map<string, { descriptionBn: string; descriptionEn: string; articleCount: number; videoCount: number }>();
   for (const setting of settingRows) {
@@ -149,7 +161,7 @@ export async function getClarificationTopics(): Promise<ClarificationTopic[]> {
         bn: setting?.descriptionBn || fallback?.description.bn || "",
         en: setting?.descriptionEn || fallback?.description.en || setting?.descriptionBn || "",
       },
-      articleCount: setting?.articleCount ?? fallback?.articleCount ?? 0,
+      articleCount: articlesByCategoryId.get(category.id) ?? 0,
       videoCount: setting?.videoCount ?? fallback?.videoCount ?? 0,
       icon: TOPIC_ICONS[id] ?? fallback?.icon ?? "help-circle",
     });
