@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma, UserRole } from "@prisma/client";
 import { db } from "@/lib/db";
 import { SESSION_COOKIE, CSRF_COOKIE, createSession, hashPassword } from "@/lib/auth";
+import { issueEmailVerification } from "@/lib/email-verification";
 import { getClientIp, isSameOrigin, jsonError, jsonOk, rateLimit } from "@/lib/security";
 import { registerSchema, zodFields } from "@/lib/validators";
 
@@ -86,8 +87,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       userAgent: request.headers.get("user-agent") ?? undefined,
     });
 
+    // Round 3: the address is NOT trusted yet — a single-use verification
+    // token is emailed (outbox). Until it is consumed, donation history linked
+    // to this email stays hidden on /account: registering someone else's
+    // address exposes nothing.
+    try {
+      await issueEmailVerification({ id: user.id, email: user.email, name: user.name });
+    } catch {
+      // A mail outage must never kill registration; the account page offers a
+      // resend button (rate limited) and the office can see the row in the outbox.
+    }
+
     const response = jsonOk(
-      { user: { name: user.name, email: user.email, role: user.role }, message: "অ্যাকাউন্ট তৈরি হয়েছে — স্বাগতম!" },
+      {
+        user: { name: user.name, email: user.email, role: user.role, emailVerified: false },
+        message: "অ্যাকাউন্ট তৈরি হয়েছে — ইমেইল নিশ্চিত করার লিংক পাঠানো হয়েছে। স্বাগতম!",
+      },
       201,
     );
     const cookieBase = {

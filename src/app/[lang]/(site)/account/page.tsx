@@ -13,6 +13,7 @@ import { pick } from "@/types";
 import type { UserRole } from "@prisma/client";
 import { ApplicationStatusCard } from "@/components/admissions/application-status-card";
 import { DonationHistory, type AccountDonationView } from "@/components/account/donation-history";
+import { EmailVerifyBanner } from "@/components/account/email-verify-banner";
 
 export const metadata: Metadata = {
   title: "আমার অ্যাকাউন্ট",
@@ -83,25 +84,30 @@ export default async function AccountPage({ params }: { params: Promise<{ lang: 
         })
       : [];
 
-  // Donor history: every donation made with this account's email — so
-  // donors without an applicant flow still see their receipts here.
-  const donationRows = await db.donation.findMany({
-    where: { donorEmail: { equals: user.email, mode: "insensitive" } },
-    orderBy: { createdAt: "desc" },
-    take: 20,
-    select: {
-      id: true,
-      receiptNo: true,
-      trackingCode: true,
-      amount: true,
-      currency: true,
-      status: true,
-      isAnonymous: true,
-      createdAt: true,
-      fund: { select: { nameBn: true, nameEn: true } },
-      campaign: { select: { titleBn: true, titleEn: true } },
-    },
-  });
+  // Donor history: donations made with this account's email. Round 3: the
+  // address must be VERIFIED first — registering someone else's email must
+  // not expose their donation trail. Unverified accounts get the banner +
+  // resend action instead.
+  const emailVerified = user.emailVerifiedAt !== null;
+  const donationRows = emailVerified
+    ? await db.donation.findMany({
+        where: { donorEmail: { equals: user.email, mode: "insensitive" } },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        select: {
+          id: true,
+          receiptNo: true,
+          trackingCode: true,
+          amount: true,
+          currency: true,
+          status: true,
+          isAnonymous: true,
+          createdAt: true,
+          fund: { select: { nameBn: true, nameEn: true } },
+          campaign: { select: { titleBn: true, titleEn: true } },
+        },
+      })
+    : [];
   const donations: AccountDonationView[] = donationRows.map((row) => ({
     id: row.id,
     receiptNo: row.receiptNo,
@@ -169,6 +175,8 @@ export default async function AccountPage({ params }: { params: Promise<{ lang: 
               </div>
             </div>
           </dl>
+
+          {!emailVerified && <EmailVerifyBanner lang={lang} />}
 
           <div className="mt-8 border-t pt-6">
             <h2 className="flex items-center gap-2 text-sm font-semibold">

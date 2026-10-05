@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { createHmac, timingSafeEqual } from "node:crypto";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { env } from "@/lib/env";
+import { grantValid, isSandboxProvider } from "@/lib/payments";
 import { langPath, isLang, type Lang } from "@/lib/locale";
 import { SandboxCheckout } from "@/components/donations/sandbox-checkout";
 
@@ -21,35 +20,27 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 interface CheckoutPageProps {
   params: Promise<{ lang: string; code: string }>;
-  searchParams: Promise<{ sig?: string }>;
-}
-
-/** Timing-safe hex-HMAC comparison (mirrors the callback route's check). */
-function signatureValid(code: string, given: string | undefined): boolean {
-  if (!given || !/^[0-9a-fA-F]{64}$/.test(given)) return false;
-  const expected = createHmac("sha256", env.paymentCallbackSecret).update(code).digest("hex");
-  const a = Buffer.from(expected, "utf8");
-  const b = Buffer.from(given.toLowerCase(), "utf8");
-  return a.length === b.length && timingSafeEqual(a, b);
+  searchParams: Promise<{ sig?: string; exp?: string }>;
 }
 
 /**
- * The sandbox payment-gateway page: the receipt dialog links here with
- * `?sig=<hex HMAC-SHA256(PAYMENT_CALLBACK_SECRET, trackingCode)>` (the URL
- * signature is computed by POST /api/donations — see its comment). This page
- * acts as the gateway: it verifies the link signature timing-safely, then —
- * like a real gateway server — signs the completion callback itself with the
- * exact contract the callback route expects:
- *   signature = hex HMAC-SHA256(secret, `${trackingCode}|COMPLETED|${providerTxnId}`)
- * The client island only submits that pre-signed payload; the secret never
- * reaches the browser beyond the two single-purpose signatures.
+ * The sandbox payment-gateway page (dev/demo only — it 404s unless the
+ * provider is explicitly sandbox, and production refuses that provider at
+ * boot). The receipt dialog links here with
+ * `?sig=<hex HMAC-SHA256(secret, `${code}|${exp}`)>&exp=<epoch-seconds>`;
+ * the grant expires (24h) and is verified timing-safely below. Confirming
+ * POSTs only the tracking code to /api/donations/sandbox-complete — the
+ * completion signature is computed server-side and never rendered.
  */
 export default async function CheckoutPage({ params, searchParams }: CheckoutPageProps) {
   const { lang: raw, code } = await params;
   if (!isLang(raw)) notFound();
   const lang: Lang = raw;
   const bn = lang === "bn";
-  const { sig } = await searchParams;
+  const { sig, exp } = await searchParams;
+
+  // Anything but the sandbox provider: this page does not exist.
+  if (!isSandboxProvider()) notFound();
 
   const backToSupport = (
     <Link
@@ -60,20 +51,20 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
     </Link>
   );
 
-  // Invalid or missing link signature → polite error, never a stack trace.
-  if (!signatureValid(code, sig)) {
+  // Invalid, missing or EXPIRED link signature → polite error, never a stack trace.
+  if (!grantValid(code, sig, exp)) {
     return (
       <section className="container-site flex flex-col items-center px-4 py-20 text-center sm:py-28">
         <span className="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
           <AlertTriangle aria-hidden className="h-7 w-7 text-destructive" />
         </span>
         <h1 className="font-heading mt-5 text-xl font-bold sm:text-2xl">
-          {bn ? "লিংকটি সঠিক নয়" : "This link is not valid"}
+          {bn ? "লিংকটি সঠিক নয় বা মেয়াদ শেষ" : "This link is not valid or has expired"}
         </h1>
         <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
           {bn
-            ? "পেমেন্ট লিংকের স্বাক্ষর যাচাই হয়নি — সম্ভবত লিংকটি সম্পূর্ণ নয় বা মেয়াদ শেষ। অনুদান ফর্ম থেকে আবার শুরু করুন।"
-            : "The payment link's signature could not be verified — it may be truncated or expired. Please start again from the donation form."}
+            ? "পেমেন্ট লিংকের স্বাক্ষর যাচাই হয়নি — সম্ভবত লিংকটি সম্পূর্ণ নয় বা মেয়াদ (২৪ ঘণ্টা) শেষ। অনুদান ফর্ম থেকে আবার শুরু করুন।"
+            : "The payment link's signature could not be verified — it may be truncated or past its 24-hour validity. Please start again from the donation form."}
         </p>
         <div className="mt-6">{backToSupport}</div>
       </section>
@@ -126,13 +117,6 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
     );
   }
 
-  // The gateway signs the completion callback exactly like the callback route
-  // verifies it: HMAC-SHA256 over `${trackingCode}|COMPLETED|${providerTxnId}`.
-  const providerTxnId = `SBX-${donation.trackingCode}`;
-  const callbackSignature = createHmac("sha256", env.paymentCallbackSecret)
-    .update(`${donation.trackingCode}|COMPLETED|${providerTxnId}`)
-    .digest("hex");
-
   return (
     <SandboxCheckout
       lang={lang}
@@ -145,7 +129,6 @@ export default async function CheckoutPage({ params, searchParams }: CheckoutPag
         donorName: donation.donorName,
         isAnonymous: donation.isAnonymous,
       }}
-      callback={{ providerTxnId, signature: callbackSignature }}
     />
   );
 }

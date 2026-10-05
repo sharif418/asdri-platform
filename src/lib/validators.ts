@@ -70,12 +70,14 @@ export const donationSchema = z.object({
 });
 export type DonationInput = z.infer<typeof donationSchema>;
 
-/* ————————————— Donations: sandbox payment callback ————————————— */
+/* ————————————— Donations: signed payment-gateway callback ————————————— */
 
 export const PAYMENT_CALLBACK_STATUS_VALUES = ["COMPLETED", "FAILED"] as const;
 
-/** Signed sandbox-gateway callback body (signature = HMAC-SHA256 over
- *  `${trackingCode}|${status}|${providerTxnId ?? ""}` with the callback secret). */
+/** Signed gateway callback body. Round 3: the signature covers the timestamp
+ *  too — signature = HMAC-SHA256 over
+ *  `${trackingCode}|${status}|${providerTxnId ?? ""}|${ts}` — and the route
+ *  rejects timestamps outside a ±15-minute window (replay protection). */
 export const paymentCallbackSchema = z.object({
   trackingCode: z
     .string()
@@ -83,6 +85,11 @@ export const paymentCallbackSchema = z.object({
     .regex(/^DN-\d{4}-\d{6}$/, "সঠিক ট্র্যাকিং কোড দিন (যেমন: DN-2026-000001)"),
   status: z.enum(PAYMENT_CALLBACK_STATUS_VALUES),
   providerTxnId: z.string().trim().max(120).optional().or(z.literal("")),
+  ts: z
+    .number({ message: "কলব্যাকের টাইমস্ট্যাম্প দিন" })
+    .int()
+    .min(1_000_000_000_000, "টাইমস্ট্যাম্পটি পুরোনো")
+    .max(9_999_999_999_999, "টাইমস্ট্যাম্পটি সঠিক নয়"),
   signature: z
     .string()
     .trim()

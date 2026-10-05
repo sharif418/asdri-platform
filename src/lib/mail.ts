@@ -205,3 +205,54 @@ export function buildDonationReceiptEmail(donation: DonationReceiptInput): Outbo
     },
   };
 }
+
+/* ————————————— Email verification (round 3) ————————————— */
+
+export interface VerificationEmailInput {
+  to: string;
+  name: string;
+  /** Full link with the raw one-time token (never logged, never stored raw). */
+  link: string;
+}
+
+/**
+ * Email-address verification email. Bilingual short body: English primary
+ * (same convention as the receipt email) with the Bangla action line, so the
+ * office's mostly-Bangla audience still recognises it.
+ */
+export function buildVerificationEmail(input: VerificationEmailInput): OutboxEmailInput {
+  const button =
+    `<a href="${escapeHtml(input.link)}" style="display:inline-block;background:#0f5132;color:#ffffff;` +
+    `text-decoration:none;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;margin:18px 0">` +
+    `Verify my email / ইমেইল নিশ্চিত করুন</a>`;
+
+  const html =
+    `<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;border:1px solid #e6e9e3;border-radius:12px;overflow:hidden">` +
+    `<div style="background:#0f5132;padding:20px 28px"><p style="margin:0;color:#d4af37;font-size:11px;letter-spacing:2px;text-transform:uppercase">As-Sunnah Dawah &amp; Research Institute</p>` +
+    `<p style="margin:4px 0 0;color:#ffffff;font-size:18px;font-weight:700">Verify your email address</p></div>` +
+    `<div style="padding:24px 28px">` +
+    `<p style="margin:0;color:#3d4a3d;font-size:14px;line-height:1.7">Assalamu alaikum ${escapeHtml(input.name)},</p>` +
+    `<p style="margin:12px 0 0;color:#3d4a3d;font-size:14px;line-height:1.7">` +
+    `Please confirm this address to activate your account. আপনার অ্যাকাউন্টের ইমেইল নিশ্চিত করতে নিচের বাটনে ক্লিক করুন।</p>` +
+    `<p style="margin:0;text-align:center">${button}</p>` +
+    `<p style="margin:16px 0 0;color:#8a938a;font-size:12px;line-height:1.7">` +
+    `Or open this link: ${escapeHtml(input.link)}<br/>` +
+    `The link expires in 48 hours. If you did not create this account, you can ignore this email.</p></div>` +
+    `<div style="background:#f6f7f4;padding:14px 28px;color:#8a938a;font-size:11px">Satarkul Badda, Dhaka-1212, Bangladesh &middot; info@assunnah-institute.org</div></div>`;
+
+  const body =
+    `As-Sunnah Dawah & Research Institute — email verification\n\n` +
+    `Assalamu alaikum ${input.name},\n\n` +
+    `Please confirm this address to activate your account: ${input.link}\n` +
+    `ইমেইল নিশ্চিত করতে উপরের লিংকটি খুলুন। লিংকটির মেয়াদ ৪৮ ঘণ্টা।\n\n` +
+    `If you did not create this account, you can ignore this email.\n`;
+
+  return {
+    to: input.to,
+    subject: "Verify your email — As-Sunnah Institute",
+    body,
+    html,
+    kind: "email.verification",
+    payload: { purpose: "email.verification" },
+  };
+}

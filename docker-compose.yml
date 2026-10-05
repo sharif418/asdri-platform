@@ -42,7 +42,7 @@ services:
       PAYMENT_CALLBACK_SECRET: ${PAYMENT_CALLBACK_SECRET:?set PAYMENT_CALLBACK_SECRET in .env (openssl rand -hex 32)}
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://assunnahinstitute.org}
       MAIL_DRIVER: ${MAIL_DRIVER:-log}
-      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-sandbox}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-manual}
       # S3 (optional — leave unset to use the local-disk driver):
       S3_ENDPOINT: ${S3_ENDPOINT:-}
       S3_REGION: ${S3_REGION:-us-east-1}

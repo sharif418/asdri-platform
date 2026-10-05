@@ -144,12 +144,13 @@ describe("fatwaQuestionSchema", () => {
   });
 });
 
-describe("paymentCallbackSchema (sandbox gateway callback)", () => {
-  test("accepts a well-formed signed callback", () => {
+describe("paymentCallbackSchema (signed gateway callback)", () => {
+  test("accepts a well-formed signed callback (with timestamp)", () => {
     const parsed = paymentCallbackSchema.parse({
       trackingCode: "DN-2026-000001",
       status: "COMPLETED",
       providerTxnId: "TXN-ABC-123",
+      ts: Date.now(),
       signature: "a".repeat(64),
     });
     expect(parsed.status).toBe("COMPLETED");

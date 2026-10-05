@@ -1,28 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { getSession, verifyCsrf } from "@/lib/auth";
 import { uploadImage, uploadDocument } from "@/lib/storage/upload";
 import { isFeatureEnabled } from "@/lib/settings";
+import { isSameOrigin, rateLimit } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
 /**
  * Document upload for applications (applicant-authenticated).
  * Files are validated exactly like admin uploads: magic bytes + size caps.
+ * Round 3: same-origin + CSRF (double-submit) + rate limit — identity
+ * documents deserve the same guards as admin mutations — and every upload is
+ * stored PRIVATE (served only to the uploader and staff, never anonymously).
  */
 
 const MAX_IMAGE = 5 * 1024 * 1024;
 const MAX_DOC = 10 * 1024 * 1024;
 
 export async function POST(request: NextRequest): Promise<Response> {
-  if (!(await isFeatureEnabled("admissions"))) {
-    return NextResponse.json({ ok: false, error: "অনলাইন আবেদন বর্তমানে বন্ধ আছে।" }, { status: 403 });
+  if (!isSameOrigin(request)) {
+    return NextResponse.json({ ok: false, error: "অননুমোদিত উৎস।" }, { status: 403 });
   }
 
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ ok: false, error: "আপলোড করতে লগইন করুন।" }, { status: 401 });
+  }
+
+  // Per-USER sliding window — IP rotation cannot bypass it.
+  const limiter = rateLimit({ key: "admissions-documents", identifier: session.user.id, limit: 20, windowMs: 10 * 60_000 });
+  if (!limiter.ok) {
+    return NextResponse.json({ ok: false, error: "অনেকবার আপলোডের চেষ্টা হয়েছে, কিছুক্ষণ পর আবার করুন।" }, { status: 429 });
+  }
+
+  if (!(await isFeatureEnabled("admissions"))) {
+    return NextResponse.json({ ok: false, error: "অনলাইন আবেদন বর্তমানে বন্ধ আছে।" }, { status: 403 });
+  }
+
+  if (!verifyCsrf(session.session, request.headers.get("x-csrf-token") ?? "")) {
+    return NextResponse.json({ ok: false, error: "নিরাপত্তা টোকেন মেলেনি — পেজ রিফ্রেশ করে আবার চেষ্টা করুন।" }, { status: 403 });
   }
 
   const form = await request.formData().catch(() => null);
@@ -60,6 +78,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         height: uploaded.height ?? null,
         variants: (uploaded.variants ?? undefined) as never,
         kind: isImage ? "IMAGE" : "DOCUMENT",
+        visibility: "PRIVATE", // identity documents are never public
         uploadedById: session.user.id,
         altBn: "আবেদন সংযুক্তি",
         altEn: "Application attachment",
