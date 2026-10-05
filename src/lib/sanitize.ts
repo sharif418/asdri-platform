@@ -42,3 +42,53 @@ export function sanitizeRichText(html: string): string {
 export function sanitizeRichTextPreview(html: string): string {
   return sanitizeRichText(html);
 }
+
+/* ————————————— HTML → display text ————————————— */
+
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+  hellip: "…",
+  mdash: "—",
+  ndash: "–",
+  lsquo: "\u2018",
+  rsquo: "\u2019",
+  ldquo: "\u201C",
+  rdquo: "\u201D",
+};
+
+function decodeEntities(text: string): string {
+  return text.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (match, code: string): string => {
+    if (code.startsWith("#x") || code.startsWith("#X")) {
+      const value = Number.parseInt(code.slice(2), 16);
+      return Number.isFinite(value) && value > 0 && value <= 0x10ffff ? String.fromCodePoint(value) : match;
+    }
+    if (code.startsWith("#")) {
+      const value = Number.parseInt(code.slice(1), 10);
+      return Number.isFinite(value) && value > 0 && value <= 0x10ffff ? String.fromCodePoint(value) : match;
+    }
+    return NAMED_ENTITIES[code.toLowerCase()] ?? match;
+  });
+}
+
+/**
+ * Stored rich HTML → plain display text: block-level closers become
+ * newlines (the fatwa wire DTO renders answers as text paragraphs), inline
+ * tags are dropped, entities are resolved. Plain text passes through
+ * unchanged apart from entity decoding.
+ */
+export function richTextToPlain(html: string): string {
+  const withBreaks = (html ?? "")
+    .replace(/<\s*br\s*\/?\s*>/gi, "\n")
+    .replace(/<\s*\/\s*(p|li|h[2-4]|blockquote)\s*>/gi, "\n")
+    .replace(/<\s*(hr|ul|ol)\s*[^>]*>/gi, "\n")
+    .replace(/<[^>]+>/g, "");
+  return decodeEntities(withBreaks)
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}

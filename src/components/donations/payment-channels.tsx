@@ -1,26 +1,35 @@
 import { Landmark, Smartphone } from "lucide-react";
-import { getSiteConfig } from "@/lib/content/site";
 import type { Language } from "@/types";
+
+/** DB-driven payment channel numbers (from the `site.payment` setting). */
+export interface PaymentChannelInfo {
+  bkash: string;
+  nagad: string;
+  rocket: string;
+  bankBn: string;
+}
 
 interface PaymentChannelsProps {
   lang: Language;
   /** `on-dark` renders on the deep-emerald ground (lighter text). */
   tone?: "default" | "on-dark";
+  /** Channel numbers — fetched server-side (settings are DB-backed). */
+  payment: PaymentChannelInfo;
 }
 
 /**
  * Official payment channels of the institute — bKash / Nagad / Rocket
- * mobile banking plus the bank transfer details, from `siteConfig.payment`.
+ * mobile banking plus the bank transfer details. Presentational and
+ * client-safe: server callers resolve the numbers and pass them down.
  */
-export async function PaymentChannels({ lang, tone = "default" }: PaymentChannelsProps) {
-  const siteConfig = await getSiteConfig();
+export function PaymentChannels({ lang, tone = "default", payment }: PaymentChannelsProps) {
   const bn = lang === "bn";
   const onDark = tone === "on-dark";
 
   const channels = [
-    { name: "bKash", number: siteConfig.payment.bkash, icon: Smartphone },
-    { name: "Nagad", number: siteConfig.payment.nagad, icon: Smartphone },
-    { name: "Rocket", number: siteConfig.payment.rocket, icon: Smartphone },
+    { name: "bKash", number: payment.bkash, icon: Smartphone },
+    { name: "Nagad", number: payment.nagad, icon: Smartphone },
+    { name: "Rocket", number: payment.rocket, icon: Smartphone },
   ];
 
   return (
@@ -72,7 +81,7 @@ export async function PaymentChannels({ lang, tone = "default" }: PaymentChannel
             {bn ? "ব্যাংক ট্রান্সফার" : "Bank Transfer"}
           </span>
           <span className={`block text-[12.5px] leading-snug ${onDark ? "text-ivory/90" : "text-foreground"}`}>
-            {siteConfig.payment.bankBn}
+            {payment.bankBn}
           </span>
         </span>
       </div>

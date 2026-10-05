@@ -10,10 +10,11 @@ import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { GoldRule } from "@/components/shared/ornaments";
 import { DonationPortal } from "@/components/donations/donation-portal";
 import { CampaignsSection } from "@/components/donations/campaigns-section";
-import { PaymentChannels } from "@/components/donations/payment-channels";
+import { PaymentChannels, type PaymentChannelInfo } from "@/components/donations/payment-channels";
 import { FUND_TYPES } from "@/types";
 import type { FundType } from "@/types";
 import { getFunds, getFundLabels } from "@/lib/content/funds";
+import { getSiteConfig } from "@/lib/content/site";
 
 export const metadata: Metadata = {
   title: "সাপোর্ট করুন — অনুদান পোর্টাল",
@@ -80,7 +81,8 @@ export default async function SupportPage({ params, searchParams }: SupportPageP
       ? Math.round(parsedAmount)
       : null;
 
-  const [funds, fundLabels] = await Promise.all([getFunds(), getFundLabels()]);
+  const [funds, fundLabels, siteConfig] = await Promise.all([getFunds(), getFundLabels(), getSiteConfig()]);
+  const payment: PaymentChannelInfo = siteConfig.payment;
 
   return (
     <>
@@ -98,7 +100,7 @@ export default async function SupportPage({ params, searchParams }: SupportPageP
       />
 
       {/* Fund selector + donation form + receipt dialog */}
-      <DonationPortal initialFund={fund} initialAmount={initialAmount} lang={lang} funds={funds} fundLabels={fundLabels} />
+      <DonationPortal initialFund={fund} initialAmount={initialAmount} lang={lang} funds={funds} fundLabels={fundLabels} payment={payment} />
 
       {/* Live campaigns */}
       <CampaignsSection lang={lang} />
@@ -150,7 +152,7 @@ export default async function SupportPage({ params, searchParams }: SupportPageP
                   : "Only send donations to the accounts below. Always mention your receipt number as the payment reference."}
               </p>
               <div className="mt-5">
-                <PaymentChannels lang={lang} />
+                <PaymentChannels lang={lang} payment={payment} />
               </div>
             </div>
 
