@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Banknote, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { Banknote, Search } from "lucide-react";
 import { db } from "@/lib/db";
 import { getSession, roleCan } from "@/lib/auth";
+import { AdminPager } from "@/components/admin/admin-pager";
 import { DonationsTable, type DonationRowData } from "@/components/admin/donations-table";
 import { FinanceExportButton } from "@/components/admin/finance-export-button";
 import { donationStatusLabel, DONATION_STATUS_META } from "@/lib/finance-labels";
@@ -227,31 +228,13 @@ export default async function AdminDonationsPage({ searchParams }: { searchParam
         )}
       </div>
 
-      {pageCount > 1 && (
-        <div className="mt-4 flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">
-            পৃষ্ঠা {formatNumber(page, "bn")} / {formatNumber(pageCount, "bn")} · মোট {formatNumber(total, "bn")} অনুদান
-          </span>
-          <div className="flex gap-2">
-            {page > 1 && (
-              <Link
-                href={buildQuery({ q: q || undefined, status, fundId, month: month ?? undefined }, page - 1)}
-                className="inline-flex items-center gap-1 rounded-lg border bg-card px-3 py-1.5 font-semibold hover:bg-secondary"
-              >
-                <ChevronLeft aria-hidden className="h-3.5 w-3.5" /> পূর্ববর্তী
-              </Link>
-            )}
-            {page < pageCount && (
-              <Link
-                href={buildQuery({ q: q || undefined, status, fundId, month: month ?? undefined }, page + 1)}
-                className="inline-flex items-center gap-1 rounded-lg border bg-card px-3 py-1.5 font-semibold hover:bg-secondary"
-              >
-                পরবর্তী <ChevronRight aria-hidden className="h-3.5 w-3.5" />
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
+      <AdminPager
+        page={page}
+        pageCount={pageCount}
+        total={total}
+        unit="অনুদান"
+        buildHref={(next) => buildQuery({ q: q || undefined, status, fundId, month: month ?? undefined }, next)}
+      />
     </div>
   );
 }

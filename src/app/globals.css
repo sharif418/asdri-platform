@@ -286,24 +286,31 @@
   animation: focus-pulse 1.6s ease-in-out 3;
 }
 
-/* ————— Print: isolate the expanded fatwa as an official pad ————— */
+/* ————— Print: isolate the expanded fatwa / open notice as an official pad ————— */
 @media print {
-  body.printing-fatwa * {
+  body.printing-fatwa *,
+  body.printing-notice * {
     visibility: hidden !important;
   }
   body.printing-fatwa .print-zone,
-  body.printing-fatwa .print-zone * {
+  body.printing-fatwa .print-zone *,
+  body.printing-notice .print-zone,
+  body.printing-notice .print-zone * {
     visibility: visible !important;
   }
-  body.printing-fatwa .print-zone {
+  body.printing-fatwa .print-zone,
+  body.printing-notice .print-zone {
     position: absolute !important;
     left: 0;
     top: 0;
     width: 100%;
     border: none !important;
     box-shadow: none !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
-  body.printing-fatwa {
+  body.printing-fatwa,
+  body.printing-notice {
     background: #fff !important;
   }
 }

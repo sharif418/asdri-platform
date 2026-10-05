@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getSession, roleCan } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { formatDate, formatNumber } from "@/lib/format";
+import { AdminPager } from "@/components/admin/admin-pager";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "নিউজলেটার সাবস্ক্রাইবার" };
@@ -113,23 +114,13 @@ export default async function AdminInboxSubscribersPage({ searchParams }: { sear
         )}
       </div>
 
-      {pageCount > 1 && (
-        <div className="mt-4 flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">পৃষ্ঠা {page} / {pageCount}</span>
-          <div className="flex gap-2">
-            {page > 1 && (
-              <Link href={`/admin/inbox/subscribers?${new URLSearchParams({ ...(q ? { q } : {}), page: String(page - 1) }).toString()}`} className="rounded-lg border bg-card px-3 py-1.5 font-semibold hover:bg-secondary">
-                পূর্ববর্তী
-              </Link>
-            )}
-            {page < pageCount && (
-              <Link href={`/admin/inbox/subscribers?${new URLSearchParams({ ...(q ? { q } : {}), page: String(page + 1) }).toString()}`} className="rounded-lg border bg-card px-3 py-1.5 font-semibold hover:bg-secondary">
-                পরবর্তী
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
+      <AdminPager
+        page={page}
+        pageCount={pageCount}
+        total={total}
+        unit="সাবস্ক্রাইবার"
+        buildHref={(next) => `/admin/inbox/subscribers?${new URLSearchParams({ ...(q ? { q } : {}), page: String(next) }).toString()}`}
+      />
     </div>
   );
 }

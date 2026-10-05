@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getSession, roleCan } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { MessagesList, type MessageRow } from "@/components/admin/messages-list";
+import { AdminPager } from "@/components/admin/admin-pager";
 
 export const metadata = { title: "যোগাযোগ বার্তা" };
 
@@ -85,29 +86,13 @@ export default async function AdminInboxMessagesPage({ searchParams }: { searchP
         <MessagesList key={rows.map((row) => `${row.id}:${row.isRead}`).join("|")} messages={rows} />
       </div>
 
-      {pageCount > 1 && (
-        <div className="mt-4 flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">পৃষ্ঠা {page} / {pageCount}</span>
-          <div className="flex gap-2">
-            {page > 1 && (
-              <Link
-                href={`/admin/inbox/messages?${new URLSearchParams({ ...(q ? { q } : {}), ...(unreadOnly ? { filter: "unread" } : {}), page: String(page - 1) }).toString()}`}
-                className="rounded-lg border bg-card px-3 py-1.5 font-semibold hover:bg-secondary"
-              >
-                পূর্ববর্তী
-              </Link>
-            )}
-            {page < pageCount && (
-              <Link
-                href={`/admin/inbox/messages?${new URLSearchParams({ ...(q ? { q } : {}), ...(unreadOnly ? { filter: "unread" } : {}), page: String(page + 1) }).toString()}`}
-                className="rounded-lg border bg-card px-3 py-1.5 font-semibold hover:bg-secondary"
-              >
-                পরবর্তী
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
+      <AdminPager
+        page={page}
+        pageCount={pageCount}
+        total={total}
+        unit="বার্তা"
+        buildHref={(next) => `/admin/inbox/messages?${new URLSearchParams({ ...(q ? { q } : {}), ...(unreadOnly ? { filter: "unread" } : {}), page: String(next) }).toString()}`}
+      />
     </div>
   );
 }

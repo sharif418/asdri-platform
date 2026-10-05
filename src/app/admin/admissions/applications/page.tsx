@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ClipboardList, Search } from "lucide-react";
+import { ClipboardList, Search } from "lucide-react";
 import { db } from "@/lib/db";
 import { getSession, roleCan } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { ApplicationsExportButton } from "@/components/admin/applications-export-button";
+import { AdminPager } from "@/components/admin/admin-pager";
 import {
   APPLICATION_STATUS_META,
   applicationStatusChip,
@@ -234,31 +235,13 @@ export default async function AdminApplicationsPage({ searchParams }: { searchPa
         )}
       </div>
 
-      {pageCount > 1 && (
-        <div className="mt-4 flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">
-            পৃষ্ঠা {formatNumber(page, "bn")} / {formatNumber(pageCount, "bn")} · মোট {formatNumber(total, "bn")} আবেদন
-          </span>
-          <div className="flex gap-2">
-            {page > 1 && (
-              <Link
-                href={buildQuery({ q: q || undefined, status, intakeId }, page - 1)}
-                className="inline-flex items-center gap-1 rounded-lg border bg-card px-3 py-1.5 font-semibold hover:bg-secondary"
-              >
-                <ChevronLeft aria-hidden className="h-3.5 w-3.5" /> পূর্ববর্তী
-              </Link>
-            )}
-            {page < pageCount && (
-              <Link
-                href={buildQuery({ q: q || undefined, status, intakeId }, page + 1)}
-                className="inline-flex items-center gap-1 rounded-lg border bg-card px-3 py-1.5 font-semibold hover:bg-secondary"
-              >
-                পরবর্তী <ChevronRight aria-hidden className="h-3.5 w-3.5" />
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
+      <AdminPager
+        page={page}
+        pageCount={pageCount}
+        total={total}
+        unit="আবেদন"
+        buildHref={(next) => buildQuery({ q: q || undefined, status, intakeId }, next)}
+      />
     </div>
   );
 }
