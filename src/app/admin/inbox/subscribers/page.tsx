@@ -72,7 +72,7 @@ export default async function AdminInboxSubscribersPage({ searchParams }: { sear
         </a>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-2xl border bg-card shadow-sm">
+      <div className="mt-4 overflow-clip rounded-2xl border bg-card shadow-sm">
         {subscribers.length === 0 ? (
           <div className="px-6 py-16 text-center">
             <p className="font-heading text-lg font-bold">কোনো সাবস্ক্রাইবার নেই</p>

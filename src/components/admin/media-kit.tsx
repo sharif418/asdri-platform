@@ -187,7 +187,7 @@ export function MediaCard({ media }: { media: MediaRow }) {
   }
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition-colors hover:border-gold/40">
+    <div className="flex flex-col overflow-clip rounded-2xl border bg-card shadow-sm transition-colors hover:border-gold/40">
       {isImage ? (
         <img
           src={`/api/media/${media.key}`}
