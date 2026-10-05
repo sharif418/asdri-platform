@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { BadgeCheck, LayoutDashboard, Lock, Mail, ShieldCheck, Smartphone } from "lucide-react";
 import type { Lang } from "@/lib/locale";
 import { langPath } from "@/lib/locale";
+import { db } from "@/lib/db";
 import { getSession, isStaff } from "@/lib/auth";
 import { PageHero } from "@/components/shared/page-hero";
 import { Reveal } from "@/components/shared/reveal";
@@ -10,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { pick } from "@/types";
 import type { UserRole } from "@prisma/client";
+import { ApplicationStatusCard } from "@/components/admissions/application-status-card";
 
 export const metadata: Metadata = {
   title: "আমার অ্যাকাউন্ট",
@@ -67,6 +69,18 @@ export default async function AccountPage({ params }: { params: Promise<{ lang: 
 
   const user = session.user;
   const roleLabel = pick(ROLE_LABELS[user.role] ?? { bn: user.role, en: user.role }, lang);
+
+  const applications =
+    user.role === "APPLICANT" || user.role === "ADMIN"
+      ? await db.application.findMany({
+          where: { userId: user.id },
+          orderBy: { submittedAt: "desc" },
+          include: {
+            intake: { include: { course: { select: { titleBn: true, titleEn: true, code: true } } } },
+            events: { orderBy: { createdAt: "asc" } },
+          },
+        })
+      : [];
 
   return (
     <div className="container-site pb-16 pt-10 sm:pb-24">
@@ -156,13 +170,35 @@ export default async function AccountPage({ params }: { params: Promise<{ lang: 
                 <span className="text-gold opacity-0 transition-opacity group-hover:opacity-100">→</span>
               </a>
             </div>
-            <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-              {lang === "bn"
-                ? "আবেদনকারীর সম্পূর্ণ পোর্টাল (আবেদনের স্ট্যাটাস, পরীক্ষার সময়সূচি, ফলাফল) ভর্তি মডিউলের সাথে আসছে।"
-                : "The full applicant portal (application status, exam schedule, results) arrives with the admissions module."}
-            </p>
+            {applications.length > 0 ? (
+              <a
+                href={langPath(lang, "/admissions/apply")}
+                className="group flex items-center justify-between rounded-xl border p-4 transition-all hover:border-gold/50 hover:shadow-md"
+              >
+                <span className="flex items-center gap-3">
+                  <StarMotif aria-hidden className="h-5 w-5 text-primary" />
+                  <span className="text-sm font-semibold">
+                    {lang === "bn" ? "নতুন আবেদন করুন" : "New application"}
+                  </span>
+                </span>
+                <span className="text-gold opacity-0 transition-opacity group-hover:opacity-100">→</span>
+              </a>
+            ) : null}
           </div>
         </div>
+
+        {applications.length > 0 && (
+          <section className="mt-10">
+            <h2 className="font-heading text-xl font-bold">
+              {lang === "bn" ? "আমার ভর্তি আবেদনসমূহ" : "My admission applications"}
+            </h2>
+            <div className="mt-4 space-y-4">
+              {applications.map((application) => (
+                <ApplicationStatusCard key={application.id} application={application} lang={lang} />
+              ))}
+            </div>
+          </section>
+        )}
       </Reveal>
     </div>
   );
