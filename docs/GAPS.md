@@ -34,7 +34,24 @@ client input before launch, and known limitations with their planned resolutions
 9. **Teacher photos are monogram avatars** (gold initials on emerald) until the office
    uploads real photos — no generated faces for real, named people.
 10. **Media deletion**: albums/people keep `onDelete: SetNull`/`Cascade` per schema; the
+    admin confirm dialogs warn; nothing is hard-deleted outside those paths — the
     admin media library hides rows referenced by content rather than hard-deleting.
+11. **Clarification topic article counts are DB-derived** (round 20): the badge on
+    /research/clarifications counts published articles per `clar-*` category, not the
+    advertised library numbers (6/5/8/5/4/3 in the source doc). Six seeded clarification
+    articles (one per topic) make each badge read ১ today; as the office publishes more,
+    counts rise honestly. Confirm the copy expectation — if the advertised numbers must
+    be shown verbatim, that is a content decision, not a code one.
+12. **Outbox resend vs retry semantics** (round 20): `retry` = deliver NOW through the
+    configured driver (smtp send; log driver marks the row delivered=logged) and
+    increments `attempts`; `resend` = re-queue only (clears sentAt/error for a smtp
+    worker pass, attempts untouched). Both audited. Confirm the office wants BOTH buttons
+    or just retry under the log driver (where resend is a no-op-ish reset).
+13. **404 copy** (round 20): the branded public 404 says “পৃষ্ঠাটি খুঁজে পাওয়া যায়নি /
+    Sorry, the page you are looking for might have been moved or does not exist.” and the
+    admin 404 “পৃষ্ঠাটি পাওয়া যায়নি / This admin page doesn't exist or has moved.” —
+    links: public → `/` + `/en`, admin → `/admin` + `/`. Confirm tone/wording with the
+    office (Bengali primary, English secondary by design).
 
 ## B. Needs client input before launch
 
@@ -65,8 +82,10 @@ client input before launch, and known limitations with their planned resolutions
    image build happen on the client's infrastructure. Treated as Partial in PROGRESS.
 2. **Donation ledger pagination** is page-based (current page size); deep pagination past
    ~300 rows and audit CSV range-aware paging remain from the round-1 backlog.
-3. **Rate-limit 429 path and admin finance mutation routes are not directly integration-
-   tested** (role gating is covered by the matrix; the 429 logic is unit-level simple).
+3. **Rate-limit 429 path and most admin finance mutation routes are not directly
+   integration-tested** (role gating is covered by the matrix; the 429 logic is unit-level
+   simple). Round-20 exception: PATCH /api/admin/outbox/[id] retry/resend now has a
+   7-test suite through the real handler.
 4. **Note-only application events**: "add note" re-PATCHes the current status (enum
    constraint); a dedicated POST /events endpoint would remove the SUBMITTED/DRAFT
    limitation in the officer panel (button currently disabled with a hint).
@@ -75,7 +94,9 @@ client input before launch, and known limitations with their planned resolutions
 6. **Search is ILIKE-based** with ranking heuristics; Postgres full-text/tsvector with
    Bangla dictionaries is a drop-in upgrade path when content volume justifies it.
 7. **Email driver is `log`** (outbox rows) in the sandbox; the smtp driver on top of
-   `queueOutboxEmail` needs SMTP credentials (HUMAN_STEPS) and a small send loop.
+   `queueOutboxEmail` needs SMTP credentials (HUMAN_STEPS). Round 20 added the manual
+   deliver-now pass (outbox retry button) — a scheduled background worker for queued
+   rows is still absent; until then staff retry manually or a cron curls the admin API.
 8. **i18n of admin** is Bangla-only by design (office staff); no /en admin.
 
 ## D. Sandbox environment notes (not product gaps)

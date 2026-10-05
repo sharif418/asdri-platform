@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: true,
   poweredByHeader: false,
+  // /admin/login has no page — the public /login serves staff sign-in too.
+  redirects: async () => [{ source: "/admin/login", destination: "/login", permanent: false }],
   images: {
     formats: ["image/avif", "image/webp"],
     // uploads are streamed from our own storage route — same-origin, no remote hosts

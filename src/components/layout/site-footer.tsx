@@ -17,7 +17,7 @@ import { toast } from "@/hooks/use-toast";
 
 interface FooterColumn {
   titleKey: DictionaryKey;
-  links: { key: DictionaryKey; href: string }[];
+  links: { key: DictionaryKey; href: string; raw?: boolean }[];
 }
 
 const footerColumns: FooterColumn[] = [
@@ -39,6 +39,8 @@ const footerColumns: FooterColumn[] = [
       { key: "nav.research.library", href: "/research/library" },
       { key: "nav.research.fatwa", href: "/research/fatwa" },
       { key: "nav.support.calculator", href: "/support/zakat-calculator" },
+      // root-level route handler — bypasses the /:lang prefix (raw href)
+      { key: "footer.rss", href: "/feed.xml", raw: true },
     ],
   },
 ];
@@ -170,12 +172,21 @@ export function SiteFooter() {
             <ul className="mt-3">
               {column.links.map((link) => (
                 <li key={link.href + link.key}>
-                  <Link
-                    href={langPath(lang, link.href)}
-                    className="flex min-h-11 items-center text-sm text-ivory/75 transition-colors hover:text-gold"
-                  >
-                    {t(link.key)}
-                  </Link>
+                  {link.raw ? (
+                    <a
+                      href={link.href}
+                      className="flex min-h-11 items-center text-sm text-ivory/75 transition-colors hover:text-gold"
+                    >
+                      {t(link.key)}
+                    </a>
+                  ) : (
+                    <Link
+                      href={langPath(lang, link.href)}
+                      className="flex min-h-11 items-center text-sm text-ivory/75 transition-colors hover:text-gold"
+                    >
+                      {t(link.key)}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>

@@ -969,6 +969,7 @@ model OutboxEmail {
   html             String
   kind             String // donation.receipt | application.submitted | fatwa.answered …
   payload          Json? // template data
+  attempts         Int       @default(0) // delivery attempts (creation-time send + manual retries)
   sentAt           DateTime?
   providerMessageId String? // SMTP server's message id when actually delivered
   error            String?

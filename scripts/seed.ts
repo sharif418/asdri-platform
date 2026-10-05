@@ -18,6 +18,7 @@ import { PrismaClient } from "@prisma/client";
 import { seedSettings } from "./seed-data/settings";
 import { seedAcademics } from "./seed-data/academics";
 import { seedContent } from "./seed-data/content";
+import { seedClarificationPosts } from "./seed-data/clarification-posts";
 import { uploadImage } from "@/lib/storage/upload";
 import { hashPassword } from "@/lib/auth";
 import { env } from "@/lib/env";
@@ -219,6 +220,8 @@ async function main(): Promise<void> {
   await seedSettings(db);
   await seedAcademics(db);
   await seedContent(db);
+  // after seedContent: the clar-* categories exist for the topic articles
+  await seedClarificationPosts(db);
   const mediaByPath = await importMedia();
   await attachMedia(mediaByPath);
   await seedAdmin();

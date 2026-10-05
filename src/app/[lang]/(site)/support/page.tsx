@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BookOpenCheck, Calculator, FileSpreadsheet, GraduationCap, LayoutDashboard, ShieldCheck } from "lucide-react";
-import { langPath, type Lang } from "@/lib/locale";
+import { langPath, alternatesFor, type Lang } from "@/lib/locale";
 import { isFeatureEnabled } from "@/lib/settings";
 import { ModuleUnavailable } from "@/components/shared/module-unavailable";
 import { PageHero } from "@/components/shared/page-hero";
@@ -15,14 +15,22 @@ import { FUND_TYPES } from "@/types";
 import type { FundType } from "@/types";
 import { getFunds, getFundLabels } from "@/lib/content/funds";
 import { getSiteConfig } from "@/lib/content/site";
+import { env } from "@/lib/env";
 import { db } from "@/lib/db";
 import type { CampaignOption } from "@/components/donations/donation-types";
 
-export const metadata: Metadata = {
-  title: "সাপোর্ট করুন — অনুদান পোর্টাল",
-  description:
-    "যাকাত ফান্ড, শিক্ষার্থী স্পন্সর, সাধারণ অনুদান ও স্কলারশিপ ফান্ডে অবদান রাখুন — বিকাশ, নগদ, রকেট ও ব্যাংক ট্রান্সফারে সহজ পেমেন্ট।",
-};
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  const { canonical, languages } = alternatesFor("/support", env.siteUrl);
+  return {
+    title: isBn ? "সাপোর্ট করুন — অনুদান পোর্টাল" : "Support — Donation Portal",
+    description: isBn
+      ? "যাকাত ফান্ড, শিক্ষার্থী স্পন্সর, সাধারণ অনুদান ও স্কলারশিপ ফান্ডে অবদান রাখুন — বিকাশ, নগদ, রকেট ও ব্যাংক ট্রান্সফারে সহজ পেমেন্ট।"
+      : "Give to the zakat fund, student sponsorship, general donations, and the scholarship fund — easy payment via bKash, Nagad, Rocket, and bank transfer.",
+    alternates: { canonical, languages },
+  };
+}
 
 interface SupportPageProps {
   params: Promise<{ lang: Lang }>;

@@ -10,10 +10,14 @@ import { SandboxCheckout } from "@/components/donations/sandbox-checkout";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "পেমেন্ট চেকআউট",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata({ params }: { params: Promise<{ lang: string; code: string }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  return {
+    title: isBn ? "পেমেন্ট চেকআউট" : "Payment Checkout",
+    robots: { index: false, follow: false },
+  };
+}
 
 interface CheckoutPageProps {
   params: Promise<{ lang: string; code: string }>;

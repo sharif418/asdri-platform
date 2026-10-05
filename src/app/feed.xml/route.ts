@@ -31,6 +31,7 @@ interface FeedNotice {
 
 async function fetchNotices(): Promise<FeedNotice[]> {
   return db.notice.findMany({
+    where: { isPublished: true },
     orderBy: { publishedAt: "desc" },
     take: 20,
     select: {

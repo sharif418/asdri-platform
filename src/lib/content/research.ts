@@ -107,29 +107,34 @@ export async function getPublications(): Promise<PublicationItem[]> {
   });
 }
 
-/** সংশয় নিরসন topics — settings hold descriptions/counts, PostCategory the titles. */
+/** সংশয় নিরসন topics — settings hold descriptions/video counts, PostCategory
+ *  the titles; article counts come from the DB (published ARTICLE posts in
+ *  each clar-* category), never from the seeded static numbers. */
 export async function getClarificationTopics(): Promise<ClarificationTopic[]> {
   const [settingRows, categoryRows] = await Promise.all([
     db.siteSetting.findMany({ where: { key: { startsWith: "clarification.topic." } }, select: { key: true, value: true } }),
     db.postCategory.findMany({
       where: { slug: { startsWith: "clar-" } },
       orderBy: { sortOrder: "asc" },
-      select: { slug: true, nameBn: true, nameEn: true },
+      select: {
+        slug: true,
+        nameBn: true,
+        nameEn: true,
+        _count: { select: { posts: { where: { kind: "ARTICLE", isPublished: true } } } },
+      },
     }),
   ]);
 
-  const byId = new Map<string, { descriptionBn: string; descriptionEn: string; articleCount: number; videoCount: number }>();
+  const byId = new Map<string, { descriptionBn: string; descriptionEn: string; videoCount: number }>();
   for (const setting of settingRows) {
     const value = setting.value as {
       descriptionBn?: string;
       descriptionEn?: string;
-      articleCount?: number;
       videoCount?: number;
     };
     byId.set(setting.key.replace("clarification.topic.", ""), {
       descriptionBn: value.descriptionBn ?? "",
       descriptionEn: value.descriptionEn ?? "",
-      articleCount: value.articleCount ?? 0,
       videoCount: value.videoCount ?? 0,
     });
   }
@@ -149,12 +154,13 @@ export async function getClarificationTopics(): Promise<ClarificationTopic[]> {
         bn: setting?.descriptionBn || fallback?.description.bn || "",
         en: setting?.descriptionEn || fallback?.description.en || setting?.descriptionBn || "",
       },
-      articleCount: setting?.articleCount ?? fallback?.articleCount ?? 0,
+      articleCount: category._count.posts,
       videoCount: setting?.videoCount ?? fallback?.videoCount ?? 0,
       icon: TOPIC_ICONS[id] ?? fallback?.icon ?? "help-circle",
     });
   }
-  // Any setting without a matching PostCategory (title fallback to static).
+  // Any setting without a matching PostCategory (title fallback to static);
+  // no category exists to hold posts, so the article count is honestly 0.
   for (const [id, setting] of byId) {
     if (topics.some((topic) => topic.id === id)) continue;
     const fallback = staticTopics.find((topic) => topic.id === id);
@@ -162,7 +168,7 @@ export async function getClarificationTopics(): Promise<ClarificationTopic[]> {
       id,
       title: { bn: fallback?.title.bn ?? id, en: fallback?.title.en ?? id },
       description: { bn: setting.descriptionBn, en: setting.descriptionEn || setting.descriptionBn },
-      articleCount: setting.articleCount,
+      articleCount: 0,
       videoCount: setting.videoCount,
       icon: TOPIC_ICONS[id] ?? fallback?.icon ?? "help-circle",
     });
