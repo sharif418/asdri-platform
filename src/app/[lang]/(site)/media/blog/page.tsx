@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Filter, X } from "lucide-react";
 import { langPath, type Lang } from "@/lib/locale";
 import { isFeatureEnabled } from "@/lib/settings";
 import { ModuleUnavailable } from "@/components/shared/module-unavailable";
-import { getBlogArticles } from "@/lib/content/blog";
+import { getArticlesByCategorySlug, getBlogArticles } from "@/lib/content/blog";
+import { getClarificationTopics } from "@/lib/content/research";
 import { alternatesFor } from "@/lib/locale";
 import { env } from "@/lib/env";
 import { PageHero } from "@/components/shared/page-hero";
 import { Reveal } from "@/components/shared/reveal";
 import { BlogExplorer } from "@/components/media/blog-explorer";
 import { toBnDigits } from "@/lib/format";
+import { pick } from "@/types";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -24,13 +28,31 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: Lan
   };
 }
 
-export default async function BlogIndexPage({ params }: { params: Promise<{ lang: Lang }> }) {
+export default async function BlogIndexPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ lang: Lang }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { lang } = await params;
   if (!(await isFeatureEnabled("blog"))) {
     return <ModuleUnavailable lang={lang} moduleLabelBn="ব্লগ ও প্রবন্ধ" moduleLabelEn="Blog & essays" />;
   }
 
-  const blogArticles = await getBlogArticles();
+  // ?topic=<clarification topic id> — deep-link filter from the clarifications
+  // page. Unknown ids are ignored (the unfiltered index renders instead).
+  const sp = await searchParams;
+  const rawTopic = Array.isArray(sp.topic) ? sp.topic[0] : sp.topic;
+  let topicFilter: { id: string; name: { bn: string; en: string } } | null = null;
+  if (rawTopic) {
+    const match = (await getClarificationTopics()).find((topic) => topic.id === rawTopic);
+    if (match) topicFilter = { id: match.id, name: match.title };
+  }
+
+  const blogArticles = topicFilter
+    ? await getArticlesByCategorySlug(`clar-${topicFilter.id}`)
+    : await getBlogArticles();
   const articles = blogArticles.map((article) => ({
     slug: article.slug,
     title: article.title,
@@ -65,10 +87,31 @@ export default async function BlogIndexPage({ params }: { params: Promise<{ lang
           <Reveal className="mb-8 text-center">
             <p className="text-sm text-muted-foreground">
               {lang === "bn"
-                ? `মোট ${toBnDigits(blogArticles.length)} টি গবেষণা-প্রবন্ধ — ক্যাটাগরি অনুযায়ী ছাঁকুন`
-                : `${blogArticles.length} research essays — filter by category`}
+                ? `মোট ${toBnDigits(blogArticles.length)} টি গবেষণা-প্রবন্ধ${topicFilter ? ` — ${pick(topicFilter.name, lang)}` : ""} — ক্যাটাগরি অনুযায়ী ছাঁকুন`
+                : `${blogArticles.length} research essays${topicFilter ? ` in ${pick(topicFilter.name, lang)}` : ""} — filter by category`}
             </p>
           </Reveal>
+
+          {/* active topic filter chip + clear button */}
+          {topicFilter ? (
+            <Reveal delay={0.05} className="mb-8 flex flex-wrap items-center justify-center gap-2.5">
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold/10 px-4 py-2 text-[13px] font-semibold text-gold"
+                aria-label={lang === "bn" ? "সক্রিয় ফিল্টার" : "Active filter"}
+              >
+                <Filter aria-hidden className="h-3.5 w-3.5" />
+                {pick(topicFilter.name, lang)}
+              </span>
+              <Link
+                href={langPath(lang, "/media/blog")}
+                className="inline-flex items-center gap-1.5 rounded-full border bg-card px-4 py-2 text-[13px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+              >
+                <X aria-hidden className="h-3.5 w-3.5" />
+                {lang === "bn" ? "সব দেখুন" : "View all"}
+              </Link>
+            </Reveal>
+          ) : null}
+
           <BlogExplorer articles={articles} lang={lang} />
         </div>
       </section>

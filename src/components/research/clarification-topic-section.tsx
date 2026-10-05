@@ -32,6 +32,7 @@ export function ClarificationTopicSection({
 }) {
   const Icon = topicIcons[topic.icon] ?? HelpCircle;
   const flip = index % 2 === 1;
+  const hasRelated = related.length > 0;
 
   return (
     <article
@@ -39,8 +40,8 @@ export function ClarificationTopicSection({
       className="scroll-mt-28 rounded-3xl border bg-card p-6 shadow-sm sm:p-9"
     >
       <div className="grid gap-8 lg:grid-cols-5 lg:gap-12">
-        {/* identity column */}
-        <div className={`lg:col-span-2 ${flip ? "lg:order-2" : ""}`}>
+        {/* identity column (spans the full row when no articles are seeded yet) */}
+        <div className={hasRelated ? `lg:col-span-2 ${flip ? "lg:order-2" : ""}` : "lg:col-span-5"}>
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-deep text-gold">
               <Icon aria-hidden className="h-7 w-7" />
@@ -73,8 +74,9 @@ export function ClarificationTopicSection({
           </p>
         </div>
 
-        {/* related articles column */}
-        <div className={`lg:col-span-3 ${flip ? "lg:order-1" : ""}`}>
+        {/* related articles column — hidden entirely when the DB has none for the topic */}
+        {hasRelated ? (
+          <div className={`lg:col-span-3 ${flip ? "lg:order-1" : ""}`}>
           <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             {lang === "bn" ? "সম্পর্কিত আর্টিকেল" : "Related Articles"}
           </h3>
@@ -103,13 +105,14 @@ export function ClarificationTopicSection({
             ))}
           </ul>
           <Link
-            href={langPath(lang, "/media/blog")}
+            href={langPath(lang, `/media/blog?topic=${topic.id}`)}
             className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary transition-colors hover:text-gold"
           >
             {lang === "bn" ? "সব আর্টিকেল দেখুন" : "Browse all articles"}
             <ArrowUpRight aria-hidden className="h-3.5 w-3.5" />
           </Link>
-        </div>
+          </div>
+        ) : null}
       </div>
     </article>
   );
