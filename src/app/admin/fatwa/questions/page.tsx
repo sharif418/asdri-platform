@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { FatwaQuestionRow } from "@/components/admin/fatwa-question-row";
+import { AdminPager } from "@/components/admin/admin-pager";
 
 export const metadata = { title: "জিজ্ঞাসা ইনবক্স" };
 
@@ -18,6 +19,17 @@ const STATUS_OPTIONS = [
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
+const PAGE_SIZE = 15;
+
+function buildQuery(base: Record<string, string | undefined>, page: number): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(base)) {
+    if (value) params.set(key, value);
+  }
+  params.set("page", String(page));
+  return `/admin/fatwa/questions?${params.toString()}`;
+}
+
 /** Fatwa question inbox — answer, publish to the bank, or reject. */
 export default async function AdminFatwaQuestionsPage({ searchParams }: { searchParams: SearchParams }) {
   const session = await getSession();
@@ -27,6 +39,7 @@ export default async function AdminFatwaQuestionsPage({ searchParams }: { search
   const q = (typeof sp.q === "string" ? sp.q : "").trim().slice(0, 120);
   const status = typeof sp.status === "string" && STATUS_OPTIONS.some((s) => s.value === sp.status) ? sp.status : undefined;
   const category = typeof sp.category === "string" ? sp.category.trim().slice(0, 60) : "";
+  const page = Math.max(1, Number.parseInt(typeof sp.page === "string" ? sp.page : "1", 10) || 1);
 
   const where = {
     ...(status ? { status: status as QuestionStatus } : {}),
@@ -34,11 +47,13 @@ export default async function AdminFatwaQuestionsPage({ searchParams }: { search
     ...(q ? { OR: [{ question: { contains: q } }, { email: { contains: q } }, { name: { contains: q } }] } : {}),
   };
 
-  const [questions, categories, counts] = await Promise.all([
+  const [total, questions, categories, counts] = await Promise.all([
+    db.fatwaQuestion.count({ where }),
     db.fatwaQuestion.findMany({
       where,
       orderBy: { createdAt: "desc" },
-      take: 100,
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
       select: {
         id: true,
         reference: true,
@@ -60,6 +75,7 @@ export default async function AdminFatwaQuestionsPage({ searchParams }: { search
     db.fatwaCategory.findMany({ orderBy: { sortOrder: "asc" }, select: { id: true, key: true, nameBn: true } }),
     db.fatwaQuestion.groupBy({ by: ["status"], _count: { _all: true } }),
   ]);
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const categoryMap = new Map(categories.map((c) => [c.key, c.nameBn]));
   const countFor = (value: string) => counts.find((row) => row.status === value)?._count._all ?? 0;
@@ -160,6 +176,14 @@ export default async function AdminFatwaQuestionsPage({ searchParams }: { search
         </Link>{" "}
         পাতায় যান।
       </p>
+
+      <AdminPager
+        page={page}
+        pageCount={pageCount}
+        total={total}
+        unit="জিজ্ঞাসা"
+        buildHref={(next) => buildQuery({ q: q || undefined, status, category: category || undefined }, next)}
+      />
     </div>
   );
 }

@@ -3,9 +3,9 @@ import { Megaphone, Pin, Plus, Search } from "lucide-react";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { roleCan } from "@/lib/auth";
-import { getSession } from "@/lib/auth";
+import { roleCan, getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { AdminPager } from "@/components/admin/admin-pager";
 
 export const metadata = { title: "নোটিশ বোর্ড" };
 
@@ -23,6 +23,17 @@ const STATUS_LABELS: Record<string, string> = {
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
+const PAGE_SIZE = 20;
+
+function buildQuery(base: Record<string, string | undefined>, page: number): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(base)) {
+    if (value) params.set(key, value);
+  }
+  params.set("page", String(page));
+  return `/admin/notices?${params.toString()}`;
+}
+
 /** Notice board admin — list, filter, and jump into the editor. */
 export default async function AdminNoticesPage({ searchParams }: { searchParams: SearchParams }) {
   const session = await getSession();
@@ -32,17 +43,24 @@ export default async function AdminNoticesPage({ searchParams }: { searchParams:
   const q = (typeof sp.q === "string" ? sp.q : "").trim().slice(0, 120);
   const category = typeof sp.category === "string" && sp.category in CATEGORY_LABELS ? sp.category : undefined;
 
+  const page = Math.max(1, Number.parseInt(typeof sp.page === "string" ? sp.page : "1", 10) || 1);
+
   const where = {
     ...(category ? { category: category as keyof typeof CATEGORY_LABELS as never } : {}),
     ...(q ? { OR: [{ titleBn: { contains: q } }, { titleEn: { contains: q } }] } : {}),
   };
 
-  const notices = await db.notice.findMany({
-    where,
-    orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
-    take: 100,
-    select: { id: true, slug: true, titleBn: true, titleEn: true, category: true, status: true, pinned: true, isPublished: true, publishedAt: true, attachment: { select: { filename: true } } },
-  });
+  const [total, notices] = await Promise.all([
+    db.notice.count({ where }),
+    db.notice.findMany({
+      where,
+      orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+      select: { id: true, slug: true, titleBn: true, titleEn: true, category: true, status: true, pinned: true, isPublished: true, publishedAt: true, attachment: { select: { filename: true } } },
+    }),
+  ]);
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -152,6 +170,14 @@ export default async function AdminNoticesPage({ searchParams }: { searchParams:
           </table>
         )}
       </div>
+
+      <AdminPager
+        page={page}
+        pageCount={pageCount}
+        total={total}
+        unit="নোটিশ"
+        buildHref={(next) => buildQuery({ q: q || undefined, category }, next)}
+      />
     </div>
   );
 }
