@@ -11,7 +11,8 @@ secret is missing or a `dev-only` placeholder). Everything below is a deliberate
 | `SESSION_SECRET` | `openssl rand -hex 32` | Session cookie signing. Rotate = all sessions invalidated. |
 | `PAYMENT_CALLBACK_SECRET` | `openssl rand -hex 32` | Signs sandbox/real gateway callbacks + checkout page grants. |
 | `DATABASE_URL` | from your Postgres host | `postgresql://user:pass@host:5432/asdri?schema=public`. Migrations run automatically on boot (Dockerfile entrypoint). |
-| `SMTP_URL` | `smtps://user:pass@smtp.host:465` | Only when `MAIL_DRIVER=smtp`. Creates the mailbox send path over the existing outbox. |
+| `SMTP_URL` | `smtps://user:pass@smtp.host:465` | Only when `MAIL_DRIVER=smtp`. Deliver-then-record over the outbox: delivered rows get `sentAt`+`providerMessageId`; failures stay retryable with the error on the row. |
+| `MAIL_FROM` | verified sender at your provider, e.g. `As-Sunnah Institute <no-reply@assunnahinstitute.org>` | Envelope From for every outbound mail (smtp driver). Optional — falls back to a no-reply default. |
 | `S3_ACCESS_KEY` / `S3_SECRET_KEY` / `S3_BUCKET` / `S3_ENDPOINT` | from your object storage | Optional: without them the app uses the local-disk driver. Set for S3/MinIO (compose profile `s3` provisions MinIO). |
 | `NEXT_PUBLIC_SITE_URL` | your real origin, e.g. `https://assunnahinstitute.org` | Drives metadataBase, sitemap, hreflang, email links. |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | one-time bootstrap values | Used **only** by `bun scripts/seed.ts` to create the first admin; change the password on first login and unset the env after. |
