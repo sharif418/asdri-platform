@@ -18,6 +18,7 @@ import { getSiteConfig } from "@/lib/content/site";
 import { getInstituteStats } from "@/lib/content/stats";
 import { getHomeSections, getUrgentNotice } from "@/lib/content/home";
 import type { ReactNode } from "react";
+import { Fragment } from "react";
 
 export const dynamic = "force-dynamic";
 
@@ -62,7 +63,9 @@ export default async function HomePage({ params }: { params: Promise<{ lang: Lan
   return (
     <>
       {topPinned ? <UrgentStrip lang={lang} notice={topPinned} /> : null}
-      {sections.map((key) => sectionsByKey[key] ?? null)}
+      {sections.map((key) => (
+        <Fragment key={key}>{sectionsByKey[key] ?? null}</Fragment>
+      ))}
     </>
   );
 }

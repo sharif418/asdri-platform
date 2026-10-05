@@ -717,3 +717,24 @@ Stage Summary:
 - Every localized internal link under src/components/** and src/app/[lang]/** is now built via langPath(lang, path) — string literals, template literals (queries + #fragments preserved), data-driven card/fund/breadcrumb hrefs (canonical-bare data, prefixed at render), search index consumption (command palette go() + search page result builders), and router.push navigations. English visitors at /en/* stay in English on every click; Bangla bare-path behavior unchanged (langPath bn → identity).
 - account/page.tsx verified (not touched): langPath on /login /register /admissions + breadcrumb; bare href="/admin" is the sanctioned exception.
 - Remaining bare hrefs are exclusively the exempted set (admin, api-served downloads, static /downloads assets, in-page #anchors, external protocols) — audited and intentional.
+
+---
+Task ID: 16 (coordinator — sandbox recovery)
+Agent: main (coordinator)
+Task: Sandbox environment was reset (fresh machine): all runtime infrastructure lost (PostgreSQL, .env, dev server) — rebuild and re-verify before continuing phase work.
+
+Work Log:
+- Discovered the reset: ~/pgsql, ~/minio gone; .env reset to sqlite; no processes running. Git history + working tree content intact (433 "modified" files were pure chmod 644→755 noise — fixed with git config core.fileMode false).
+- Rebuilt PostgreSQL 16: EDB download 403 → zonky embedded binaries 16.4.0 from Maven (jar → txz → ~/pgsql), initdb -U asdri at ~/infra/pgdata, port 5433, listen 127.0.0.1; CREATE DATABASE via single-user mode (zonky ships no psql/createdb). ~/infra/start.sh guards restarts.
+- .env rewritten: postgresql://asdri@127.0.0.1:5433/asdri, fresh SESSION_SECRET + PAYMENT_CALLBACK_SECRET (openssl rand -hex 32), MAIL_DRIVER=log, PAYMENT_PROVIDER=sandbox, NEXT_PUBLIC_SITE_URL=http://localhost:3000, SEED_ADMIN_EMAIL/PASSWORD (documented sandbox default). NO S3_* vars → storage runs the local-disk driver (storage-local/) — deliberate deviation from the previous MinIO setup; recorded for GAPS (production still S3 per .env.example; driver choice is env-driven, zero code change).
+- prisma migrate deploy → both committed migrations applied; bun scripts/seed.ts → full content re-seeded (7 courses, 91 subjects, 35 people, 16 media into storage-local, 8 notices, 9 posts, 8 fatwa, 4 funds, 2 campaigns, 47 menu items, admin user created).
+- Dev server started detached (bun run dev); route sweep: 30 routes — all 200 except 4 broken.
+- FIX 1 — account page parse error (interrupted admissions edit): removed junk `<div class_name="hidden">` + stray `</div>` + duplicate langPath import → /account 200.
+- FIX 2 — home section map missing React keys (console error on every load): sections.map now wraps in <Fragment key={key}> → console clean.
+- FIX 3 — admissions/apply PageHero missing required lang prop (tsc error): added lang={lang} → tsc --noEmit 0 errors, lint 0.
+- Agent-browser verification: homepage renders (Bengali title, 0 page errors). Dev server OOM-died once during tsc (chronic 4GB) — detached restart + poll per standing mitigation.
+
+Stage Summary:
+- Infrastructure fully recovered: PG 16.4 @ 5433 + seeded DB + dev server @ 3000 all green; lint 0, tsc 0, all routes 200.
+- Confirmed remaining gaps for this session: (a) six missing public API routes referenced by client components (/api/notices, /api/campaigns, /api/fatwa, /api/contact, /api/newsletter, /api/donations — all 404); (b) admissions admin UI (intakes + applications workflow — APIs exist, pages missing); (c) donations flow completion; (d) qa-ship phase (tests/CI/Docker/PROGRESS/GAPS/HUMAN_STEPS).
+- PR discipline maintained: PRs #1-3 (foundation→content-seed→public-site) remain open for the client; this session will push feat/admin-cms + feat/admissions as stacked PRs #4/#5, never self-merged.
