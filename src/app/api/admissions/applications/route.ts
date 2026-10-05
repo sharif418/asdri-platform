@@ -21,6 +21,13 @@ const educationSchema = z.object({
   sortOrder: z.number().int().min(0).default(0),
 });
 
+const APP_DOC_TYPES = ["NID", "TRANSCRIPT", "CERTIFICATE", "CHARACTER", "OTHER"] as const;
+
+const documentSchema = z.object({
+  mediaId: z.string().min(1),
+  type: z.enum(APP_DOC_TYPES),
+});
+
 const applicationSchema = z.object({
   intakeId: z.string().min(1),
   fullNameBn: z.string().trim().min(3, "বাংলা নাম লিখুন").max(160),
@@ -38,6 +45,7 @@ const applicationSchema = z.object({
   guardianPhone: z.string().trim().max(20).default(""),
   guardianRelation: z.string().trim().max(60).default(""),
   photoMediaId: z.string().optional().nullable(),
+  documents: z.array(documentSchema).max(10, "সর্বোচ্চ ১০টি ডকুমেন্ট").default([]),
   declarationAccepted: z.literal(true, { message: "ঘোষণাপত্রে সম্মতি দিন" }),
   education: z.array(educationSchema).min(1, "অন্তত একটি শিক্ষাগত যোগ্যতা যোগ করুন").max(8),
 });
@@ -90,6 +98,20 @@ export async function POST(request: NextRequest): Promise<Response> {
     return NextResponse.json({ ok: false, error: "আপনি এই ইনটেকে ইতিমধ্যে আবেদন করেছেন।", data: { trackingNo: existing.trackingNo } }, { status: 409 });
   }
 
+  // Uploaded documents must exist, belong to this account, and be documents.
+  const docMedia = d.documents.length
+    ? await db.media.findMany({
+        where: { id: { in: d.documents.map((x) => x.mediaId) }, uploadedById: session.user.id, kind: "DOCUMENT" },
+        select: { id: true },
+      })
+    : [];
+  const ownedIds = new Set(docMedia.map((m) => m.id));
+  for (const doc of d.documents) {
+    if (!ownedIds.has(doc.mediaId)) {
+      return NextResponse.json({ ok: false, error: "আপলোড করা ডকুমেন্ট পাওয়া যায়নি — আবার আপলোড করুন।" }, { status: 400 });
+    }
+  }
+
   const application = await db.$transaction(async (tx) => {
     const app = await tx.application.create({
       data: {
@@ -127,6 +149,11 @@ export async function POST(request: NextRequest): Promise<Response> {
           result: row.result,
           sortOrder: i,
         },
+      });
+    }
+    for (const doc of d.documents) {
+      await tx.applicationDocument.create({
+        data: { applicationId: app.id, mediaId: doc.mediaId, type: doc.type },
       });
     }
     await tx.applicationEvent.create({

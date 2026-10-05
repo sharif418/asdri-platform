@@ -10,6 +10,7 @@ import { SiteConfigProvider } from "@/components/providers/site-config-provider"
 import { AdminLogoutButton } from "@/components/auth/admin-logout-button";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { InstituteLogo } from "@/components/shared/logo";
+import { Toaster } from "@/components/ui/toaster";
 import { db } from "@/lib/db";
 
 export const metadata: Metadata = {
@@ -89,6 +90,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             </main>
           </div>
         </div>
+        {/* Every admin module's mutation feedback renders here — same shadcn
+            toast stack the public site mounts in its [lang] layout. */}
+        <Toaster />
         </SiteConfigProvider>
       </body>
     </html>
