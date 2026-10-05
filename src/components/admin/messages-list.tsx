@@ -6,6 +6,7 @@ import { CheckCheck, Loader2, Mail, MailOpen, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 
 export interface MessageRow {
   id: string;
@@ -55,7 +56,7 @@ export function MessagesList({ messages }: { messages: MessageRow[] }) {
 
   async function remove(row: MessageRow) {
     if (busyId) return;
-    if (!window.confirm(`'${row.name}' এর বার্তাটি মুছে ফেলা হবে। নিশ্চিত?`)) return;
+    if (!(await adminConfirm({ title: `'${row.name}' এর বার্তাটি মুছে ফেলা হবে। নিশ্চিত?` }))) return;
     setBusyId(row.id);
     try {
       const res = await fetch(`/api/admin/messages/${row.id}`, { method: "DELETE", headers: { "x-csrf-token": csrfToken() } });
@@ -93,7 +94,7 @@ export function MessagesList({ messages }: { messages: MessageRow[] }) {
   }
 
   return (
-    <div className="overflow-clip rounded-2xl border bg-card shadow-sm">
+    <div className="overflow-x-auto overflow-y-clip rounded-2xl border bg-card shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-secondary/30 px-4 py-2.5">
         <p className="text-[12.5px] font-semibold text-muted-foreground">
           {formatNumber(rows.length, "bn")} টি বার্তা · অপঠিত {formatNumber(unread, "bn")}

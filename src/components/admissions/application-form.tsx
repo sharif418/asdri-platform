@@ -231,7 +231,7 @@ export function ApplicationForm({
                 <p className="mt-2 text-[13.5px] font-semibold leading-snug">{bn ? intake.labelBn : intake.labelEn}</p>
                 <p className="mt-1 text-[11.5px] text-muted-foreground">
                   {intake.seatsTotal
-                    ? `${bn ? "আসন" : "Seats"}: ${toBnDigits(intake.seatsTotal)} · `
+                    ? `${bn ? "আসন" : "Seats"}: ${bn ? toBnDigits(intake.seatsTotal) : intake.seatsTotal} · `
                     : ""}
                   {intake.closesAt
                     ? `${bn ? "শেষ" : "Closes"}: ${new Date(intake.closesAt).toLocaleDateString(bn ? "bn-BD" : "en-GB")}`
@@ -260,7 +260,7 @@ export function ApplicationForm({
             <label className="text-sm font-semibold">
               {bn ? "পূর্ণ নাম (বাংলা)" : "Full name (Bangla)"} <span className="text-destructive">*</span>
             </label>
-            <input value={fullNameBn} onChange={(e) => setFullNameBn(e.target.value)} dir="rtl" className={inputClass} placeholder={bn ? "মোঃ আব্দুল্লাহ আল মামুন" : "বাংলায় পূর্ণ নাম"} />
+            <input value={fullNameBn} onChange={(e) => setFullNameBn(e.target.value)} className={inputClass} placeholder={bn ? "মোঃ আব্দুল্লাহ আল মামুন" : "বাংলায় পূর্ণ নাম"} />
           </div>
           <div>
             <label className="text-sm font-semibold">{bn ? "Full name (English)" : "Full name (English)"}</label>
@@ -270,13 +270,13 @@ export function ApplicationForm({
             <label className="text-sm font-semibold">
               {bn ? "পিতার নাম" : "Father's name"} <span className="text-destructive">*</span>
             </label>
-            <input value={fatherName} onChange={(e) => setFatherName(e.target.value)} dir="rtl" className={inputClass} />
+            <input value={fatherName} onChange={(e) => setFatherName(e.target.value)} className={inputClass} />
           </div>
           <div>
             <label className="text-sm font-semibold">
               {bn ? "মাতার নাম" : "Mother's name"} <span className="text-destructive">*</span>
             </label>
-            <input value={motherName} onChange={(e) => setMotherName(e.target.value)} dir="rtl" className={inputClass} />
+            <input value={motherName} onChange={(e) => setMotherName(e.target.value)} className={inputClass} />
           </div>
           <div>
             <label className="text-sm font-semibold">{bn ? "জন্ম তারিখ" : "Date of birth"}</label>
@@ -294,11 +294,11 @@ export function ApplicationForm({
           </div>
           <div className="sm:col-span-2">
             <label className="text-sm font-semibold">{bn ? "বর্তমান ঠিকানা" : "Present address"}</label>
-            <textarea value={presentAddress} onChange={(e) => setPresentAddress(e.target.value)} rows={2} dir="rtl" className={inputClass} />
+            <textarea value={presentAddress} onChange={(e) => setPresentAddress(e.target.value)} rows={2} className={inputClass} />
           </div>
           <div className="sm:col-span-2">
             <label className="text-sm font-semibold">{bn ? "স্থায়ী ঠিকানা" : "Permanent address"}</label>
-            <textarea value={permanentAddress} onChange={(e) => setPermanentAddress(e.target.value)} rows={2} dir="rtl" className={inputClass} />
+            <textarea value={permanentAddress} onChange={(e) => setPermanentAddress(e.target.value)} rows={2} className={inputClass} />
           </div>
         </div>
       </section>
@@ -309,7 +309,7 @@ export function ApplicationForm({
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
           <div>
             <label className="text-sm font-semibold">{bn ? "অভিভাবকের নাম" : "Guardian name"}</label>
-            <input value={guardianName} onChange={(e) => setGuardianName(e.target.value)} dir="rtl" className={inputClass} />
+            <input value={guardianName} onChange={(e) => setGuardianName(e.target.value)} className={inputClass} />
           </div>
           <div>
             <label className="text-sm font-semibold">{bn ? "মোবাইল" : "Mobile"}</label>
@@ -317,7 +317,7 @@ export function ApplicationForm({
           </div>
           <div>
             <label className="text-sm font-semibold">{bn ? "সম্পর্ক" : "Relation"}</label>
-            <input value={guardianRelation} onChange={(e) => setGuardianRelation(e.target.value)} dir="rtl" className={inputClass} placeholder={bn ? "পিতা / চাচা" : "Father / Uncle"} />
+            <input value={guardianRelation} onChange={(e) => setGuardianRelation(e.target.value)} className={inputClass} placeholder={bn ? "পিতা / চাচা" : "Father / Uncle"} />
           </div>
         </div>
       </section>
@@ -344,21 +344,18 @@ export function ApplicationForm({
               <input
                 value={row.level}
                 onChange={(e) => setEducation((rows) => rows.map((r, j) => (j === i ? { ...r, level: e.target.value } : r)))}
-                dir="rtl"
                 placeholder={bn ? "স্তর (এসএসসি/তাকমিল…)*" : "Level (SSC/Takmil…)*"}
                 className="rounded-md border bg-background px-2.5 py-1.5 text-[13px]"
               />
               <input
                 value={row.institution}
                 onChange={(e) => setEducation((rows) => rows.map((r, j) => (j === i ? { ...r, institution: e.target.value } : r)))}
-                dir="rtl"
                 placeholder={bn ? "প্রতিষ্ঠান" : "Institution"}
                 className="rounded-md border bg-background px-2.5 py-1.5 text-[13px]"
               />
               <input
                 value={row.groupOrSubject}
                 onChange={(e) => setEducation((rows) => rows.map((r, j) => (j === i ? { ...r, groupOrSubject: e.target.value } : r)))}
-                dir="rtl"
                 placeholder={bn ? "গ্রুপ/বিষয়" : "Group/Subject"}
                 className="rounded-md border bg-background px-2.5 py-1.5 text-[13px]"
               />

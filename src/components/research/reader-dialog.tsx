@@ -102,7 +102,7 @@ export function ReaderDialog({ title, issnIsbn, year, lang }: ReaderDialogProps)
           <div aria-hidden className="pattern-lattice-light absolute inset-0" />
           <div aria-hidden className="absolute inset-x-0 top-0 h-1 bg-gold-gradient" />
           <DialogHeader className="relative">
-            <p className="font-arabic text-lg text-gold/90">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
+            <p dir="rtl" lang="ar" className="font-arabic text-lg text-gold/90">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
             <DialogTitle className="font-heading mt-2 text-left text-lg leading-snug text-ivory">
               {resolvedTitle}
             </DialogTitle>
@@ -125,7 +125,7 @@ export function ReaderDialog({ title, issnIsbn, year, lang }: ReaderDialogProps)
               <div className="h-2.5 w-3/4 rounded bg-muted" />
               <div className="h-2.5 w-full rounded bg-muted/80" />
               <div className="h-2.5 w-5/6 rounded bg-muted/70" />
-              <p className="font-arabic pt-2 text-right text-base leading-relaxed text-foreground/70">
+              <p dir="rtl" lang="ar" className="font-arabic pt-2 text-right text-base leading-relaxed text-foreground/70">
                 وَمَا اخْتَلَفْتُمْ فِيهِ مِنْ شَيْءٍ فَحُكْمُهُ إِلَى اللَّهِ
               </p>
               <div className="h-2.5 w-2/3 rounded bg-muted/60" />

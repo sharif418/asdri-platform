@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CampaignDialog, campaignFormInitial, type CampaignFundOption } from "@/components/admin/campaign-dialog";
 import { formatDate, formatTaka, toBnDigits } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 
 export interface CampaignRowData {
   id: string;
@@ -39,7 +40,7 @@ export function CampaignsTable({ campaigns, funds }: { campaigns: CampaignRowDat
   async function onDelete(campaign: CampaignRowData) {
     if (busyId) return;
     if (campaign.donorCount > 0) return; // soft guard — the API 409s too
-    if (!window.confirm(`"${campaign.titleBn}" ক্যাম্পেইনটি মুছে ফেলা হবে। নিশ্চিত?`)) return;
+    if (!(await adminConfirm({ title: `"${campaign.titleBn}" ক্যাম্পেইনটি মুছে ফেলা হবে। নিশ্চিত?` }))) return;
     setBusyId(campaign.id);
     try {
       const res = await fetch(`/api/admin/campaigns/${campaign.id}`, {
@@ -97,7 +98,7 @@ export function CampaignsTable({ campaigns, funds }: { campaigns: CampaignRowDat
   }
 
   return (
-    <div className="overflow-clip rounded-2xl border bg-card shadow-sm">
+    <div className="overflow-x-auto overflow-y-clip rounded-2xl border bg-card shadow-sm">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-secondary/30 text-left text-[11.5px] uppercase tracking-wide text-muted-foreground">

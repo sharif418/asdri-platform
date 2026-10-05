@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { BilingualField, LanguageStatus } from "@/components/admin/ui/bilingual-field";
 import { MediaPicker, type PickedMedia } from "@/components/admin/ui/media-picker";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 
 export interface DownloadFormValues {
   id?: string;
@@ -105,7 +106,7 @@ export function DownloadForm({
 
   async function onDelete() {
     if (deleting || mode !== "edit" || !values.id) return;
-    if (!window.confirm(`'${values.titleBn}' স্থায়ীভাবে মুছে ফেলা হবে। নিশ্চিত?`)) return;
+    if (!(await adminConfirm({ title: `'${values.titleBn}' স্থায়ীভাবে মুছে ফেলা হবে। নিশ্চিত?` }))) return;
     setDeleting(true);
     try {
       const res = await fetch(`/api/admin/download-resources/${values.id}`, {
@@ -132,7 +133,7 @@ export function DownloadForm({
             <input
               value={active === "bn" ? values.titleBn : values.titleEn}
               onChange={(e) => set(active === "bn" ? "titleBn" : "titleEn", e.target.value)}
-              dir={active === "bn" ? "rtl" : "ltr"}
+             
               placeholder={active === "bn" ? "যেমন: ভর্তি ফরম ২০২৬" : "e.g. Admission Form 2026"}
               required
               className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
@@ -146,7 +147,7 @@ export function DownloadForm({
               value={active === "bn" ? values.descriptionBn : values.descriptionEn}
               onChange={(e) => set(active === "bn" ? "descriptionBn" : "descriptionEn", e.target.value)}
               rows={3}
-              dir={active === "bn" ? "rtl" : "ltr"}
+             
               placeholder={active === "bn" ? "১–২ লাইনের বিবরণ" : "1–2 line description"}
               className="w-full resize-y rounded-lg border bg-card px-3.5 py-2.5 text-sm outline-none focus:border-primary/50"
             />
@@ -159,7 +160,7 @@ export function DownloadForm({
               <input
                 value={active === "bn" ? values.categoryBn : values.categoryEn}
                 onChange={(e) => set(active === "bn" ? "categoryBn" : "categoryEn", e.target.value)}
-                dir={active === "bn" ? "rtl" : "ltr"}
+               
                 list={active === "bn" ? "download-category-bn" : "download-category-en"}
                 placeholder={active === "bn" ? "যেমন: ভর্তি ফরম" : "e.g. Admission Forms"}
                 required

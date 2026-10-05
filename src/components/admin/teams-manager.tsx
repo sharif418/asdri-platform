@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { formatNumber } from "@/lib/format";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 
 export interface TeamRow {
   id: string;
@@ -59,7 +60,7 @@ export function TeamsManager({ teams }: { teams: TeamRow[] }) {
 
   async function removeTeam(row: TeamRow) {
     if (busyId) return;
-    if (!window.confirm(`'${row.nameBn}' দলটি মুছে ফেলা হবে। নিশ্চিত?`)) return;
+    if (!(await adminConfirm({ title: `'${row.nameBn}' দলটি মুছে ফেলা হবে। নিশ্চিত?` }))) return;
     setBusyId(row.id);
     try {
       const res = await fetch(`/api/admin/teams/${row.id}`, {
@@ -170,7 +171,6 @@ export function TeamsManager({ teams }: { teams: TeamRow[] }) {
               value={row.nameBn}
               onChange={(e) => patchRow(row.id, { nameBn: e.target.value })}
               aria-label={`${row.key} — বাংলা নাম`}
-              dir="rtl"
               className="min-w-32 flex-1 rounded-lg border bg-card px-2.5 py-1.5 text-[13px] outline-none focus:border-primary/50"
             />
             <input
@@ -219,7 +219,6 @@ export function TeamsManager({ teams }: { teams: TeamRow[] }) {
           onChange={(e) => setNewNameBn(e.target.value)}
           placeholder="বাংলা নাম"
           aria-label="নতুন দলের বাংলা নাম"
-          dir="rtl"
           className="min-w-32 flex-1 rounded-lg border bg-card px-2.5 py-2 text-[13px] outline-none focus:border-primary/50"
         />
         <input

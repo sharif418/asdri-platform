@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { LedgerDialog, ledgerFormInitial, type LedgerFundOption } from "@/components/admin/ledger-dialog";
 import { ledgerDirectionChip, ledgerDirectionLabel } from "@/lib/finance-labels";
 import { formatDate, formatTaka } from "@/lib/format";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 
 export interface LedgerRowData {
   id: string;
@@ -32,7 +33,7 @@ export function LedgerTable({ entries, funds }: { entries: LedgerRowData[]; fund
 
   async function onDelete(entry: LedgerRowData) {
     if (busyId) return;
-    if (!window.confirm(`"${entry.description}" এন্ট্রিটি মুছে ফেলা হবে। নিশ্চিত?`)) return;
+    if (!(await adminConfirm({ title: `"${entry.description}" এন্ট্রিটি মুছে ফেলা হবে। নিশ্চিত?` }))) return;
     setBusyId(entry.id);
     try {
       const res = await fetch(`/api/admin/ledger/${entry.id}`, {
@@ -85,7 +86,7 @@ export function LedgerTable({ entries, funds }: { entries: LedgerRowData[]; fund
   }
 
   return (
-    <div className="overflow-clip rounded-2xl border bg-card shadow-sm">
+    <div className="overflow-x-auto overflow-y-clip rounded-2xl border bg-card shadow-sm">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-secondary/30 text-left text-[11.5px] uppercase tracking-wide text-muted-foreground">

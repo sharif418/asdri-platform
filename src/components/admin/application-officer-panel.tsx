@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { normalizeDigitsInput } from "@/lib/format";
 import { useRouter } from "next/navigation";
 import { Loader2, MessageSquarePlus, Save } from "lucide-react";
 import type { ApplicationStatus } from "@prisma/client";
@@ -149,9 +150,9 @@ export function ApplicationOfficerPanel({
             <label className="text-sm font-semibold">লিখিত স্কোর</label>
             <input
               value={examScore}
-              onChange={(e) => setExamScore(e.target.value.replace(/\D/g, "").slice(0, 3))}
+              onChange={(e) => setExamScore(normalizeDigitsInput(e.target.value).slice(0, 3))}
               inputMode="numeric"
-              placeholder="০–১০০"
+              placeholder="0–100"
               dir="ltr"
               className={cn(inputClass, "mt-1")}
             />
@@ -160,9 +161,9 @@ export function ApplicationOfficerPanel({
             <label className="text-sm font-semibold">মৌখিক স্কোর</label>
             <input
               value={vivaScore}
-              onChange={(e) => setVivaScore(e.target.value.replace(/\D/g, "").slice(0, 3))}
+              onChange={(e) => setVivaScore(normalizeDigitsInput(e.target.value).slice(0, 3))}
               inputMode="numeric"
-              placeholder="০–১০০"
+              placeholder="0–100"
               dir="ltr"
               className={cn(inputClass, "mt-1")}
             />

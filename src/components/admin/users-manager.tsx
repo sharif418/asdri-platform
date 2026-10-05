@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 
 export interface UserRow {
   id: string;
@@ -127,7 +128,7 @@ export function UsersManager({ users }: { users: UserRow[] }) {
 
   async function resetPassword(row: UserRow) {
     if (busyId) return;
-    if (!window.confirm(`${row.name} এর পাসওয়ার্ড নতুন করে তৈরি হবে — তার সব সেশন বাতিল হয়ে যাবে। নিশ্চিত?`)) return;
+    if (!(await adminConfirm({ title: `${row.name} এর পাসওয়ার্ড নতুন করে তৈরি হবে — তার সব সেশন বাতিল হয়ে যাবে। নিশ্চিত?` }))) return;
     setBusyId(row.id);
     try {
       const res = await fetch(`/api/admin/users/${row.id}/reset-password`, {
@@ -148,7 +149,7 @@ export function UsersManager({ users }: { users: UserRow[] }) {
 
   async function removeUser(row: UserRow) {
     if (busyId) return;
-    if (!window.confirm(`${row.name} (${row.email}) অ্যাকাউন্টটি স্থায়ীভাবে মুছে ফেলা হবে। নিশ্চিত?`)) return;
+    if (!(await adminConfirm({ title: `${row.name} (${row.email}) অ্যাকাউন্টটি স্থায়ীভাবে মুছে ফেলা হবে। নিশ্চিত?` }))) return;
     setBusyId(row.id);
     try {
       const res = await fetch(`/api/admin/users/${row.id}`, { method: "DELETE", headers: { "x-csrf-token": csrfToken() } });
@@ -226,7 +227,7 @@ export function UsersManager({ users }: { users: UserRow[] }) {
         />
       )}
 
-      <section className="overflow-clip rounded-2xl border bg-card shadow-sm">
+      <section className="overflow-x-auto overflow-y-clip rounded-2xl border bg-card shadow-sm">
         <div className="border-b bg-secondary/30 px-4 py-2.5">
           <p className="text-[12.5px] font-semibold text-muted-foreground">
             মোট {formatNumber(rows.length, "bn")} টি অ্যাকাউন্ট · নিজের অ্যাকাউন্ট নিষ্ক্রিয় বা মুছে ফেলা যায় না

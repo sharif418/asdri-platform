@@ -95,7 +95,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                 </span>
                 <Badge className="gap-1.5 border-gold/40 bg-gold/15 px-3 py-1 text-xs font-semibold text-gold hover:bg-gold/25">
                   <Clock3 aria-hidden className="h-3.5 w-3.5" />
-                  {toBnDigits(readingMinutes)} {lang === "bn" ? "মিনিট পড়া" : "min read"}
+                  {lang === "bn" ? toBnDigits(readingMinutes) : readingMinutes} {lang === "bn" ? "মিনিট পড়া" : "min read"}
                 </Badge>
               </figcaption>
             </figure>
@@ -201,7 +201,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                           </span>
                           <span className="inline-flex items-center gap-1.5">
                             <Clock3 aria-hidden className="h-3.5 w-3.5 text-gold" />
-                            {toBnDigits(item.readMinutes)} {lang === "bn" ? "মিনিট" : "min"}
+                            {lang === "bn" ? toBnDigits(item.readMinutes) : item.readMinutes} {lang === "bn" ? "মিনিট" : "min"}
                           </span>
                         </div>
                       </div>

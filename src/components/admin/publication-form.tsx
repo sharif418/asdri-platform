@@ -12,6 +12,7 @@ import { MediaPicker, type PickedMedia } from "@/components/admin/ui/media-picke
 import { sanitizeRichTextPreview } from "@/lib/sanitize";
 import { slugifyTitle } from "@/lib/slug";
 import { PUBLICATION_KINDS } from "@/lib/validators/admin-research";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 
 export interface PublicationFormValues {
   id?: string;
@@ -115,7 +116,7 @@ export function PublicationForm({
 
   async function onDelete() {
     if (deleting || mode !== "edit" || !values.id) return;
-    if (!window.confirm(`'${values.titleBn}' স্থায়ীভাবে মুছে ফেলা হবে। নিশ্চিত?`)) return;
+    if (!(await adminConfirm({ title: `'${values.titleBn}' স্থায়ীভাবে মুছে ফেলা হবে। নিশ্চিত?` }))) return;
     setDeleting(true);
     try {
       const res = await fetch(`/api/admin/publications/${values.id}`, {
@@ -145,7 +146,6 @@ export function PublicationForm({
                   value={values.titleBn}
                   onChange={(e) => set("titleBn", e.target.value)}
                   placeholder="বাংলা শিরোনাম"
-                  dir="rtl"
                   required
                   className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
                 />
@@ -168,7 +168,7 @@ export function PublicationForm({
               value={active === "bn" ? values.abstractBn : values.abstractEn}
               onChange={(e) => set(active === "bn" ? "abstractBn" : "abstractEn", e.target.value)}
               rows={4}
-              dir={active === "bn" ? "rtl" : "ltr"}
+             
               placeholder={active === "bn" ? "২–৪ লাইনের সারসংক্ষেপ" : "2–4 line abstract"}
               className="w-full resize-y rounded-lg border bg-card px-3.5 py-2.5 text-sm outline-none focus:border-primary/50"
             />
@@ -180,7 +180,7 @@ export function PublicationForm({
             <input
               value={active === "bn" ? values.authorsBn : values.authorsEn}
               onChange={(e) => set(active === "bn" ? "authorsBn" : "authorsEn", e.target.value)}
-              dir={active === "bn" ? "rtl" : "ltr"}
+             
               placeholder={active === "bn" ? "যেমন: ড. আবু বকর, মুহাম্মদ সালিহ" : "e.g. Dr. Abu Bakr, Muhammad Salih"}
               className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-sm outline-none focus:border-primary/50"
             />

@@ -133,7 +133,7 @@ export function NoticeDialogView({ notice, lang, open, onOpenChange }: NoticeDia
                 {formatDate(notice.publishedAt, lang)}
               </span>
             </div>
-            <DialogTitle className="text-right text-left font-heading text-lg leading-snug sm:text-xl">
+            <DialogTitle className="text-left font-heading text-lg leading-snug sm:text-xl">
               {pick(notice.title, lang)}
             </DialogTitle>
             <DialogDescription className="text-left text-[13px] leading-relaxed print:hidden">
@@ -144,7 +144,7 @@ export function NoticeDialogView({ notice, lang, open, onOpenChange }: NoticeDia
           <div className="scrollbar-thin relative max-h-[46vh] space-y-3 overflow-y-auto rounded-xl border border-l-4 border-l-gold bg-parchment/60 p-5 text-sm leading-[1.75] text-foreground/90 shadow-[inset_0_1px_4px_rgba(28,66,49,0.06)] dark:bg-muted/40 dark:shadow-[inset_0_1px_4px_rgba(0,0,0,0.25)] print:max-h-none print:rounded-none print:shadow-none">
             <span
               aria-hidden
-              className="pointer-events-none absolute -right-2 -top-2 select-none font-arabic text-7xl leading-none text-primary/5 dark:text-gold/5 print:hidden"
+              dir="rtl" lang="ar" className="pointer-events-none absolute -right-2 -top-2 select-none font-arabic text-7xl leading-none text-primary/5 dark:text-gold/5 print:hidden"
             >
               بِسْمِ
             </span>

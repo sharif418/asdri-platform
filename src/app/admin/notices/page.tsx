@@ -106,7 +106,7 @@ export default async function AdminNoticesPage({ searchParams }: { searchParams:
         </button>
       </form>
 
-      <div className="mt-4 overflow-clip rounded-2xl border bg-card shadow-sm">
+      <div className="mt-4 overflow-x-auto overflow-y-clip rounded-2xl border bg-card shadow-sm">
         {notices.length === 0 ? (
           <div className="px-6 py-16 text-center">
             <p className="font-heading text-lg font-bold">এখনো কোনো নোটিশ নেই</p>

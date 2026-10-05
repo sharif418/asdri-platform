@@ -134,7 +134,6 @@ export function FatwaCategoryManager({ categories }: { categories: CategoryRow[]
                   onChange={(e) => setDraft(row.id, "nameBn", e.target.value)}
                   aria-label={`${row.key} — বাংলা নাম`}
                   placeholder="বাংলা নাম"
-                  dir="rtl"
                   className="w-full rounded-md border bg-card px-2.5 py-1.5 text-[12.5px] outline-none focus:border-primary/50"
                 />
                 <input

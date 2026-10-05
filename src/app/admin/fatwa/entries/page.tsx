@@ -91,7 +91,7 @@ export default async function AdminFatwaEntriesPage({ searchParams }: { searchPa
       </form>
 
       <div className="mt-4 grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="overflow-clip rounded-2xl border bg-card shadow-sm">
+        <div className="overflow-x-auto overflow-y-clip rounded-2xl border bg-card shadow-sm">
           {entries.length === 0 ? (
             <div className="px-6 py-16 text-center">
               <p className="font-heading text-lg font-bold">কোনো ফতোয়া পাওয়া যায়নি</p>

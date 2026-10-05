@@ -151,7 +151,7 @@ export default async function ResearchPage({ params }: { params: Promise<{ lang:
         </div>
         <div className="container-site relative">
           <Reveal>
-            <p className="font-arabic mx-auto max-w-2xl text-center text-xl leading-relaxed text-gold/90 sm:text-2xl">
+            <p dir="rtl" lang="ar" className="font-arabic mx-auto max-w-2xl text-center text-xl leading-relaxed text-gold/90 sm:text-2xl">
               قُلْ هَاتُوا بُرْهَانَكُمْ إِنْ كُنْتُمْ صَادِقِينَ
             </p>
             <p className="mt-4 text-center text-sm leading-relaxed text-ivory/70">

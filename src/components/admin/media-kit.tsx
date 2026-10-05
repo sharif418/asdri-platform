@@ -6,6 +6,7 @@ import { Check, FileText, Loader2, Trash2, Upload } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { formatBytes } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 
 /** Row shape shared with the server page (JSON-serialisable). */
 export interface MediaRow {
@@ -165,7 +166,7 @@ export function MediaCard({ media }: { media: MediaRow }) {
 
   async function remove() {
     if (deleting) return;
-    if (!window.confirm(`'${media.filename}' স্থায়ীভাবে মুছে ফেলা হবে (স্টোরেজসহ)। নিশ্চিত?`)) return;
+    if (!(await adminConfirm({ title: `'${media.filename}' স্থায়ীভাবে মুছে ফেলা হবে (স্টোরেজসহ)। নিশ্চিত?` }))) return;
     setDeleting(true);
     try {
       const res = await fetch(`/api/admin/media/${media.id}`, {
@@ -219,7 +220,6 @@ export function MediaCard({ media }: { media: MediaRow }) {
             value={altBn}
             onChange={(e) => setAltBn(e.target.value)}
             placeholder="বিকল্প টেক্সট (বাংলা)"
-            dir="rtl"
             aria-label={`${media.filename} — বাংলা বিকল্প টেক্সট`}
             className="w-full rounded-lg border bg-background px-2.5 py-1.5 text-[12px] outline-none focus:border-primary/50"
           />

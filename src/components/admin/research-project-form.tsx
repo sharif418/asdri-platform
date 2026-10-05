@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { BilingualField, LanguageStatus } from "@/components/admin/ui/bilingual-field";
 import { sanitizeRichTextPreview } from "@/lib/sanitize";
 import { slugifyTitle } from "@/lib/slug";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 
 export interface ResearchProjectFormValues {
   id?: string;
@@ -89,7 +90,7 @@ export function ResearchProjectForm({ initial, mode }: { initial: ResearchProjec
 
   async function onDelete() {
     if (deleting || mode !== "edit" || !values.id) return;
-    if (!window.confirm(`'${values.titleBn}' স্থায়ীভাবে মুছে ফেলা হবে। নিশ্চিত?`)) return;
+    if (!(await adminConfirm({ title: `'${values.titleBn}' স্থায়ীভাবে মুছে ফেলা হবে। নিশ্চিত?` }))) return;
     setDeleting(true);
     try {
       const res = await fetch(`/api/admin/research-projects/${values.id}`, {
@@ -116,7 +117,7 @@ export function ResearchProjectForm({ initial, mode }: { initial: ResearchProjec
             <input
               value={active === "bn" ? values.titleBn : values.titleEn}
               onChange={(e) => set(active === "bn" ? "titleBn" : "titleEn", e.target.value)}
-              dir={active === "bn" ? "rtl" : "ltr"}
+             
               placeholder={active === "bn" ? "বাংলা শিরোনাম" : "English title"}
               required
               className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
@@ -130,7 +131,7 @@ export function ResearchProjectForm({ initial, mode }: { initial: ResearchProjec
               value={active === "bn" ? values.summaryBn : values.summaryEn}
               onChange={(e) => set(active === "bn" ? "summaryBn" : "summaryEn", e.target.value)}
               rows={4}
-              dir={active === "bn" ? "rtl" : "ltr"}
+             
               placeholder={active === "bn" ? "প্রকল্পের লক্ষ্য ও পরিধি…" : "Aim and scope of the project…"}
               className="w-full resize-y rounded-lg border bg-card px-3.5 py-2.5 text-sm outline-none focus:border-primary/50"
             />
@@ -142,7 +143,7 @@ export function ResearchProjectForm({ initial, mode }: { initial: ResearchProjec
             <input
               value={active === "bn" ? values.statusBn : values.statusEn}
               onChange={(e) => set(active === "bn" ? "statusBn" : "statusEn", e.target.value)}
-              dir={active === "bn" ? "rtl" : "ltr"}
+             
               placeholder={active === "bn" ? "যেমন: চলছে" : "e.g. Ongoing"}
               className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-sm outline-none focus:border-primary/50"
             />

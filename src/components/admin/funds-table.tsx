@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { FundDialog } from "@/components/admin/fund-dialog";
 import { formatTaka, toBnDigits } from "@/lib/format";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 
 export interface FundRowData {
   id: string;
@@ -58,7 +59,7 @@ export function FundsTable({ funds }: { funds: FundRowData[] }) {
   async function onDelete(fund: FundRowData) {
     if (busyId) return;
     if (fund.donationCount > 0 || fund.entryCount > 0) return; // soft guard; API 409s too
-    if (!window.confirm(`"${fund.nameBn}" ফান্ডটি মুছে ফেলা হবে। নিশ্চিত?`)) return;
+    if (!(await adminConfirm({ title: `"${fund.nameBn}" ফান্ডটি মুছে ফেলা হবে। নিশ্চিত?` }))) return;
     setBusyId(fund.id);
     try {
       const res = await fetch(`/api/admin/funds/${fund.id}`, {
@@ -101,7 +102,7 @@ export function FundsTable({ funds }: { funds: FundRowData[] }) {
   }
 
   return (
-    <div className="overflow-clip rounded-2xl border bg-card shadow-sm">
+    <div className="overflow-x-auto overflow-y-clip rounded-2xl border bg-card shadow-sm">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-secondary/30 text-left text-[11.5px] uppercase tracking-wide text-muted-foreground">

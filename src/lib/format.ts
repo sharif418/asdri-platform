@@ -114,3 +114,10 @@ export function formatBytes(bytes: number, lang: Language): string {
   const mb = (bytes / 1024 / 1024).toFixed(1);
   return `${lang === "bn" ? toBnDigits(mb) : mb} MB`;
 }
+
+/** Normalise a numeric input: Bengali digits → Latin, non-digits stripped.
+ *  Admin number fields (seats, scores, amounts) use this so typing ৪০ works. */
+export function normalizeDigitsInput(value: string): string {
+  const latin = value.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
+  return latin.replace(/[^0-9]/g, "");
+}

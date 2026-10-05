@@ -11,6 +11,7 @@ import { BilingualField, LanguageStatus } from "@/components/admin/ui/bilingual-
 import { RichTextEditor } from "@/components/admin/ui/rich-text-editor";
 import { sanitizeRichTextPreview } from "@/lib/sanitize";
 import { slugifyTitle } from "@/lib/slug";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 
 export interface NoticeFormValues {
   id?: string;
@@ -86,7 +87,7 @@ export function NoticeForm({ initial, mode }: { initial: NoticeFormValues; mode:
 
   async function onDelete() {
     if (deleting || mode !== "edit" || !values.id) return;
-    if (!window.confirm(`'${values.titleBn}' নোটিশটি স্থায়ীভাবে মুছে ফেলা হবে। নিশ্চিত?`)) return;
+    if (!(await adminConfirm({ title: `'${values.titleBn}' নোটিশটি স্থায়ীভাবে মুছে ফেলা হবে। নিশ্চিত?` }))) return;
     setDeleting(true);
     try {
       const res = await fetch(`/api/admin/notices/${values.id}`, {
@@ -116,7 +117,6 @@ export function NoticeForm({ initial, mode }: { initial: NoticeFormValues; mode:
                   onChange={(e) => set("titleBn", e.target.value)}
                   placeholder="বাংলা শিরোনাম লিখুন"
                   className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
-                  dir="rtl"
                   required
                 />
               ) : (
@@ -139,7 +139,6 @@ export function NoticeForm({ initial, mode }: { initial: NoticeFormValues; mode:
                 onChange={(e) => set("excerptBn", e.target.value)}
                 rows={2}
                 placeholder="২–৩ লাইনের সারসংক্ষেপ"
-                dir="rtl"
                 className="w-full resize-y rounded-lg border bg-card px-3.5 py-2.5 text-sm outline-none focus:border-primary/50"
               />
             ) : (
@@ -161,7 +160,6 @@ export function NoticeForm({ initial, mode }: { initial: NoticeFormValues; mode:
                 value={values.bodyBn}
                 onChange={(html) => set("bodyBn", html)}
                 placeholder="বিস্তারিত বিজ্ঞপ্তি…"
-                dir="rtl"
               />
             ) : (
               <RichTextEditor value={values.bodyEn} onChange={(html) => set("bodyEn", html)} placeholder="Full notice body…" />

@@ -320,7 +320,6 @@ export function CourseEditor({ initial }: { initial: CourseEditorValues }) {
                     <input
                       value={meta.titleBn}
                       onChange={(e) => setMetaField("titleBn", e.target.value)}
-                      dir="rtl"
                       placeholder="বাংলা নাম"
                       className="w-full rounded-lg border bg-background px-3.5 py-2.5 text-[15px] font-heading"
                     />
@@ -342,6 +341,7 @@ export function CourseEditor({ initial }: { initial: CourseEditorValues }) {
                   value={meta.titleAr}
                   onChange={(e) => setMetaField("titleAr", e.target.value)}
                   dir="rtl"
+                  lang="ar"
                   placeholder="السنة التمهيدية"
                   className="w-full rounded-lg border bg-background px-3.5 py-2.5 font-arabic text-[15px]"
                 />
@@ -354,7 +354,6 @@ export function CourseEditor({ initial }: { initial: CourseEditorValues }) {
                   <input
                     value={meta.taglineBn}
                     onChange={(e) => setMetaField("taglineBn", e.target.value)}
-                    dir="rtl"
                     placeholder="এক লাইনে কোর্সের পরিচয়"
                     className="w-full rounded-lg border bg-background px-3.5 py-2 text-sm"
                   />
@@ -372,7 +371,7 @@ export function CourseEditor({ initial }: { initial: CourseEditorValues }) {
             <BilingualField label="কোর্স পরিচিতি (সম্পূর্ণ)">
               {(active) =>
                 active === "bn" ? (
-                  <RichTextEditor value={meta.overviewBn} onChange={(v) => setMetaField("overviewBn", v)} dir="rtl" />
+                  <RichTextEditor value={meta.overviewBn} onChange={(v) => setMetaField("overviewBn", v)} />
                 ) : (
                   <RichTextEditor value={meta.overviewEn} onChange={(v) => setMetaField("overviewEn", v)} />
                 )
@@ -382,7 +381,7 @@ export function CourseEditor({ initial }: { initial: CourseEditorValues }) {
             <BilingualField label="লক্ষ্য-উদ্দেশ্য" hint="বুলেট তালিকা হিসেবে লিখুন — ওয়েবসাইটে তালিকা আকারে দেখানো হবে।">
               {(active) =>
                 active === "bn" ? (
-                  <RichTextEditor value={meta.objectivesBn} onChange={(v) => setMetaField("objectivesBn", v)} dir="rtl" minHeight={120} />
+                  <RichTextEditor value={meta.objectivesBn} onChange={(v) => setMetaField("objectivesBn", v)} minHeight={120} />
                 ) : (
                   <RichTextEditor value={meta.objectivesEn} onChange={(v) => setMetaField("objectivesEn", v)} minHeight={120} />
                 )
@@ -392,7 +391,7 @@ export function CourseEditor({ initial }: { initial: CourseEditorValues }) {
             <BilingualField label="ভর্তির যোগ্যতা">
               {(active) =>
                 active === "bn" ? (
-                  <RichTextEditor value={meta.eligibilityBn} onChange={(v) => setMetaField("eligibilityBn", v)} dir="rtl" minHeight={120} />
+                  <RichTextEditor value={meta.eligibilityBn} onChange={(v) => setMetaField("eligibilityBn", v)} minHeight={120} />
                 ) : (
                   <RichTextEditor value={meta.eligibilityEn} onChange={(v) => setMetaField("eligibilityEn", v)} minHeight={120} />
                 )
@@ -402,7 +401,7 @@ export function CourseEditor({ initial }: { initial: CourseEditorValues }) {
             <BilingualField label="কোর্স সম্পন্নকারীদের ভবিষ্যৎ">
               {(active) =>
                 active === "bn" ? (
-                  <RichTextEditor value={meta.careerBn} onChange={(v) => setMetaField("careerBn", v)} dir="rtl" minHeight={120} />
+                  <RichTextEditor value={meta.careerBn} onChange={(v) => setMetaField("careerBn", v)} minHeight={120} />
                 ) : (
                   <RichTextEditor value={meta.careerEn} onChange={(v) => setMetaField("careerEn", v)} minHeight={120} />
                 )
@@ -416,7 +415,6 @@ export function CourseEditor({ initial }: { initial: CourseEditorValues }) {
               <input
                 value={meta.durationBn}
                 onChange={(e) => setMetaField("durationBn", e.target.value)}
-                dir="rtl"
                 placeholder="৩ বছর (আবাসিক)"
                 className="mt-1.5 w-full rounded-lg border bg-background px-3 py-2 text-sm"
               />
@@ -435,7 +433,6 @@ export function CourseEditor({ initial }: { initial: CourseEditorValues }) {
               <input
                 value={meta.courseTypeBn}
                 onChange={(e) => setMetaField("courseTypeBn", e.target.value)}
-                dir="rtl"
                 placeholder="সম্পূর্ণ আবাসিক · শুধু পুরুষ"
                 className="mt-1.5 w-full rounded-lg border bg-background px-3 py-2 text-sm"
               />
@@ -534,7 +531,6 @@ export function CourseEditor({ initial }: { initial: CourseEditorValues }) {
                   <input
                     value={sem.titleBn}
                     onChange={(e) => updateSemester(semIndex, { titleBn: e.target.value })}
-                    dir="rtl"
                     placeholder="(ঐচ্ছিক শিরোনাম — যেমন: মূল কোর্স)"
                     className="min-w-40 flex-1 rounded-md border bg-background px-2.5 py-1.5 text-[13px]"
                   />
@@ -595,7 +591,6 @@ export function CourseEditor({ initial }: { initial: CourseEditorValues }) {
                               <input
                                 value={subject.titleBn}
                                 onChange={(e) => updateSubject(semIndex, subIndex, { titleBn: e.target.value })}
-                                dir="rtl"
                                 placeholder="বাংলা নাম *"
                                 className="w-44 rounded-md border bg-background px-2 py-1.5"
                               />
@@ -610,7 +605,6 @@ export function CourseEditor({ initial }: { initial: CourseEditorValues }) {
                               <textarea
                                 value={subject.modulesBn}
                                 onChange={(e) => updateSubject(semIndex, subIndex, { modulesBn: e.target.value })}
-                                dir="rtl"
                                 rows={3}
                                 placeholder="মডিউল ১&#10;মডিউল ২"
                                 className="w-48 rounded-md border bg-background px-2 py-1.5 text-[12px]"
@@ -706,7 +700,6 @@ export function CourseEditor({ initial }: { initial: CourseEditorValues }) {
               <input
                 value={spec.nameBn}
                 onChange={(e) => setSpecs((list) => list.map((s, j) => (j === i ? { ...s, nameBn: e.target.value } : s)))}
-                dir="rtl"
                 placeholder="বিভাগের নাম (বাংলা)"
                 className="min-w-44 flex-1 rounded-md border bg-background px-2.5 py-1.5 text-[13px]"
               />
@@ -720,6 +713,7 @@ export function CourseEditor({ initial }: { initial: CourseEditorValues }) {
                 value={spec.nameAr}
                 onChange={(e) => setSpecs((list) => list.map((s, j) => (j === i ? { ...s, nameAr: e.target.value } : s)))}
                 dir="rtl"
+                lang="ar"
                 placeholder="العربية"
                 className="w-36 rounded-md border bg-background px-2.5 py-1.5 text-[13px] font-arabic"
               />
@@ -771,7 +765,6 @@ export function CourseEditor({ initial }: { initial: CourseEditorValues }) {
               <input
                 value={program.titleBn}
                 onChange={(e) => setSdp((list) => list.map((p, j) => (j === i ? { ...p, titleBn: e.target.value } : p)))}
-                dir="rtl"
                 placeholder="কার্যক্রমের নাম (বাংলা)"
                 className="rounded-md border bg-background px-2.5 py-1.5 text-[13px]"
               />
@@ -784,7 +777,6 @@ export function CourseEditor({ initial }: { initial: CourseEditorValues }) {
               <input
                 value={program.objectiveBn}
                 onChange={(e) => setSdp((list) => list.map((p, j) => (j === i ? { ...p, objectiveBn: e.target.value } : p)))}
-                dir="rtl"
                 placeholder="উদ্দেশ্য"
                 className="rounded-md border bg-background px-2.5 py-1.5 text-[13px]"
               />
@@ -800,7 +792,6 @@ export function CourseEditor({ initial }: { initial: CourseEditorValues }) {
                 <input
                   value={program.outcomeBn}
                   onChange={(e) => setSdp((list) => list.map((p, j) => (j === i ? { ...p, outcomeBn: e.target.value } : p)))}
-                  dir="rtl"
                   placeholder="ফলাফল"
                   className="flex-1 rounded-md border bg-background px-2.5 py-1.5 text-[13px]"
                 />

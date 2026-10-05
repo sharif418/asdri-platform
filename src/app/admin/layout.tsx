@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { hindSiliguri, tiroBangla } from "@/lib/fonts";
+import { amiri, hindSiliguri, tiroBangla } from "@/lib/fonts";
 import "../globals.css";
 import { getSession, isStaff } from "@/lib/auth";
 import { getEnabledFlags } from "@/lib/settings";
@@ -11,6 +11,7 @@ import { AdminLogoutButton } from "@/components/auth/admin-logout-button";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { InstituteLogo } from "@/components/shared/logo";
 import { Toaster } from "@/components/ui/toaster";
+import { ConfirmBridge } from "@/components/admin/ui/confirm";
 import { db } from "@/lib/db";
 
 export const metadata: Metadata = {
@@ -40,7 +41,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   return (
     <html lang="bn" data-lang="bn" suppressHydrationWarning>
-      <body className={`${tiroBangla.variable} ${hindSiliguri.variable} antialiased bg-background text-foreground`}>
+      <body className={`${tiroBangla.variable} ${hindSiliguri.variable} ${amiri.variable} antialiased bg-background text-foreground`}>
         <SiteConfigProvider config={siteConfig} flags={flags}>
         <div className="flex min-h-screen">
           <AdminSidebar role={session.user.role} unread={unreadMessages} />
@@ -79,6 +80,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         {/* Every admin module's mutation feedback renders here — same shadcn
             toast stack the public site mounts in its [lang] layout. */}
         <Toaster />
+        <ConfirmBridge />
         </SiteConfigProvider>
       </body>
     </html>

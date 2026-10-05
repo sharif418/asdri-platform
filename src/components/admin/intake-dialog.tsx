@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { normalizeDigitsInput } from "@/lib/format";
 import { useRouter } from "next/navigation";
 import { CalendarDays, Loader2, Save } from "lucide-react";
 import type { IntakeStatus } from "@prisma/client";
@@ -164,7 +165,7 @@ export function IntakeDialog({
                 <label className="text-sm font-semibold">বছর *</label>
                 <input
                   value={values.year}
-                  onChange={(e) => set("year", e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  onChange={(e) => set("year", normalizeDigitsInput(e.target.value).slice(0, 4))}
                   inputMode="numeric"
                   placeholder="2026"
                   dir="ltr"
@@ -201,9 +202,9 @@ export function IntakeDialog({
             <label className="text-sm font-semibold">মোট আসন</label>
             <input
               value={values.seatsTotal}
-              onChange={(e) => set("seatsTotal", e.target.value.replace(/\D/g, "").slice(0, 5))}
+              onChange={(e) => set("seatsTotal", normalizeDigitsInput(e.target.value).slice(0, 5))}
               inputMode="numeric"
-              placeholder="৪০"
+              placeholder="40"
               dir="ltr"
               className={inputClass}
             />

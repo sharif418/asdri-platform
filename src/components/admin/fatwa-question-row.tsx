@@ -202,7 +202,7 @@ export function FatwaQuestionRow({
 
           <div>
             <p className="mb-1.5 text-sm font-semibold">উত্তর লিখুন (ফিকহ ও গবেষণা বোর্ড)</p>
-            <RichTextEditor value={answer} onChange={setAnswer} placeholder="প্রামাণ্য দলিলসহ উত্তর লিখুন…" dir="rtl" minHeight={200} />
+            <RichTextEditor value={answer} onChange={setAnswer} placeholder="প্রামাণ্য দলিলসহ উত্তর লিখুন…" minHeight={200} />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
@@ -284,7 +284,6 @@ export function FatwaQuestionRow({
                   <input
                     value={answeredBy}
                     onChange={(e) => setAnsweredBy(e.target.value)}
-                    dir="rtl"
                     className="mt-1 w-full rounded-lg border bg-background px-3 py-2 text-[13px] outline-none focus:border-primary/50"
                   />
                 </div>
