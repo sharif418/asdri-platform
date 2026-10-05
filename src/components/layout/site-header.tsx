@@ -30,27 +30,51 @@ import { LogoLockup } from "@/components/shared/logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { CommandPalette, SearchTrigger } from "@/components/search/command-palette";
 import { useLanguage } from "@/components/providers/language-provider";
-import { useSiteConfig } from "@/components/providers/site-config-provider";
+import { useSiteConfig, useSiteMenu, useModuleEnabled } from "@/components/providers/site-config-provider";
 import { navigation } from "@/content/site";
 import { langPath } from "@/lib/locale";
 import type { DictionaryKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 interface NavSection {
-  key: DictionaryKey;
+  label: string;
   href: string;
-  children: { key: DictionaryKey; href: string }[];
+  children: { label: string; href: string }[];
 }
 
-const navSections: NavSection[] = [
-  { key: "nav.about", href: "/about", children: [...navigation.about] },
-  { key: "nav.academics", href: "/academics", children: [...navigation.academics] },
-  { key: "nav.admissions", href: "/admissions", children: [...navigation.admissions] },
-  { key: "nav.research", href: "/research", children: [...navigation.research] },
-  { key: "nav.media", href: "/media", children: [...navigation.media] },
-  { key: "nav.notices", href: "/notices", children: [...navigation.notices] },
-  { key: "nav.contact", href: "/contact", children: [...navigation.contact] },
-];
+/** Resolve the nav sections: DB menus (office-edited) with the static seed
+ *  navigation as fallback. Labels resolve per language; the flag filtering
+ *  already happened server-side in the (site) layout. */
+function useNavSections(): NavSection[] {
+  const { t, lang } = useLanguage();
+  const menu = useSiteMenu();
+
+  if (menu) {
+    return menu.main.map((section) => ({
+      label: lang === "bn" ? section.labelBn : section.labelEn || section.labelBn,
+      href: section.href,
+      children: section.children.map((child) => ({
+        label: lang === "bn" ? child.labelBn : child.labelEn || child.labelBn,
+        href: child.href,
+      })),
+    }));
+  }
+
+  const staticSections: { key: DictionaryKey; href: string; children: { key: DictionaryKey; href: string }[] }[] = [
+    { key: "nav.about", href: "/about", children: [...navigation.about] },
+    { key: "nav.academics", href: "/academics", children: [...navigation.academics] },
+    { key: "nav.admissions", href: "/admissions", children: [...navigation.admissions] },
+    { key: "nav.research", href: "/research", children: [...navigation.research] },
+    { key: "nav.media", href: "/media", children: [...navigation.media] },
+    { key: "nav.notices", href: "/notices", children: [...navigation.notices] },
+    { key: "nav.contact", href: "/contact", children: [...navigation.contact] },
+  ];
+  return staticSections.map((section) => ({
+    label: t(section.key),
+    href: section.href,
+    children: section.children.map((child) => ({ label: t(child.key), href: child.href })),
+  }));
+}
 
 /** Internal pathnames are locale-prefixed (/bn/x, /en/x) — strip to compare. */
 function displayPath(pathname: string): string {
@@ -132,7 +156,7 @@ function ActiveNavUnderline() {
 
 /** Desktop mega-menu trigger + panel. */
 function DesktopNavItem({ section }: { section: NavSection }) {
-  const { t, lang } = useLanguage();
+  const { lang } = useLanguage();
   const pathname = displayPath(usePathname());
   const base = section.href;
   const active = pathname === base || pathname.startsWith(`${base}/`);
@@ -146,7 +170,7 @@ function DesktopNavItem({ section }: { section: NavSection }) {
           data-active={active}
         >
           <Link href={langPath(lang, base)}>
-            <span className={cn(active ? "text-primary font-semibold" : "link-sweep")}>{t(section.key)}</span>
+            <span className={cn(active ? "text-primary font-semibold" : "link-sweep")}>{section.label}</span>
           </Link>
         </NavigationMenuLink>
         {active ? <ActiveNavUnderline /> : null}
@@ -157,7 +181,7 @@ function DesktopNavItem({ section }: { section: NavSection }) {
               aria-hidden
               tabIndex={-1}
             >
-              <span className="sr-only">{t(section.key)} menu</span>
+              <span className="sr-only">{section.label} menu</span>
             </NavigationMenuTrigger>
             <NavigationMenuContent>
               <ul className="grid w-[260px] gap-1 p-2">
@@ -168,7 +192,7 @@ function DesktopNavItem({ section }: { section: NavSection }) {
                         href={langPath(lang, child.href)}
                         className="block rounded-md px-3 py-2 text-sm transition-colors hover:bg-secondary hover:text-primary"
                       >
-                        {t(child.key)}
+                        {child.label}
                       </Link>
                     </NavigationMenuLink>
                   </li>
@@ -186,6 +210,7 @@ function DesktopNavItem({ section }: { section: NavSection }) {
 function MobileNav({ onSearchClick }: { onSearchClick: () => void }) {
   const { t, lang, toggle } = useLanguage();
   const siteConfig = useSiteConfig();
+  const navSections = useNavSections();
   const pathname = displayPath(usePathname());
   const [open, setOpen] = useState(false);
 
@@ -240,7 +265,7 @@ function MobileNav({ onSearchClick }: { onSearchClick: () => void }) {
             {navSections.map((section) => {
               const active = pathname === section.href || pathname.startsWith(`${section.href}/`);
               return (
-                <AccordionItem key={section.key} value={section.key} className="border-b-0">
+                <AccordionItem key={section.href} value={section.href} className="border-b-0">
                   <div className="flex items-center justify-between">
                     <Link
                       href={langPath(lang, section.href)}
@@ -250,7 +275,7 @@ function MobileNav({ onSearchClick }: { onSearchClick: () => void }) {
                         active && "text-primary",
                       )}
                     >
-                      {t(section.key)}
+                      {section.label}
                     </Link>
                     {section.children.length > 0 ? (
                       <AccordionTrigger className="w-9 justify-end py-2.5 pr-1 [&>svg]:h-4 [&>svg]:w-4" />
@@ -266,7 +291,7 @@ function MobileNav({ onSearchClick }: { onSearchClick: () => void }) {
                             onClick={() => setOpen(false)}
                             className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-primary"
                           >
-                            {t(child.key)}
+                            {child.label}
                           </Link>
                         ))}
                       </div>
@@ -321,6 +346,8 @@ function MobileNav({ onSearchClick }: { onSearchClick: () => void }) {
 export function SiteHeader() {
   const { t, lang } = useLanguage();
   const siteConfig = useSiteConfig();
+  const navSections = useNavSections();
+  const donationsEnabled = useModuleEnabled("donations");
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const pathname = displayPath(usePathname());
@@ -365,7 +392,7 @@ export function SiteHeader() {
                   </div>
                 </NavigationMenuItem>
                 {navSections.map((section) => (
-                  <DesktopNavItem key={section.key} section={section} />
+                  <DesktopNavItem key={section.href} section={section} />
                 ))}
               </NavigationMenuList>
             </NavigationMenu>
@@ -373,16 +400,18 @@ export function SiteHeader() {
 
           <div className="flex items-center gap-2.5">
             <SearchTrigger onClick={() => setSearchOpen(true)} className="hidden lg:inline-flex" />
-            <Button
-              asChild
-              size="sm"
-              className="hidden bg-gold-gradient text-[13px] font-semibold text-gold-foreground shadow-sm hover:opacity-95 sm:inline-flex"
-            >
-              <Link href={langPath(lang, "/support")}>
-                <HeartHandshake aria-hidden className="h-4 w-4" />
-                {t("action.donate")}
-              </Link>
-            </Button>
+            {donationsEnabled ? (
+              <Button
+                asChild
+                size="sm"
+                className="hidden bg-gold-gradient text-[13px] font-semibold text-gold-foreground shadow-sm hover:opacity-95 sm:inline-flex"
+              >
+                <Link href={langPath(lang, "/support")}>
+                  <HeartHandshake aria-hidden className="h-4 w-4" />
+                  {t("action.donate")}
+                </Link>
+              </Button>
+            ) : null}
             <MobileNav onSearchClick={() => setSearchOpen(true)} />
           </div>
         </div>

@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import type { Lang } from "@/lib/locale";
 import { alternatesFor, langPath } from "@/lib/locale";
 import { env } from "@/lib/env";
-import { isFeatureEnabled, getAboutContent } from "@/lib/settings";
+import { isFeatureEnabled, getAboutContent, readSetting } from "@/lib/settings";
 import { getSession } from "@/lib/auth";
 import { PageHero } from "@/components/shared/page-hero";
 import { ModuleUnavailable } from "@/components/shared/module-unavailable";
@@ -54,10 +54,24 @@ export default async function ApplyPage({ params }: { params: Promise<{ lang: La
     examDate: intake.examDate?.toISOString() ?? null,
   }));
 
-  const declarationBn =
-    "আমি ঘোষণা করছি যে, আমি প্রদত্ত সকল তথ্য সঠিক ও নির্ভুল। কোনো তথ্য মিথ্যা প্রমাণিত হলে আমার আবেদন বাতিল বলে গণ্য হবে।";
-  const declarationEn =
-    "I declare that all information provided is true and correct. If any information proves false, my application will be considered cancelled.";
+  // Declaration copy is office-editable (/admin/content/admission); the
+  // static text is only the fallback for a never-saved setting.
+  const admissionCopy = await readSetting<{
+    declarationBn: string;
+    declarationEn: string;
+    applyIntroBn: string;
+    applyIntroEn: string;
+  }>("admissions.settings", {
+    declarationBn:
+      "আমি ঘোষণা করছি যে, আমি প্রদত্ত সকল তথ্য সঠিক ও নির্ভুল। কোনো তথ্য মিথ্যা প্রমাণিত হলে আমার আবেদন বাতিল বলে গণ্য হবে।",
+    declarationEn:
+      "I declare that all information provided is true and correct. If any information proves false, my application will be considered cancelled.",
+    applyIntroBn: "",
+    applyIntroEn: "",
+  });
+  const declarationBn = admissionCopy.declarationBn;
+  const declarationEn = admissionCopy.declarationEn;
+  const applyIntro = lang === "bn" ? admissionCopy.applyIntroBn : admissionCopy.applyIntroEn;
 
   return (
     <>
@@ -77,6 +91,11 @@ export default async function ApplyPage({ params }: { params: Promise<{ lang: La
         lang={lang}
       />
       <div className="container-site pb-16 sm:pb-24">
+        {applyIntro ? (
+          <p className="mx-auto mb-6 max-w-3xl rounded-xl border border-gold/30 bg-gold-soft/30 p-4 text-[13.5px] leading-relaxed text-foreground/90">
+            {applyIntro}
+          </p>
+        ) : null}
         <ApplicationForm
           intakes={intakes}
           loggedIn={Boolean(session)}

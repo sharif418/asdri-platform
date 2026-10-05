@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { orderByIds, searchFatwaEntries } from "@/lib/db-search";
 import { richTextToPlain } from "@/lib/sanitize";
 import { getClientIp, isSameOrigin, jsonError, jsonOk, rateLimit } from "@/lib/security";
+import { isFeatureEnabled } from "@/lib/settings";
 import { fatwaQuestionSchema, zodFields } from "@/lib/validators";
 import { FATWA_CATEGORIES, type FatwaCategory } from "@/types";
 
@@ -60,6 +61,10 @@ function parsePositiveInt(value: string | null, fallback: number): number {
  * question + answer text in both languages (see lib/db-search).
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  if (!(await isFeatureEnabled("fatwa"))) {
+    return jsonOk({ items: [], total: 0, page: 1, pageSize: 10 });
+  }
+
   const limiter = rateLimit({
     key: "fatwa-read",
     identifier: getClientIp(request),
@@ -169,6 +174,9 @@ async function createQuestion(
 
 /** POST /api/fatwa — submit a question to the fiqh & research board. */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  if (!(await isFeatureEnabled("fatwa"))) {
+    return jsonError("ফতোয়া বিভাগটি বর্তমানে বন্ধ আছে।", "FORBIDDEN", 403);
+  }
   if (!isSameOrigin(request)) {
     return jsonError("অননুমোদিত উৎস", "UNAUTHORIZED", 403);
   }

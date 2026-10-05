@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { NoticeCategory as DbNoticeCategory, Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getClientIp, jsonError, jsonOk, rateLimit } from "@/lib/security";
+import { isFeatureEnabled } from "@/lib/settings";
 import { NOTICE_CATEGORIES, type NoticeCategory, type NoticeStatus } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +37,11 @@ function parsePositiveInt(value: string | null, fallback: number): number {
  * the `status` field lets clients render the badge.
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  // Feature flag: a switched-off module serves an empty feed, matching the page.
+  if (!(await isFeatureEnabled("notices"))) {
+    return jsonOk({ items: [], total: 0, page: 1, pageSize: 10 });
+  }
+
   const limiter = rateLimit({
     key: "notices-read",
     identifier: getClientIp(request),

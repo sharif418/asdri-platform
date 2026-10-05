@@ -8,42 +8,72 @@ import { Button } from "@/components/ui/button";
 import { InstituteLogo } from "@/components/shared/logo";
 import { StarMotif } from "@/components/shared/ornaments";
 import { useLanguage } from "@/components/providers/language-provider";
-import { useSiteConfig } from "@/components/providers/site-config-provider";
+import { useSiteConfig, useSiteMenu } from "@/components/providers/site-config-provider";
 import { navigation } from "@/content/site";
 import { langPath } from "@/lib/locale";
 import type { DictionaryKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 
-interface FooterColumn {
-  titleKey: DictionaryKey;
-  links: { key: DictionaryKey; href: string; raw?: boolean }[];
+interface FooterLink {
+  label: string;
+  href: string;
+  raw?: boolean;
 }
 
-const footerColumns: FooterColumn[] = [
-  {
-    titleKey: "footer.quickLinks",
-    links: [
-      { key: "nav.academics.courses", href: "/academics/courses" },
-      { key: "nav.admissions.process", href: "/admissions" },
-      { key: "nav.about.alumni", href: "/about/alumni" },
-      { key: "nav.media.blog", href: "/media/blog" },
-      ...navigation.notices.slice(0, 2),
-      ...navigation.support.slice(0, 2),
-    ],
-  },
-  {
-    titleKey: "footer.resources",
-    links: [
-      { key: "nav.academics.downloads", href: "/academics/downloads" },
-      { key: "nav.research.library", href: "/research/library" },
-      { key: "nav.research.fatwa", href: "/research/fatwa" },
-      { key: "nav.support.calculator", href: "/support/zakat-calculator" },
-      // root-level route handler — bypasses the /:lang prefix (raw href)
-      { key: "footer.rss", href: "/feed.xml", raw: true },
-    ],
-  },
-];
+interface FooterColumn {
+  titleKey: DictionaryKey;
+  links: FooterLink[];
+}
+
+/** Footer link columns: DB menus (office-edited in /admin/settings/menus) with
+ *  the static seed navigation as fallback; the RSS link always stays. */
+function useFooterColumns(): FooterColumn[] {
+  const { t, lang } = useLanguage();
+  const menu = useSiteMenu();
+
+  const staticColumns: FooterColumn[] = [
+    {
+      titleKey: "footer.quickLinks",
+      links: [
+        { label: t("nav.academics.courses"), href: "/academics/courses" },
+        { label: t("nav.admissions.process"), href: "/admissions" },
+        { label: t("nav.about.alumni"), href: "/about/alumni" },
+        { label: t("nav.media.blog"), href: "/media/blog" },
+        ...navigation.notices.slice(0, 2).map((l) => ({ label: t(l.key), href: l.href })),
+        ...navigation.support.slice(0, 2).map((l) => ({ label: t(l.key), href: l.href })),
+      ],
+    },
+    {
+      titleKey: "footer.resources",
+      links: [
+        { label: t("nav.academics.downloads"), href: "/academics/downloads" },
+        { label: t("nav.research.library"), href: "/research/library" },
+        { label: t("nav.research.fatwa"), href: "/research/fatwa" },
+        { label: t("nav.support.calculator"), href: "/support/zakat-calculator" },
+        // root-level route handler — bypasses the /:lang prefix (raw href)
+        { label: t("footer.rss"), href: "/feed.xml", raw: true },
+      ],
+    },
+  ];
+
+  if (menu && (menu.footerPrimary.length > 0 || menu.footerSecondary.length > 0)) {
+    const resolve = (link: { labelBn: string; labelEn: string; href: string }): FooterLink => ({
+      label: lang === "bn" ? link.labelBn : link.labelEn || link.labelBn,
+      href: link.href,
+      raw: /^https?:\/\//.test(link.href),
+    });
+    return [
+      { titleKey: "footer.quickLinks", links: menu.footerPrimary.map(resolve) },
+      {
+        titleKey: "footer.resources",
+        links: [...menu.footerSecondary.map(resolve), { label: t("footer.rss"), href: "/feed.xml", raw: true }],
+      },
+    ];
+  }
+
+  return staticColumns;
+}
 
 /** Newsletter subscribe form (client island inside the footer). */
 function NewsletterForm() {
@@ -105,6 +135,7 @@ function NewsletterForm() {
 export function SiteFooter() {
   const { t, lang } = useLanguage();
   const siteConfig = useSiteConfig();
+  const footerColumns = useFooterColumns();
   const year = new Date().getFullYear();
 
   return (
@@ -171,20 +202,20 @@ export function SiteFooter() {
             </h3>
             <ul className="mt-3">
               {column.links.map((link) => (
-                <li key={link.href + link.key}>
+                <li key={link.href + link.label}>
                   {link.raw ? (
                     <a
                       href={link.href}
                       className="flex min-h-11 items-center text-sm text-ivory/75 transition-colors hover:text-gold"
                     >
-                      {t(link.key)}
+                      {link.label}
                     </a>
                   ) : (
                     <Link
                       href={langPath(lang, link.href)}
                       className="flex min-h-11 items-center text-sm text-ivory/75 transition-colors hover:text-gold"
                     >
-                      {t(link.key)}
+                      {link.label}
                     </Link>
                   )}
                 </li>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getClientIp, jsonError, jsonOk, rateLimit } from "@/lib/security";
+import { isFeatureEnabled } from "@/lib/settings";
 import type { FundingCampaign } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,10 @@ const CACHE_CONTROL = "public, max-age=0, s-maxage=30, stale-while-revalidate=60
  * arrived yet). Ordered by the office's `sortOrder`, then age.
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  if (!(await isFeatureEnabled("donations"))) {
+    return jsonOk([]);
+  }
+
   const limiter = rateLimit({
     key: "campaigns-read",
     identifier: getClientIp(request),
