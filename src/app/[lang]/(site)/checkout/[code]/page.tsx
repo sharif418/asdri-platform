@@ -5,19 +5,31 @@ import { AlertTriangle, ShieldCheck } from "lucide-react";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
-import { langPath, isLang, type Lang } from "@/lib/locale";
+import { alternatesFor, isLang, langPath, type Lang } from "@/lib/locale";
+import { getSiteConfig } from "@/lib/content/site";
 import { SandboxCheckout } from "@/components/donations/sandbox-checkout";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "পেমেন্ট চেকআউট",
-  robots: { index: false, follow: false },
-};
-
 interface CheckoutPageProps {
   params: Promise<{ lang: string; code: string }>;
   searchParams: Promise<{ sig?: string }>;
+}
+
+export async function generateMetadata({ params }: CheckoutPageProps): Promise<Metadata> {
+  const { lang: raw, code } = await params;
+  const lang: Lang = isLang(raw) ? raw : "bn";
+  const isBn = lang === "bn";
+  const siteConfig = await getSiteConfig();
+  const { canonical, languages } = alternatesFor(`/checkout/${code}`, env.siteUrl);
+  return {
+    title: isBn ? `পেমেন্ট চেকআউট — ${siteConfig.shortBn}` : `Payment Checkout — ${siteConfig.shortEn}`,
+    description: isBn
+      ? "নিরাপদ স্যান্ডবক্স পেমেন্ট গেটওয়ে — আপনার অনুদানের ট্র্যাকিং কোড ও স্বাক্ষর যাচাই করে পেমেন্ট সম্পন্ন করুন।"
+      : "Secure sandbox payment gateway — complete your donation after tracking-code and link-signature verification.",
+    alternates: { canonical, languages },
+    robots: { index: false, follow: false },
+  };
 }
 
 /** Timing-safe hex-HMAC comparison (mirrors the callback route's check). */

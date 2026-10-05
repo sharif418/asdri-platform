@@ -1,14 +1,25 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import type { Lang } from "@/lib/locale";
+import { alternatesFor, type Lang } from "@/lib/locale";
+import { env } from "@/lib/env";
 import { getSession } from "@/lib/auth";
+import { getSiteConfig } from "@/lib/content/site";
 import { PageHero } from "@/components/shared/page-hero";
 import { LoginForm } from "@/components/auth/login-form";
 
-export const metadata: Metadata = {
-  title: "লগইন",
-  description: "আস-সুন্নাহ দাওয়াহ অ্যান্ড রিসার্চ ইনস্টিটিউট অ্যাকাউন্টে লগইন করুন — অনুদানের রিসিপ্ট ও স্পন্সর রিপোর্ট দেখুন।",
-};
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  const siteConfig = await getSiteConfig();
+  const { canonical, languages } = alternatesFor("/login", env.siteUrl);
+  return {
+    title: isBn ? `লগইন — ${siteConfig.shortBn}` : `Sign In — ${siteConfig.shortEn}`,
+    description: isBn
+      ? "ডোনার ড্যাশবোর্ড, অনুদানের রিসিপ্ট ও স্পন্সর রিপোর্ট দেখতে আপনার আস-সুন্নাহ ইনস্টিটিউট অ্যাকাউন্টে লগইন করুন।"
+      : "Sign in to your As-Sunnah Institute account to view the donor dashboard, donation receipts, and sponsor reports.",
+    alternates: { canonical, languages },
+  };
+}
 
 export default async function LoginPage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;

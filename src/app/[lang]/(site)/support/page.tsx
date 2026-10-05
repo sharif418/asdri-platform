@@ -15,14 +15,24 @@ import { FUND_TYPES } from "@/types";
 import type { FundType } from "@/types";
 import { getFunds, getFundLabels } from "@/lib/content/funds";
 import { getSiteConfig } from "@/lib/content/site";
+import { alternatesFor } from "@/lib/locale";
+import { env } from "@/lib/env";
 import { db } from "@/lib/db";
 import type { CampaignOption } from "@/components/donations/donation-types";
 
-export const metadata: Metadata = {
-  title: "সাপোর্ট করুন — অনুদান পোর্টাল",
-  description:
-    "যাকাত ফান্ড, শিক্ষার্থী স্পন্সর, সাধারণ অনুদান ও স্কলারশিপ ফান্ডে অবদান রাখুন — বিকাশ, নগদ, রকেট ও ব্যাংক ট্রান্সফারে সহজ পেমেন্ট।",
-};
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const isBn = lang === "bn";
+  const siteConfig = await getSiteConfig();
+  const { canonical, languages } = alternatesFor("/support", env.siteUrl);
+  return {
+    title: isBn ? `অনুদান ও সহযোগিতা — ${siteConfig.shortBn}` : `Support & Donations — ${siteConfig.shortEn}`,
+    description: isBn
+      ? "যাকাত ফান্ড, শিক্ষার্থী স্পন্সর, সাধারণ অনুদান ও স্কলারশিপ ফান্ডে অবদান রাখুন — বিকাশ, নগদ, রকেট ও ব্যাংক ট্রান্সফারে সহজ পেমেন্ট।"
+      : "Give to the zakat fund, sponsor a student, or support general and scholarship funds — easy payment via bKash, Nagad, Rocket, and bank transfer.",
+    alternates: { canonical, languages },
+  };
+}
 
 interface SupportPageProps {
   params: Promise<{ lang: Lang }>;
