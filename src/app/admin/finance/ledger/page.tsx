@@ -4,6 +4,7 @@ import { Landmark, Plus, Wallet } from "lucide-react";
 import { db } from "@/lib/db";
 import { getSession, roleCan } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { AdminPager } from "@/components/admin/admin-pager";
 import { LedgerTable, type LedgerRowData } from "@/components/admin/ledger-table";
 import { LedgerDialog } from "@/components/admin/ledger-dialog";
 import { FinanceExportButton } from "@/components/admin/finance-export-button";
@@ -193,25 +194,13 @@ export default async function AdminLedgerPage({ searchParams }: { searchParams: 
         <LedgerTable entries={entries} funds={funds} />
       </div>
 
-      {pageCount > 1 && (
-        <div className="mt-4 flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">
-            পৃষ্ঠা {formatNumber(page, "bn")} / {formatNumber(pageCount, "bn")} · মোট {formatNumber(total, "bn")} এন্ট্রি
-          </span>
-          <div className="flex gap-2">
-            {page > 1 && (
-              <Link href={pageHref(page - 1)} className="inline-flex items-center gap-1 rounded-lg border bg-card px-3 py-1.5 font-semibold hover:bg-secondary">
-                পূর্ববর্তী
-              </Link>
-            )}
-            {page < pageCount && (
-              <Link href={pageHref(page + 1)} className="inline-flex items-center gap-1 rounded-lg border bg-card px-3 py-1.5 font-semibold hover:bg-secondary">
-                পরবর্তী
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
+      <AdminPager
+        page={page}
+        pageCount={pageCount}
+        total={total}
+        unit="এন্ট্রি"
+        buildHref={pageHref}
+      />
     </div>
   );
 }

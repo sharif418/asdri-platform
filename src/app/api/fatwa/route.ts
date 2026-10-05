@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma, type FatwaQuestion } from "@prisma/client";
 import { db } from "@/lib/db";
+import { orderByIds, searchFatwaEntries } from "@/lib/db-search";
 import { richTextToPlain } from "@/lib/sanitize";
 import { getClientIp, isSameOrigin, jsonError, jsonOk, rateLimit } from "@/lib/security";
 import { fatwaQuestionSchema, zodFields } from "@/lib/validators";
@@ -55,8 +56,8 @@ function parsePositiveInt(value: string | null, fallback: number): number {
 /** GET /api/fatwa?slug=|q=&category=&page=&pageSize= — published fatwa bank.
  *
  * `slug` returns that single entry (deep links from the palette/shares);
- * otherwise a paginated, searchable list (question + answer text, both
- * languages, ILIKE via Prisma's insensitive mode).
+ * otherwise a paginated, searchable list — ranked tsvector full-text over
+ * question + answer text in both languages (see lib/db-search).
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const limiter = rateLimit({
@@ -102,31 +103,38 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return response;
     }
 
-    const where: Prisma.FatwaEntryWhereInput = {
-      isPublished: true,
-      ...(category ? { category: { key: category } } : {}),
-      ...(q
-        ? {
-            OR: [
-              { questionBn: { contains: q, mode: "insensitive" } },
-              { questionEn: { contains: q, mode: "insensitive" } },
-              { answerBn: { contains: q, mode: "insensitive" } },
-              { answerEn: { contains: q, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-    };
+    const categoryFilter = category ? { category: { key: category } } : {};
 
-    const [total, rows] = await Promise.all([
-      db.fatwaEntry.count({ where }),
-      db.fatwaEntry.findMany({
-        where,
-        orderBy: { publishedAt: "desc" },
+    let total: number;
+    let rows: FatwaRow[];
+    if (q) {
+      // Ranked full-text search (tsvector with ILIKE fallback) — ordered ids
+      // first, then hydrated through the shared select and re-ordered.
+      const search = await searchFatwaEntries({
+        q,
+        categoryKey: category || null,
         skip: (page - 1) * pageSize,
         take: pageSize,
+      });
+      total = search.total;
+      const hydrated = await db.fatwaEntry.findMany({
+        where: { id: { in: search.ids.length > 0 ? search.ids : ["__none__"] } },
         select: FATWA_SELECT,
-      }),
-    ]);
+      });
+      rows = orderByIds(hydrated, search.ids) as FatwaRow[];
+    } else {
+      const where: Prisma.FatwaEntryWhereInput = { isPublished: true, ...categoryFilter };
+      [total, rows] = await Promise.all([
+        db.fatwaEntry.count({ where }),
+        db.fatwaEntry.findMany({
+          where,
+          orderBy: { publishedAt: "desc" },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          select: FATWA_SELECT,
+        }),
+      ]);
+    }
 
     const response = jsonOk({ items: rows.map(toDto), total, page, pageSize });
     response.headers.set("Cache-Control", "no-store");

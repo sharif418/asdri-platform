@@ -5,6 +5,7 @@ import { ArrowRight, FileQuestion, Sparkles } from "lucide-react";
 import type { Lang } from "@/lib/locale";
 import { langPath } from "@/lib/locale";
 import { db } from "@/lib/db";
+import { orderByIds, searchNoticeEntries, searchFatwaEntries } from "@/lib/db-search";
 import { PageHero } from "@/components/shared/page-hero";
 import { Reveal } from "@/components/shared/reveal";
 import { SearchBox } from "@/components/search/search-box";
@@ -32,6 +33,7 @@ interface SearchPageProps {
 
 interface DbResults {
   notices: {
+    id: string;
     slug: string;
     titleBn: string;
     titleEn: string;
@@ -41,6 +43,7 @@ interface DbResults {
     publishedAt: Date;
   }[];
   fatwas: {
+    id: string;
     slug: string;
     category: { key: string; nameBn: string; nameEn: string } | null;
     questionBn: string;
@@ -55,55 +58,46 @@ const EMPTY_RESULTS: DbResults = { notices: [], fatwas: [], noticeTotal: 0, fatw
 
 async function queryDatabase(q: string): Promise<DbResults> {
   try {
-    const noticeWhere = {
-      isPublished: true,
-      OR: [
-        { titleBn: { contains: q } },
-        { titleEn: { contains: q } },
-        { excerptBn: { contains: q } },
-        { excerptEn: { contains: q } },
-      ],
-    };
-    const fatwaWhere = {
-      isPublished: true,
-      OR: [
-        { questionBn: { contains: q } },
-        { questionEn: { contains: q } },
-        { answerBn: { contains: q } },
-        { answerEn: { contains: q } },
-      ],
-    };
-    const [notices, fatwas, noticeTotal, fatwaTotal] = await Promise.all([
-      db.notice.findMany({
-        where: noticeWhere,
-        orderBy: { publishedAt: "desc" },
-        take: 5,
-        select: {
-          slug: true,
-          titleBn: true,
-          titleEn: true,
-          excerptBn: true,
-          excerptEn: true,
-          category: true,
-          publishedAt: true,
-        },
-      }),
-      db.fatwaEntry.findMany({
-        where: fatwaWhere,
-        orderBy: { publishedAt: "desc" },
-        take: 5,
-        select: {
-          slug: true,
-          category: { select: { key: true, nameBn: true, nameEn: true } },
-          questionBn: true,
-          questionEn: true,
-          answeredBy: true,
-        },
-      }),
-      db.notice.count({ where: noticeWhere }),
-      db.fatwaEntry.count({ where: fatwaWhere }),
+    const [noticeSearch, fatwaSearch] = await Promise.all([
+      searchNoticeEntries({ q, skip: 0, take: 5 }),
+      searchFatwaEntries({ q, skip: 0, take: 5 }),
     ]);
-    return { notices, fatwas, noticeTotal, fatwaTotal };
+    const [notices, fatwas] = await Promise.all([
+      noticeSearch.ids.length > 0
+        ? db.notice.findMany({
+            where: { id: { in: noticeSearch.ids }, isPublished: true },
+            select: {
+              id: true,
+              slug: true,
+              titleBn: true,
+              titleEn: true,
+              excerptBn: true,
+              excerptEn: true,
+              category: true,
+              publishedAt: true,
+            },
+          })
+        : Promise.resolve([] as DbResults["notices"]),
+      fatwaSearch.ids.length > 0
+        ? db.fatwaEntry.findMany({
+            where: { id: { in: fatwaSearch.ids }, isPublished: true },
+            select: {
+              id: true,
+              slug: true,
+              category: { select: { key: true, nameBn: true, nameEn: true } },
+              questionBn: true,
+              questionEn: true,
+              answeredBy: true,
+            },
+          })
+        : Promise.resolve([] as DbResults["fatwas"]),
+    ]);
+    return {
+      notices: orderByIds(notices, noticeSearch.ids),
+      fatwas: orderByIds(fatwas, fatwaSearch.ids),
+      noticeTotal: noticeSearch.total,
+      fatwaTotal: fatwaSearch.total,
+    };
   } catch {
     return EMPTY_RESULTS;
   }
