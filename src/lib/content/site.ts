@@ -45,6 +45,11 @@ function telHref(phone: string): string {
 let cached: { value: SiteConfigView; expiresAt: number } | null = null;
 const TTL_MS = 30_000;
 
+/** Clear the merged site-config cache (called after identity/contact/social/payment writes). */
+export function invalidateSiteConfig(): void {
+  cached = null;
+}
+
 /** Merge identity + contact + social + payment settings into one view. */
 export async function getSiteConfig(): Promise<SiteConfigView> {
   if (cached && cached.expiresAt > Date.now()) return cached.value;

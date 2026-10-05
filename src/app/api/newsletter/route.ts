@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getClientIp, isSameOrigin, jsonError, jsonOk, rateLimit } from "@/lib/security";
+import { isFeatureEnabled } from "@/lib/settings";
 import { newsletterSchema, zodFields } from "@/lib/validators";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +13,9 @@ export const dynamic = "force-dynamic";
  * get the same success envelope so the form never exposes list membership.
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  if (!(await isFeatureEnabled("newsletter"))) {
+    return jsonError("নিউজলেটার বর্তমানে বন্ধ আছে।", "FORBIDDEN", 403);
+  }
   if (!isSameOrigin(request)) {
     return jsonError("অননুমোদিত উৎস", "UNAUTHORIZED", 403);
   }

@@ -28,6 +28,9 @@ async function getSetting<T>(key: string, fallback: T): Promise<T> {
 
 export function invalidateSettings(): void {
   cache.clear();
+  // The flag cache shares this invalidation contract: settings writes and
+  // flag toggles must both take effect immediately.
+  flagCacheValue = null;
 }
 
 /** Read an arbitrary setting key with a typed fallback (for adapters). */
@@ -185,8 +188,7 @@ export async function getHeroMediaId(): Promise<string | null> {
 
 /* ————— feature flags ————— */
 
-const flagCache: { value: Map<string, boolean>; expiresAt: number } | null = null;
-let flagCacheValue: { value: Map<string, boolean>; expiresAt: number } | null = flagCache;
+let flagCacheValue: { value: Map<string, boolean>; expiresAt: number } | null = null;
 
 /** Is a module enabled? Unknown keys default to enabled (fail-open for content). */
 export async function isFeatureEnabled(key: string): Promise<boolean> {

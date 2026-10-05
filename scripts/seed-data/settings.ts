@@ -107,6 +107,21 @@ export const FEATURE_FLAGS: { key: string; labelBn: string; labelEn: string; des
 
 type MenuSeed = Prisma.MenuItemCreateInput;
 
+/** Bind menu entries to the module flag that governs them. */
+function flagForHref(href: string): string | null {
+  if (href.startsWith("/admissions")) return "admissions";
+  if (href.startsWith("/media/blog")) return "blog";
+  if (href.startsWith("/media/videos")) return "videos";
+  if (href.startsWith("/media/gallery")) return "gallery";
+  if (href.startsWith("/media/news")) return "notices";
+  if (href.startsWith("/research/fatwa")) return "fatwa";
+  if (href.startsWith("/research/clarifications")) return "clarifications";
+  if (href.startsWith("/research/publications") || href.startsWith("/research/projects") || href.startsWith("/research/library")) return "research";
+  if (href.startsWith("/academics/downloads")) return "downloads";
+  if (href.startsWith("/notices")) return "notices";
+  return null;
+}
+
 export function buildMenuGroups(): { parentKey: string | null; parentLabel: { labelBn: string; labelEn: string }; items: MenuSeed[] }[] {
   // [dictionary key, children keys + hrefs]
   const main: [string, readonly { href: string; key: string }[]][] = [
@@ -130,7 +145,10 @@ export function buildMenuGroups(): { parentKey: string | null; parentLabel: { la
         href: child.href,
         sortOrder: i,
         isVisible: true,
-        flagKey: child.href === "/admissions" ? "admissions" : null,
+        // Menu items bound to a module flag disappear from the public
+        // navigation when that module is switched off (admin: Site settings →
+        // Feature flags).
+        flagKey: flagForHref(child.href),
       })),
     };
   });

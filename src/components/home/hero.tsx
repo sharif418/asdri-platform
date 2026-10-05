@@ -21,10 +21,12 @@ import { pick } from "@/types";
 
 interface HeroProps {
   lang: Language;
+  /** Office-chosen hero image (from /admin/content/home); null = default campus photo. */
+  heroImageUrl?: string | null;
 }
 
 /** Full-bleed hero — campus backdrop, bismillah, headline, dual CTAs, video dialog. */
-export function Hero({ lang }: HeroProps) {
+export function Hero({ lang, heroImageUrl }: HeroProps) {
   const { t } = useLanguage();
   const siteConfig = useSiteConfig();
   const [videoOpen, setVideoOpen] = useState(false);
@@ -43,7 +45,8 @@ export function Hero({ lang }: HeroProps) {
       {/* Backdrop */}
       <div
         aria-hidden
-        className="absolute inset-0 -z-10 bg-[url('/images/hero-campus.png')] bg-cover bg-center"
+        className={`absolute inset-0 -z-10 bg-cover bg-center${heroImageUrl ? "" : " bg-[url('/images/hero-campus.png')]"}`}
+        style={heroImageUrl ? { backgroundImage: `url(${heroImageUrl})` } : undefined}
       />
       <div
         aria-hidden
