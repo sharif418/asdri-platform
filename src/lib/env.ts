@@ -66,6 +66,10 @@ export const env = {
   get smtpUrl(): string {
     return required("SMTP_URL");
   },
+  get mailFrom(): string {
+    // Verified sender configured at the provider (HUMAN_STEPS item).
+    return process.env.MAIL_FROM ?? "As-Sunnah Institute <no-reply@assunnah-institute.org>";
+  },
   get paymentProvider(): string {
     return process.env.PAYMENT_PROVIDER ?? "sandbox";
   },

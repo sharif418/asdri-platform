@@ -87,7 +87,7 @@ export default async function AdminGalleryPage({ searchParams }: { searchParams:
             <Link
               key={album.id}
               href={`/admin/gallery/${album.slug}`}
-              className="group overflow-hidden rounded-2xl border bg-card shadow-sm transition-colors hover:border-gold/50"
+              className="group overflow-clip rounded-2xl border bg-card shadow-sm transition-colors hover:border-gold/50"
             >
               {album.coverMedia ? (
                 <img

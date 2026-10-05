@@ -417,6 +417,20 @@ html:not([data-lang="en"]) .prose-islamic p {
   border-radius: 4px;
 }
 
+/* Admin data tables: the header row stays pinned under the sticky topbar
+   while the officer scrolls a 20–25 row page. Wrappers use overflow-clip
+   (not overflow-hidden) so the table is not trapped in a non-scrolling
+   scrollport. Background is the same secondary-over-card tint the thead
+   already wears, but opaque — rows must not bleed through the pinned row. */
+#admin-main table thead th {
+  position: sticky;
+  top: 3.5rem; /* h-14 sticky admin topbar (mobile + desktop variants) */
+  z-index: 10;
+  background-color: color-mix(in oklab, var(--secondary) 30%, var(--card));
+  /* keep the visual divider when the row is pinned mid-viewport */
+  box-shadow: inset 0 -1px 0 color-mix(in oklab, var(--border) 70%, transparent);
+}
+
 /* kbd chips — palette footers, shortcut hints (site-wide base) */
 kbd {
   display: inline-block;

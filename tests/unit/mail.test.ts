@@ -1,4 +1,5 @@
 import { describe, test, expect } from "bun:test";
+import { db } from "@/lib/db";
 import { buildDonationReceiptEmail, escapeHtml } from "@/lib/mail";
 
 describe("escapeHtml", () => {
@@ -55,5 +56,47 @@ describe("buildDonationReceiptEmail", () => {
     expect(payload.amount).toBe(1500);
     expect(payload.currency).toBe("BDT");
     expect(payload.fundName).toBe("Zakat Fund");
+  });
+});
+
+describe("queueOutboxEmail driver behaviour (integration)", () => {
+  test("log driver persists unsent with no error (sandbox default)", async () => {
+    const { queueOutboxEmail } = await import("@/lib/mail");
+    const to = `mail-log-${Date.now()}@test.local`;
+    await queueOutboxEmail({
+      to,
+      subject: "log driver probe",
+      body: "plain",
+      html: "<p>plain</p>",
+      kind: "test.probe",
+    });
+    const row = await db.outboxEmail.findFirstOrThrow({ where: { to }, orderBy: { createdAt: "desc" } });
+    expect(row.sentAt).toBeNull();
+    expect(row.error).toBeNull();
+    expect(row.providerMessageId).toBeNull();
+    await db.outboxEmail.delete({ where: { id: row.id } });
+  });
+
+  test("smtp driver without SMTP_URL never throws — row kept retryable with the reason", async () => {
+    process.env.MAIL_DRIVER = "smtp";
+    delete process.env.SMTP_URL; // smtpUrl() reads env each call
+    try {
+      const { queueOutboxEmail } = await import("@/lib/mail");
+      const to = `mail-smtp-${Date.now()}@test.local`;
+      await queueOutboxEmail({
+        to,
+        subject: "smtp soft-fail probe",
+        body: "plain",
+        html: "<p>plain</p>",
+        kind: "test.probe",
+      });
+      const row = await db.outboxEmail.findFirstOrThrow({ where: { to }, orderBy: { createdAt: "desc" } });
+      expect(row.sentAt).toBeNull(); // not delivered
+      expect(row.error).toBe("MAIL_DRIVER=smtp but SMTP_URL is unset");
+      expect(row.providerMessageId).toBeNull();
+      await db.outboxEmail.delete({ where: { id: row.id } });
+    } finally {
+      process.env.MAIL_DRIVER = "log"; // never leak into later tests
+    }
   });
 });

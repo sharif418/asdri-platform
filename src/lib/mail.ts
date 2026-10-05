@@ -1,13 +1,17 @@
 import type { Prisma } from "@prisma/client";
+import type { Transporter } from "nodemailer";
 import { db } from "@/lib/db";
+import { env } from "@/lib/env";
 
 /**
  * Mail outbox — the platform's single send path.
  *
  * MAIL_DRIVER=log (the sandbox default) persists every message as an
  * OutboxEmail row, unsent: inspectable in dev, re-sendable from the admin
- * later. The production smtp driver will deliver first and then record the
- * same row, so callers never branch on the driver.
+ * later. MAIL_DRIVER=smtp (server) delivers through SMTP first and then
+ * records the same row with sentAt / providerMessageId — a send failure
+ * keeps the row unsent with the error message, so nothing is lost and a
+ * later pass can retry. Callers never branch on the driver.
  */
 
 export interface OutboxEmailInput {
@@ -23,8 +27,50 @@ export interface OutboxEmailInput {
   payload?: Record<string, unknown>;
 }
 
-/** Queue one email in the outbox (log driver — persisted, not delivered). */
+/* ————————— SMTP delivery (lazily loaded; log driver never pays for it) ————————— */
+
+let sharedTransporter: Transporter | null = null;
+let transporterBroken = false;
+
+async function smtpTransporter(): Promise<Transporter | null> {
+  const url = env.smtpUrl;
+  if (!url) return null; // configured smtp without SMTP_URL — record, never crash
+  if (transporterBroken) return null;
+  if (sharedTransporter) return sharedTransporter;
+  const nodemailer = await import("nodemailer");
+  sharedTransporter = nodemailer.createTransport(url);
+  return sharedTransporter;
+}
+
+/** Queue one email: smtp driver attempts delivery first, log driver only persists. */
 export async function queueOutboxEmail(input: OutboxEmailInput): Promise<void> {
+  let sentAt: Date | null = null;
+  let providerMessageId: string | null = null;
+  let error: string | null = null;
+
+  if (env.mailDriver === "smtp") {
+    const transporter = await smtpTransporter();
+    if (!transporter) {
+      error = env.smtpUrl ? "smtp transporter unavailable" : "MAIL_DRIVER=smtp but SMTP_URL is unset";
+    } else {
+      try {
+        const info = await transporter.sendMail({
+          from: env.mailFrom,
+          to: input.to,
+          subject: input.subject,
+          text: input.body,
+          html: input.html,
+        });
+        sentAt = new Date();
+        providerMessageId = info.messageId ?? null;
+      } catch (cause) {
+        // Deliberately soft: the money path (donation callbacks) must never
+        // fail because a mail server hiccuped — the row stays retryable.
+        error = cause instanceof Error ? cause.message : String(cause);
+      }
+    }
+  }
+
   await db.outboxEmail.create({
     data: {
       to: input.to,
@@ -33,6 +79,9 @@ export async function queueOutboxEmail(input: OutboxEmailInput): Promise<void> {
       html: input.html,
       kind: input.kind,
       payload: input.payload as Prisma.InputJsonValue | undefined,
+      sentAt,
+      providerMessageId,
+      error,
     },
   });
 }
