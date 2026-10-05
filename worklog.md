@@ -984,3 +984,29 @@ Task: Round-20 wrap — 20-a QA bug fixes + 20-b outbox retry & branded 404, bra
 - **PR stack discipline**: #2-#12 + #13 all open, none merged by agents — the client's merge review triggers the first real CI run (still unverified in-sandbox by design).
 - Next-phase candidates: **Bangla PDF receipts** (headless Chromium), **recurring-donation scheduler** (needs schema column + worker), **CI first-run after merge**, scheduled outbox send worker (manual retry exists now), donation-ledger deep pagination, tsvector search upgrade.
 - Demo data: 2 sandbox donations (one receipt now manually retried/delivered for the E2E), 11 published articles (5 editorial + 6 clar), outbox rows visible in finance — pristine DB is one `migrate reset` + seed away.
+
+---
+Task ID: 21
+Agent: general-purpose (stack reconciliation — delta PR replacing closed #14)
+Task: Round-21 stack reconciliation — the duplicated recovery branch (old PR #14, closed) rebased onto the intact remote stack; only the true delta kept.
+
+## 项目当前状态描述/判断
+- **状态**：本地沙箱回滚（旧克隆 + PG 清空 + infra/commit.sh 丢失 + 工具层 /dev/tcp 会话击杀故障 ~40 分钟）。根因隔离：任何写 /dev/tcp/127.0.0.1:5433 的命令瞬间杀死 agent 工具会话——echo/curl/git 不受影响；绕行 = 用 Prisma/psql 检查。远程堆栈 #11 feat/search-engine-2 → #12 feat/admin-pagers-and-polish → #13 feat/qa-round20-fixes 完好（18 commits：404 修复、outbox retry+attempts、RSS、博客文章+主题筛选、metadata i18n、a11y、151 测试）；本地误判"rounds 19/20 全丢"重建了重复内容（旧 PR #14 已关闭）；本 PR 只保留真正增量。
+- 增量三件套：admin section roots（修 QA 发现的 5 个 404 死链）、demo 数据种子（真实 API 造数）、本地环境恢复知识（worklog/GAPS 沉淀）。
+
+## 当前目标/已完成的修改/验证结果
+- **修改与验证**：
+  (1) admin section roots：/admin/inbox → /admin/inbox/messages、/admin/fatwa → /admin/fatwa/questions、/admin/research → /admin/research/publications 三个重定向页 + admin-sidebar.tsx 移除 content/settings 两个死导航项（round-20 树中 /admin/content 与 /admin/settings 无对应路由，点击即 404）——共修 QA 发现的 5 个 404 死链。
+  (2) scripts/seed-demo.ts + package.json `db:seed:demo`：经真实 HTTP API 造 4 笔捐赠（含匿名 ৳৫,০০০）+ 2 份入学申请（signed sandbox callbacks、officer 状态流转、outbox 回执、audit 全留痕），按 donor/applicant email 幂等，重跑不重复。
+  (3) 本地环境恢复知识：root-free PG17 重建于 /home/z/pglocal（.deb 解包）+ /home/z/infra/start.sh 幂等启动脚本（pg_isready 探活、stale pid 清理、role/db 补建）+ commit.sh 重建 + watchdog 4-21s 翻 main 的 content-neutral 防御（每次 commit 后 `git branch -f main <branch>`，翻转落点即分支头，零丢失）。
+  (4) 证据：download/qa-r21-*.png（404、博客 chips/筛选、clar-topics、footer RSS、admin donations/outbox/applications/inbox、mobile home——其中 404/博客/回执截图记录的是 round-20 特性在本地环境的实况，作为回归证据）。门禁：lint 0 / tsc 0 / 151 测试（round-20 套件，本增量不加测试）。
+- 迁移对账：本地 asdri/asdri_test 曾有幽灵记录 20261005090000_outbox_attempts（与 round-20 的 20261005084600_outbox_attempts 功能等价——同为 ADD COLUMN attempts INT NOT NULL DEFAULT 0）；已删除幽灵行、`prisma migrate resolve --applied 20261005084600_outbox_attempts`、清理 deploy 失败残留的 rolled_back 行；两库 `migrate deploy` 均报 no pending migrations，OutboxEmail 三列（attempts/sentAt/providerMessageId）在位。
+
+## 未解决问题或风险,建议下一阶段优先事项
+- **风险与下一步**：watchdog 翻转与 /dev/tcp 禁令已写入 GAPS（§D）；下阶段候选：孟加拉语 PDF 收据、定期捐赠调度器、ledger 深分页、seed-data 模块拆分（content.ts >500 行）、inbox/fatwa-questions 演示数据。
+- 堆栈卫生：旧分支 feat/qa-round19 远程已删、本地 ref 保留；本 PR（feat/qa-round21-stack）base 为 feat/qa-round20-fixes，PR #14 已关闭并留言指向本 PR。
+
+Stage Summary:
+- Gates (serial): `bun run lint` 0 errors · `bunx tsc --noEmit` exit 0 · `bun run test` 151 pass / 0 fail / 565 expect() calls / 12 files（round-20 套件原样通过，增量文件零冲突）。
+- Delta commits on feat/qa-round21-stack (base ecc78d4 = PR #13 tip): 5d9215a feat(admin+demo) section roots + demo seed + 截图；docs 提交见 git log。旧 PR #14 closed with comment；feat/qa-round19 远程分支已删除。
+- Cron race hit 1× mid-round（checkout 后被翻回 main）——main 已预先 repoint 到分支头，翻转 content-neutral 零丢失；commit 全程走 /home/z/commit.sh WORDBRANCH=feat/qa-round21-stack。
