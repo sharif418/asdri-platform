@@ -58,6 +58,21 @@ PR stack (all **open**, awaiting client review — never self-merged):
 - Client components fetch the six public APIs (all rebuilt in PR #6): notices feed (pinned
   first), fatwa bank (search + deep links + ask), campaign progress bars, contact form,
   footer newsletter, donation form. Evidence: E2E in §6.
+- **Branded bilingual 404** (round 20): `[lang]/not-found.tsx` is the single public
+  not-found boundary — a static server component (branded markup in the first HTML byte,
+  Bengali primary + English secondary, links to `/` and `/en`), replacing the (site)
+  route-group boundary that never rendered in Next 16.1.3. `(site)/loading.tsx` was
+  removed: its early Suspense flush turned every notFound() into a 200. Bogus admin
+  paths hit an admin catch-all + branded admin 404 (staff; anonymous still gets the
+  login gate). Evidence: `/definitely-bogus`, `/en/definitely-bogus`,
+  `/academics/courses/<bogus-slug>`, `/research/fatwa/<bogus-slug>` all 404 + branded
+  markup in curl; `/admin/<bogus>` 404 branded with a staff session —
+  `qa-round20-404.png`.
+- **Round-20 QA polish**: localized metadata (support/notices/login/checkout EN titles
+  + hreflang alternates), localized a11y labels (main/mobile nav, back-to-top, RSS), six
+  seeded clarification articles with DB-derived topic counts + `/media/blog?topic=`
+  filter, campaign target label single text node, `/admin/login` → `/login` redirect,
+  RSS published-only query + footer feed link.
 
 ## 4. Admin CMS — DONE
 
@@ -115,12 +130,24 @@ PR stack (all **open**, awaiting client review — never self-merged):
   with `sentAt` + `providerMessageId`; failures stay soft (error on the row, retryable —
   the money path can never break on a mail outage). Migration `20261005070000` adds the
   column; `MAIL_FROM` env with a no-reply default; unit-tested both drivers (144 suite).
+- **Outbox true retry** (round 20): `OutboxEmail.attempts` (migration 20261005084600)
+  counts the creation-time smtp send plus every manual retry. `action: "retry"` on
+  PATCH /api/admin/outbox/[id] delivers NOW through the configured driver (smtp send,
+  or log-driver delivered=logged) via the shared `deliverOutboxEmail`, recording
+  sentAt/providerMessageId or the error; `resend` keeps its queue-only semantics
+  (attempts untouched). The finance table shows attempts in Bengali numerals and a
+  retry-now button on errored/unsent rows only; both actions audited (outbox.retry /
+  outbox.resend). Integration: 7-test suite through the real route handler (401/403/
+  404/400 matrix, queued 0→1 + sentAt, failed-row recovery, resend no-op on attempts).
+  Browser E2E: queued row → এখনই আবার পাঠান → পাঠানো + attempts ১, button gone —
+  `qa-round20-outbox-retry.png`.
 
 ## 7. QA / ship — DONE (with the two sandbox-unverifiable items marked PARTIAL below)
 
-- **Tests: DONE.** 144 tests / 541 assertions, 11 files, all green in ~2s on this branch
+- **Tests: DONE.** 151 tests / 565 assertions, 12 files, all green in ~3s on this branch
   (`bun run test`; main is at 121/464/8 — PR #11 adds the search/pager suite +21, round 19
-  adds the mail-driver pair +2). Unit: Bengali numerals/taka/dates, locale + proxy logic, zod
+  adds the mail-driver pair +2, round 20 adds the outbox retry/resend suite +7 through
+  the real PATCH handler). Unit: Bengali numerals/taka/dates, locale + proxy logic, zod
   validators, receipt email, both HMAC contracts, db-search tokens/fallback, pager window
   algorithm. Integration (against a dedicated
   `asdri_test` database, dev DB verified untouched): full role matrix, session lifecycle,
