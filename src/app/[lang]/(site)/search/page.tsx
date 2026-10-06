@@ -213,12 +213,12 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
                     <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                       {dict["search.noResultsHint"]}
                     </p>
-                    <div className="mt-6 flex flex-wrap justify-center gap-2">
+                    <div className="mt-6 flex flex-wrap justify-center gap-2.5">
                       {POPULAR_QUERIES.slice(0, 4).map((item) => (
                         <Link
                           key={item.q}
                           href={langPath(lang, `/search?q=${encodeURIComponent(item.q)}`)}
-                          className="rounded-full border border-gold/30 bg-card px-3.5 py-1.5 text-[13px] font-medium transition-all duration-200 hover:border-gold hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+                          className="rounded-full border border-gold/30 bg-card px-4 py-2 text-[13px] font-medium transition-all duration-200 hover:border-gold hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
                         >
                           {pick({ bn: item.bn, en: item.en }, lang)}
                         </Link>

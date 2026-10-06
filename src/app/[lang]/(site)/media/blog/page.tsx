@@ -183,7 +183,7 @@ export default async function BlogIndexPage({
               </span>
               <Link
                 href={langPath(lang, "/media/blog")}
-                className="inline-flex items-center gap-1.5 rounded-full border bg-card px-4 py-2 text-[13px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                className="inline-flex items-center gap-1.5 rounded-full border bg-card px-4 py-2 text-[13px] font-medium text-muted-foreground transition-all hover:border-primary/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
               >
                 <X aria-hidden className="h-3.5 w-3.5" />
                 {lang === "bn" ? "সব দেখুন" : "View all"}
