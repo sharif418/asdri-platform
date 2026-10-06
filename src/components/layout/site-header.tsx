@@ -118,7 +118,7 @@ function TopUtilityBar() {
             type="button"
             onClick={toggle}
             className="inline-flex items-center gap-1 rounded-full border border-ivory/25 px-2.5 py-0.5 font-medium tracking-wide transition-colors hover:border-gold hover:text-gold"
-            aria-label={lang === "bn" ? "Switch to English" : "বাংলায় দেখুন"}
+            aria-label={lang === "bn" ? "EN | বাং — switch to English" : "EN | বাং — বাংলায় দেখুন"}
           >
             <Languages aria-hidden className="h-3.5 w-3.5" />
             <span className={cn("text-[11px]", lang === "bn" ? "opacity-60" : "font-bold text-gold")}>EN</span>

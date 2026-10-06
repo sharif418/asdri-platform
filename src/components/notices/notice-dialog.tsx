@@ -1,13 +1,16 @@
 "use client";
 
-import { CalendarDays, Download, FileText, Printer, Share2 } from "lucide-react";
+import { CalendarDays, Download, ExternalLink, FileText, Share2 } from "lucide-react";
+import Link from "next/link";
 import { pick, type Language, type LocalizedText, type NoticeCategory, type NoticeStatus } from "@/types";
 import { formatDate } from "@/lib/format";
 import { langPath } from "@/lib/locale";
 import { richTextToPlain } from "@/lib/sanitize";
 import { toast } from "@/hooks/use-toast";
+import { categoryLabel, statusBadgeClass, statusLabel } from "@/lib/notice-labels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PrintButton } from "@/components/shared/print-button";
 import {
   Dialog,
   DialogContent,
@@ -29,32 +32,9 @@ export interface NoticeDetailData {
   publishedAt: string;
 }
 
-export function statusLabel(status: NoticeStatus, lang: Language): string {
-  if (status === "new") return lang === "bn" ? "নতুন" : "New";
-  if (status === "active") return lang === "bn" ? "আবেদন চলছে" : "Ongoing";
-  return lang === "bn" ? "শেষ" : "Closed";
-}
-
-export function statusBadgeClass(status: NoticeStatus): string {
-  switch (status) {
-    case "new":
-      return "border-gold/40 bg-gold/15 text-gold";
-    case "active":
-      return "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400";
-    case "closed":
-      return "border-border bg-muted text-muted-foreground";
-  }
-}
-
-export function categoryLabel(category: NoticeCategory, lang: Language): string {
-  const map: Record<NoticeCategory, { bn: string; en: string }> = {
-    admission: { bn: "ভর্তি", en: "Admission" },
-    recruitment: { bn: "নিয়োগ", en: "Recruitment" },
-    academic: { bn: "একাডেমিক", en: "Academic" },
-    general: { bn: "সাধারণ", en: "General" },
-  };
-  return lang === "bn" ? map[category].bn : map[category].en;
-}
+// Label helpers moved to the pure module (server pages call them too);
+// re-exported here so existing client importers keep working.
+export { categoryLabel, statusBadgeClass, statusLabel } from "@/lib/notice-labels";
 
 interface NoticeDialogViewProps {
   notice: NoticeDetailData;
@@ -70,9 +50,9 @@ export function NoticeDialogView({ notice, lang, open, onOpenChange }: NoticeDia
     .map((part) => part.trim())
     .filter((part) => part.length > 0);
 
-  /** Share the notice's deep link — Web Share on mobile, clipboard otherwise. */
+  /** Share the notice's permalink — Web Share on mobile, clipboard otherwise. */
   async function shareNotice() {
-    const url = `${window.location.origin}${langPath(lang, `/notices?notice=${encodeURIComponent(notice.slug)}`)}`;
+    const url = `${window.location.origin}${langPath(lang, `/notices/${encodeURIComponent(notice.slug)}`)}`;
     const text = `${pick(notice.title, lang)}\n${formatDate(notice.publishedAt, lang)}\n${url}`;
     try {
       if (typeof navigator.share === "function") {
@@ -89,18 +69,7 @@ export function NoticeDialogView({ notice, lang, open, onOpenChange }: NoticeDia
     }
   }
 
-  /** Print the open notice as an official pad (Save-as-PDF), the fatwa-pad pattern. */
-  function printNotice() {
-    document.body.classList.add("printing-notice");
-    const cleanup = () => {
-      document.body.classList.remove("printing-notice");
-      window.removeEventListener("afterprint", cleanup);
-    };
-    window.addEventListener("afterprint", cleanup);
-    window.print();
-    // Fallback cleanup for browsers that never fire afterprint.
-    window.setTimeout(cleanup, 1500);
-  }
+  /** Print the open notice as an official pad (Save-as-PDF) — PrintButton. */
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -186,14 +155,22 @@ export function NoticeDialogView({ notice, lang, open, onOpenChange }: NoticeDia
             <Share2 aria-hidden className="h-4 w-4" />
             {lang === "bn" ? "শেয়ার" : "Share"}
           </Button>
-          <Button
-            type="button"
-            onClick={printNotice}
-            className="gap-2 bg-primary font-semibold hover:bg-primary/90 sm:flex-none"
+          <PrintButton
+            bodyClass="printing-notice"
+            label={lang === "bn" ? "অফিসিয়াল কপি (PDF)" : "Official copy (PDF)"}
+            className="gap-2 bg-primary font-semibold text-primary-foreground hover:bg-primary/90 sm:flex-none"
+          />
+        </div>
+
+        {/* Permalink — the shareable, crawlable full page for this notice. */}
+        <div className="print:hidden">
+          <Link
+            href={langPath(lang, `/notices/${notice.slug}`)}
+            className="inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold dark:hover:text-gold"
           >
-            <Printer aria-hidden className="h-4 w-4" />
-            {lang === "bn" ? "অফিসিয়াল কপি (PDF)" : "Official copy (PDF)"}
-          </Button>
+            <ExternalLink aria-hidden className="h-3.5 w-3.5" />
+            {lang === "bn" ? "সম্পূর্ণ পাতা খুলুন" : "Open the full page"}
+          </Link>
         </div>
 
         {!notice.attachmentUrl ? (

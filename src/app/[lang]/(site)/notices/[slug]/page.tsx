@@ -132,6 +132,10 @@ export default async function NoticeDetailPage({ params }: NoticePageProps) {
           </div>
 
           {/* ————— The official pad ————— */}
+          {/* sr-only section headings keep the document outline sequential
+              (h1 hero → h2 pad → h2 neighbours → footer h3) for screen
+              readers and axe — the pad itself is untitled prose by design. */}
+          <h2 className="sr-only">{bn ? "বিজ্ঞপ্তির বিস্তারিত" : "Notice details"}</h2>
           <article className="print-zone relative overflow-hidden rounded-2xl border border-gold/25 bg-card shadow-sm">
             <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-gold-gradient" />
 
@@ -148,7 +152,7 @@ export default async function NoticeDetailPage({ params }: NoticePageProps) {
             <div className="p-5 sm:p-8">
               <div className="flex flex-wrap items-center gap-2 print:justify-center">
                 {notice.pinned ? (
-                  <Badge variant="outline" className="gap-1 border-gold/40 bg-gold/15 text-[11px] font-semibold text-gold">
+                  <Badge variant="outline" className="gap-1 border-gold/40 bg-gold/15 text-[11px] font-semibold text-[#7a5c15] dark:text-gold">
                     <Pin aria-hidden className="h-3 w-3" />
                     {bn ? "পিন করা" : "Pinned"}
                   </Badge>
@@ -169,8 +173,6 @@ export default async function NoticeDetailPage({ params }: NoticePageProps) {
                   {formatDate(notice.publishedAt, lang)}
                 </span>
               </div>
-
-              <h1 className="sr-only">{pick(notice.title, lang)}</h1>
 
               <div className="prose-islamic mt-5 text-[15px] leading-[1.9] sm:text-base">
                 {bodyHtml ? (
@@ -214,7 +216,9 @@ export default async function NoticeDetailPage({ params }: NoticePageProps) {
 
           {/* ————— Chronological neighbours ————— */}
           {(prev || next) && (
-            <nav aria-label={bn ? "নোটিশ নেভিগেশন" : "Notice navigation"} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 print:hidden">
+            <>
+              <h2 className="sr-only">{bn ? "পূর্ববর্তী ও পরবর্তী নোটিশ" : "Previous and next notices"}</h2>
+              <nav aria-label={bn ? "নোটিশ নেভিগেশন" : "Notice navigation"} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 print:hidden">
               {prev ? (
                 <Link
                   href={langPath(lang, `/notices/${prev.slug}`)}
@@ -256,6 +260,7 @@ export default async function NoticeDetailPage({ params }: NoticePageProps) {
                 </Link>
               ) : null}
             </nav>
+            </>
           )}
 
           {/* ————— Office contact reminder ————— */}
