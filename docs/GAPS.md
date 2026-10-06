@@ -113,11 +113,14 @@ Round-3 corrections applied: items made stale by PRs #16–#19 are updated in pl
    payload (inherent — flight carries the tree for hydration): home document
    268 → 408 KB raw / 60 → 97 KB gz, while JS dropped ~40 KB gz and 3 runtime
    fetches disappeared; Lighthouse perf stayed in its noise band (home 53–62 across
-   three runs vs 57 before; reports in `.qa/lighthouse/r4-final/`). Remaining levers,
-   in value order: **font subsetting to used glyphs** (734 KB Bengali faces are the
-   dominant LCP cost — needs Bangla shaping care, e.g. pyftsubset with a
-   Bengali-specific unicodeset), PPR/ISR for the home shell, and Bangla text
-   compression is already good (UTF-8 3 bytes/char compresses ~5:1). Accessibility
+   three runs vs 57 before; reports in `.qa/lighthouse/r4-final/`). PR #22 then
+   rebuilt font delivery outright (per-script unicode-range faces + lang-critical
+   preloads; see PROGRESS §4c): per-page font bytes 760 → 350 KB (bn) / 269 KB (en),
+   shaping parity proven via uharfbuzz, and course-list/detail scored +8/+16 above
+   their old bands — but home stays 53–63 on this shared CPU (LCP is hero-image +
+   CPU bound here; the byte cut should show on real hardware). Remaining levers in
+   value order: PPR/ISR for the home shell once Next 16 stabilizes it, and Bangla
+   text compression is already good (UTF-8 3 bytes/char compresses ~5:1). Accessibility
    95+ on all four audited pages; Best-Practices and SEO 100.
 10. **Lighthouse variance**: this sandbox's shared CPU makes single-run performance
     scores swing ±5–13 points (course-detail measured 56–69 across four runs). The

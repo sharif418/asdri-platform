@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { amiri, hindSiliguri, tiroBangla } from "@/lib/fonts";
 import "../globals.css";
 import { getSession, isStaff } from "@/lib/auth";
 import { getEnabledFlags } from "@/lib/settings";
@@ -41,7 +40,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   return (
     <html lang="bn" data-lang="bn" suppressHydrationWarning>
-      <body className={`${tiroBangla.variable} ${hindSiliguri.variable} ${amiri.variable} antialiased bg-background text-foreground`}>
+      <body className="antialiased bg-background text-foreground">
         <SiteConfigProvider config={siteConfig} flags={flags}>
         <div className="flex min-h-screen">
           <AdminSidebar role={session.user.role} unread={unreadMessages} />

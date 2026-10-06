@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Calculator, Gift, GraduationCap, HandCoins, HeartHandshake, Sparkles, Target } from "lucide-react";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
+import { ProgressBar } from "@/components/shared/progress-bar";
 import { listCampaigns } from "@/lib/content/campaigns";
 import { dictionaries, type DictionaryKey } from "@/lib/i18n";
 import { formatCompactTaka, formatTaka } from "@/lib/format";
@@ -60,22 +61,9 @@ const fundCards: FundCard[] = [
   },
 ];
 
-/** Plain-div progress bar — the Radix Progress is a client component; this
- *  server version ships identical visuals with zero JS (aria included). */
+/** Track tinted for the dark parchment band — the shared server ProgressBar. */
 function CampaignBar({ percent, label }: { percent: number; label: string }) {
-  const clamped = Math.min(100, Math.max(0, percent));
-  return (
-    <div
-      role="progressbar"
-      aria-valuenow={clamped}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-label={label}
-      className="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-ivory/15"
-    >
-      <div className="bg-gold-gradient h-full rounded-full transition-[width]" style={{ width: `${clamped}%` }} />
-    </div>
-  );
+  return <ProgressBar percent={percent} label={label} className="mt-4 bg-ivory/15" />;
 }
 
 /** Support-us band: fund categories, live campaign trackers, zakat CTA.
@@ -161,7 +149,7 @@ export async function SupportSection({ lang }: { lang: Language }) {
                         {pick(campaign.description, lang)}
                       </p>
                       <CampaignBar percent={percent} label={`${pick(campaign.title, lang)} — ${percent}%`} />
-                      <div className="mt-2.5 flex items-center justify-between text-[12.5px]">
+                      <div className="mt-2.5 flex items-center justify-between text-[12.5px] tabular-nums">
                         <span className="font-semibold text-gold">
                           {formatCompactTaka(campaign.raisedAmount, lang)}{" "}
                           <span className="font-normal text-ivory/55">
