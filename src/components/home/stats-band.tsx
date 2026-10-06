@@ -1,5 +1,3 @@
-"use client";
-
 import { GraduationCap, BookOpen, Users, Timer, School, BadgeCheck } from "lucide-react";
 import { StatCounter } from "@/components/shared/stat-counter";
 import type { Language, StatItem } from "@/types";
@@ -21,7 +19,8 @@ interface StatsBandProps {
   stats: StatItem[];
 }
 
-/** Impact-at-a-glance band — deep emerald strip with animated gold counters. */
+/** Impact-at-a-glance band — deep emerald strip with animated gold counters.
+ *  Server component: only the per-figure StatCounter is a client island. */
 export function StatsBand({ lang, stats }: StatsBandProps) {
   if (stats.length === 0) {
     return (

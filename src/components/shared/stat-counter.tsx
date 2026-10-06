@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useInView } from "framer-motion";
 import { toBnDigits } from "@/lib/format";
 import type { Language } from "@/types";
 
@@ -20,11 +19,36 @@ interface StatCounterProps {
  * Round 3: the SERVER render (and any no-JS reader, crawler or slow phone)
  * shows the FINAL value — the animation only runs client-side after hydration,
  * so the markup never ships six zeros.
+ *
+ * Round 4: the in-view trigger is a plain IntersectionObserver (was
+ * framer-motion's useInView) — one fewer runtime dependency on the page.
  */
 export function StatCounter({ value, suffix = "", lang, durationMs = 1600, className }: StatCounterProps) {
   const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-40px" });
+  const [inView, setInView] = useState(false);
   const [display, setDisplay] = useState(value); // SSR truth, animated only after mount
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || inView) return;
+    if (typeof IntersectionObserver === "undefined") {
+      // ancient browser: skip the animation entirely (deferred to a microtask
+      // so React doesn't flag a synchronous cascade inside the effect)
+      const id = setTimeout(() => setInView(true), 0);
+      return () => clearTimeout(id);
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "-40px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [inView]);
 
   useEffect(() => {
     if (!inView) return;

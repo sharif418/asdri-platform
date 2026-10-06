@@ -1,123 +1,51 @@
-"use client";
-
-import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { ArrowRight, BookMarked, Loader2, MessageCircleQuestion, Search, Send } from "lucide-react";
+import { ArrowRight, BookMarked, BookOpen } from "lucide-react";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal } from "@/components/shared/reveal";
+import { FatwaAskForm } from "@/components/home/fatwa-ask-form";
+import { FatwaBankSearch } from "@/components/home/fatwa-bank-search";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { useLanguage } from "@/components/providers/language-provider";
-import { toast } from "@/hooks/use-toast";
+import { listFatwaPreview, type FatwaPreviewItem } from "@/lib/content/fatwa";
+import { fatwaCategoryOptions } from "@/content/home-islands";
 import { formatDate } from "@/lib/format";
 import { langPath } from "@/lib/locale";
-import { pick } from "@/types";
-import type { FatwaCategory, FatwaEntry, Language } from "@/types";
+import type { Language } from "@/types";
 
-interface FatwaDto {
-  id: string;
-  slug: string;
-  category: FatwaCategory;
-  question: { bn: string; en: string };
-  answer: { bn: string; en: string };
-  answeredBy: string;
-  publishedAt: string;
+/** One fatwa bank entry (server-rendered). data-search powers the island filter. */
+function FatwaBankEntry({ entry, lang }: { entry: FatwaPreviewItem; lang: Language }) {
+  const cat = fatwaCategoryOptions.find((c) => c.value === entry.category);
+  const question = lang === "bn" ? entry.question.bn : entry.question.en;
+  const answer = lang === "bn" ? entry.answer.bn : entry.answer.en;
+  return (
+    <li
+      data-search={`${question} ${answer} ${entry.answeredBy}`.toLowerCase()}
+      className="rounded-xl border bg-background/60 p-4"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <Badge variant="outline" className="border-gold/40 bg-gold/10 text-[10px] font-semibold text-gold">
+          {cat ? (lang === "bn" ? cat.labelBn : cat.labelEn) : entry.category}
+        </Badge>
+        <span className="text-[11px] text-muted-foreground">{formatDate(entry.publishedAt, lang)}</span>
+      </div>
+      <h4 className="mt-2.5 text-[14px] font-semibold leading-snug">{question}</h4>
+      <p className="mt-2 line-clamp-3 text-[13px] leading-relaxed text-muted-foreground">{answer}</p>
+      <p className="mt-2.5 text-[11px] font-medium text-primary">— {entry.answeredBy}</p>
+    </li>
+  );
 }
 
-const categoryOptions: { value: FatwaCategory; labelBn: string; labelEn: string }[] = [
-  { value: "ibadat", labelBn: "ইবাদত", labelEn: "Worship" },
-  { value: "muamalat", labelBn: "লেনদেন", labelEn: "Transactions" },
-  { value: "aqidah", labelBn: "আকীদা", labelEn: "Creed" },
-  { value: "family", labelBn: "পারিবারিক", labelEn: "Family" },
-  { value: "contemporary", labelBn: "সমকালীন", labelEn: "Contemporary" },
-];
-
-/** Fatwa & online query gateway — quick ask form + live-searchable fatwa bank. */
-export function FatwaGateway({ lang }: { lang: Language }) {
-  const { t } = useLanguage();
-  const [search, setSearch] = useState("");
-  const [entries, setEntries] = useState<FatwaDto[]>([]);
-  const [loadingBank, setLoadingBank] = useState(true);
-
-  // Ask form state
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [category, setCategory] = useState<FatwaCategory>("ibadat");
-  const [question, setQuestion] = useState("");
-  const [isPrivate, setIsPrivate] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoadingBank(true);
-    fetch("/api/fatwa?pageSize=4")
-      .then(async (res) => {
-        if (!res.ok) throw new Error("failed");
-        const payload: { data: { items: FatwaDto[] } } = await res.json();
-        if (!cancelled) setEntries(payload.data.items);
-      })
-      .catch(() => undefined)
-      .finally(() => {
-        if (!cancelled) setLoadingBank(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const filteredEntries = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return entries;
-    return entries.filter(
-      (entry) =>
-        entry.question.bn.toLowerCase().includes(query) ||
-        entry.question.en.toLowerCase().includes(query) ||
-        entry.answer.bn.toLowerCase().includes(query),
-    );
-  }, [entries, search]);
-
-  async function onAsk(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (submitting) return;
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/fatwa", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, phone, category, question, isPrivate }),
-      });
-      const payload: { data?: { message: string }; error?: string; fields?: Record<string, string> } =
-        await res.json();
-      if (!res.ok) {
-        if (payload.fields) {
-          const first = Object.values(payload.fields)[0];
-          toast({ title: first ?? t("toast.error"), variant: "destructive" });
-        } else {
-          toast({ title: payload.error ?? t("toast.error"), variant: "destructive" });
-        }
-        return;
-      }
-      toast({ title: t("toast.success"), description: payload.data?.message });
-      setQuestion("");
-      setPhone("");
-    } catch {
-      toast({ title: t("toast.error"), variant: "destructive" });
-    } finally {
-      setSubmitting(false);
-    }
-  }
+/**
+ * Fatwa & online query gateway — server shell with two small islands:
+ * the quick-ask form (src/components/home/fatwa-ask-form.tsx) and the bank
+ * search filter (src/components/home/fatwa-bank-search.tsx).
+ *
+ * Round 4: was a single 324-line client island that fetched /api/fatwa after
+ * hydration — the bank now ships in the document (crawlers see it), the form
+ * is the only stateful JS, and nothing from this section is serialized into
+ * the RSC flight payload.
+ */
+export async function FatwaGateway({ lang }: { lang: Language }) {
+  const entries = await listFatwaPreview(4);
 
   return (
     <section className="py-16 sm:py-24">
@@ -136,125 +64,12 @@ export function FatwaGateway({ lang }: { lang: Language }) {
         </Reveal>
 
         <div className="mt-12 grid gap-8 lg:grid-cols-2">
-          {/* Quick ask form */}
+          {/* Quick ask form — the interactive island */}
           <Reveal>
-            <form
-              onSubmit={onAsk}
-              className="relative overflow-hidden rounded-2xl border bg-card p-6 shadow-sm sm:p-8"
-              aria-label={lang === "bn" ? "প্রশ্ন জমা দিন" : "Ask a question"}
-            >
-              <div aria-hidden className="absolute inset-x-0 top-0 h-1 bg-gold-gradient" />
-              <h3 className="font-heading flex items-center gap-2.5 text-lg font-semibold">
-                <MessageCircleQuestion aria-hidden className="h-5 w-5 text-gold" />
-                {lang === "bn" ? "প্রশ্ন জমা দিন" : "Submit a Question"}
-              </h3>
-
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="fatwa-name">{t("label.name")} *</Label>
-                  <Input
-                    id="fatwa-name"
-                    required
-                    minLength={2}
-                    maxLength={120}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="fatwa-email">{t("label.email")} *</Label>
-                  <Input
-                    id="fatwa-email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="fatwa-phone">
-                    {t("label.phone")} <span className="text-[11px] text-muted-foreground">({t("label.optional")})</span>
-                  </Label>
-                  <Input
-                    id="fatwa-phone"
-                    dir="ltr"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+8801XXXXXXXXX"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="fatwa-category-select">{t("label.category")} *</Label>
-                  <Select value={category} onValueChange={(v) => setCategory(v as FatwaCategory)}>
-                    <SelectTrigger id="fatwa-category-select" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categoryOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {lang === "bn" ? option.labelBn : option.labelEn}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="mt-4 space-y-1.5">
-                <Label htmlFor="fatwa-question">
-                  {lang === "bn" ? "আপনার প্রশ্ন" : "Your Question"} *
-                </Label>
-                <Textarea
-                  id="fatwa-question"
-                  required
-                  minLength={15}
-                  maxLength={4000}
-                  rows={4}
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  placeholder={
-                    lang === "bn"
-                      ? "বিস্তারিতভাবে প্রশ্নটি লিখুন — প্রাসঙ্গিক তথ্য দিলে উত্তর আরও স্পষ্ট হবে ইনশাআল্লাহ…"
-                      : "Write your question in detail — context helps produce a clearer answer, in shaa Allah…"
-                  }
-                />
-              </div>
-
-              <div className="mt-4 flex items-start gap-2.5">
-                <Checkbox
-                  id="fatwa-private"
-                  checked={isPrivate}
-                  onCheckedChange={(checked) => setIsPrivate(checked === true)}
-                  className="mt-0.5"
-                />
-                <Label htmlFor="fatwa-private" className="text-[13px] font-normal leading-snug text-muted-foreground">
-                  {lang === "bn"
-                    ? "আমার প্রশ্নটি ওয়েবসাইটে প্রকাশ্যে না দেখিয়ে শুধু ইমেইলে উত্তর দিন"
-                    : "Answer by email only — do not publish my question on the website"}
-                </Label>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={submitting}
-                className="mt-6 w-full bg-primary text-[15px] font-semibold hover:bg-primary/90"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 aria-hidden className="h-4 w-4 animate-spin" />
-                    {t("action.sending")}
-                  </>
-                ) : (
-                  <>
-                    <Send aria-hidden className="h-4 w-4" />
-                    {t("action.submit")}
-                  </>
-                )}
-              </Button>
-            </form>
+            <FatwaAskForm lang={lang} />
           </Reveal>
 
-          {/* Searchable fatwa bank preview */}
+          {/* Searchable fatwa bank preview — server-rendered, island-filtered */}
           <Reveal delay={0.12}>
             <div className="flex h-full flex-col rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
               <h3 className="font-heading flex items-center gap-2.5 text-lg font-semibold">
@@ -262,50 +77,25 @@ export function FatwaGateway({ lang }: { lang: Language }) {
                 {lang === "bn" ? "সার্চেবল ফতোয়া ব্যাংক" : "Searchable Fatwa Bank"}
               </h3>
 
-              <div className="relative mt-5">
-                <Search aria-hidden className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder={lang === "bn" ? "কী-ওয়ার্ড দিয়ে খুঁজুন (যেমন: যাকাত, কিবলা)…" : "Search by keyword (e.g. zakat, qiblah)…"}
-                  className="pl-9"
-                  aria-label={t("action.search")}
-                />
-              </div>
+              <FatwaBankSearch lang={lang} />
 
-              <div className="mt-5 flex-1 space-y-4">
-                {loadingBank ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground" aria-busy="true">
-                    {t("action.sending")}
+              <div className="mt-5 flex-1">
+                {entries.length === 0 ? (
+                  <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+                    <BookOpen aria-hidden className="mx-auto mb-3 h-8 w-8 text-muted-foreground/50" />
+                    {lang === "bn" ? "এখনো কোনো ফতোয়া প্রকাশিত হয়নি।" : "No fatwas published yet."}
                   </p>
-                ) : filteredEntries.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">{t("label.noResults")}</p>
                 ) : (
-                  <ul className="scrollbar-thin max-h-[420px] space-y-4 overflow-y-auto pr-1">
-                    {filteredEntries.map((entry) => {
-                      const cat = categoryOptions.find((c) => c.value === entry.category);
-                      return (
-                        <li key={entry.id} className="rounded-xl border bg-background/60 p-4">
-                          <div className="flex items-center justify-between gap-2">
-                            <Badge variant="outline" className="border-gold/40 bg-gold/10 text-[10px] font-semibold text-gold">
-                              {cat ? (lang === "bn" ? cat.labelBn : cat.labelEn) : entry.category}
-                            </Badge>
-                            <span className="text-[11px] text-muted-foreground">
-                              {formatDate(entry.publishedAt, lang)}
-                            </span>
-                          </div>
-                          <h4 className="mt-2.5 text-[14px] font-semibold leading-snug">
-                            {pick(entry.question, lang)}
-                          </h4>
-                          <p className="mt-2 line-clamp-3 text-[13px] leading-relaxed text-muted-foreground">
-                            {pick(entry.answer, lang)}
-                          </p>
-                          <p className="mt-2.5 text-[11px] font-medium text-primary">— {entry.answeredBy}</p>
-                        </li>
-                      );
-                    })}
+                  <ul id="fatwa-bank-list" className="scrollbar-thin max-h-[420px] space-y-4 overflow-y-auto pr-1">
+                    {entries.map((entry) => (
+                      <FatwaBankEntry key={entry.id} entry={entry} lang={lang} />
+                    ))}
                   </ul>
                 )}
+                <p id="fatwa-bank-empty" hidden className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+                  <BookOpen aria-hidden className="mx-auto mb-2 h-7 w-7 text-muted-foreground/50" />
+                  {lang === "bn" ? "কোনো ফতোয়া মেলেনি।" : "No matching fatwas."}
+                </p>
               </div>
 
               <Link

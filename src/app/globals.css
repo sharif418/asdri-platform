@@ -559,3 +559,56 @@ kbd {
     break-after: avoid;
   }
 }
+
+/* ————— Scroll-driven reveals (zero JS) —————
+   Replaces the framer-motion <Reveal> client islands: content is no longer
+   serialized twice (HTML + RSC flight) and stays visible for every browser
+   that lacks scroll-timeline support, honors prefers-reduced-motion, and
+   renders for no-JS readers/crawlers. Chromium/Safari 26 animate on the
+   compositor via the view() timeline. */
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes reveal-item-up {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fallback (Firefox today, older browsers, reduced motion): no animation
+   declared at all — the element is simply visible. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal-up 1 both;
+      animation-timeline: view();
+      /* Start as the element's top edge crosses the viewport bottom; finish
+         once it is roughly half-visible. --reveal-shift staggers the range
+         for a gentle cascade (was: seconds-based delay). */
+      animation-range: entry var(--reveal-shift, 0%) entry calc(55% + var(--reveal-shift, 0%));
+    }
+    .reveal-item {
+      animation: reveal-item-up 1 both;
+      animation-timeline: view();
+      animation-range: entry calc(6% + var(--reveal-shift, 0%)) entry calc(60% + var(--reveal-shift, 0%));
+    }
+    /* Stagger container itself reveals flatter — its children carry the cascade. */
+    .reveal-stagger {
+      animation: reveal-up 1 both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 45%;
+    }
+  }
+}
