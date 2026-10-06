@@ -109,7 +109,7 @@ export function DonationForm({
         }),
       });
       const payload: {
-        data?: { receiptNo: string; message: string; paymentInfo: PaymentInfo; checkoutUrl?: string | null };
+        data?: { receiptNo: string; trackingCode?: string; message: string; paymentInfo: PaymentInfo; checkoutUrl?: string | null };
         error?: string;
         fields?: Record<string, string>;
       } = await res.json();
@@ -128,6 +128,7 @@ export function DonationForm({
       setMessage("");
       onSuccess({
         receiptNo: payload.data.receiptNo,
+        trackingCode: payload.data.trackingCode ?? payload.data.receiptNo,
         fundType,
         amount: numericAmount,
         currency,

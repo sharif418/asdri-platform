@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BookOpenCheck, Calculator, FileSpreadsheet, GraduationCap, LayoutDashboard, ShieldCheck } from "lucide-react";
+import { BookOpenCheck, Calculator, FileSearch, FileSpreadsheet, GraduationCap, LayoutDashboard, ReceiptText, ShieldCheck } from "lucide-react";
 import { langPath, alternatesFor, type Lang } from "@/lib/locale";
 import { isFeatureEnabled } from "@/lib/settings";
 import { ModuleUnavailable } from "@/components/shared/module-unavailable";
@@ -227,6 +227,36 @@ export default async function SupportPage({ params, searchParams }: SupportPageP
                 </div>
               </div>
             </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* Receipt lookup strip — donors re-checking a past donation */}
+      <section className="border-y border-gold/20 bg-parchment py-10 sm:py-12" aria-label={lang === "bn" ? "অনুদানের অবস্থা" : "Donation status"}>
+        <div className="container-site">
+          <Reveal className="flex flex-col items-center gap-5 text-center sm:flex-row sm:justify-between sm:text-left">
+            <div className="flex items-start gap-4">
+              <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-gold/40 bg-gold/10 text-gold">
+                <ReceiptText aria-hidden className="h-5 w-5" />
+              </span>
+              <div>
+                <h2 className="font-heading text-lg font-semibold sm:text-xl">
+                  {lang === "bn" ? "আগের অনুদানের অবস্থা জানতে চান?" : "Checking on a past donation?"}
+                </h2>
+                <p className="mt-1 max-w-xl text-[13.5px] leading-relaxed text-muted-foreground">
+                  {lang === "bn"
+                    ? "ট্র্যাকিং কোড আর ফর্মে দেওয়া মোবাইল/ইমেইল দিয়ে অনুদানের অবস্থা দেখুন — অপেক্ষমাণ হলে পেমেন্টের নির্দেশনা, সম্পন্ন হলে রিসিপ্ট।"
+                    : "See your donation's status with the tracking code and the phone/email from your form — payment instructions while pending, the receipt once complete."}
+                </p>
+              </div>
+            </div>
+            <Link
+              href={langPath(lang, "/support/receipt-lookup")}
+              className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-gold/60 bg-gold/10 px-6 py-3 text-sm font-semibold text-gold transition-colors hover:bg-gold hover:text-gold-foreground"
+            >
+              <FileSearch aria-hidden className="h-4 w-4" />
+              {lang === "bn" ? "অবস্থা ও রিসিপ্ট দেখুন" : "View Status & Receipt"}
+            </Link>
           </Reveal>
         </div>
       </section>

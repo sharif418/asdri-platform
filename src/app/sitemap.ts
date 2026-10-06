@@ -37,6 +37,7 @@ const ROUTES: RouteSpec[] = [
   { path: "/admissions", priority: 0.9, changeFrequency: "weekly", flag: "admissions" },
   { path: "/admissions/scholarships", priority: 0.8, changeFrequency: "monthly", flag: "admissions" },
   { path: "/admissions/faq", priority: 0.7, changeFrequency: "monthly", flag: "admissions" },
+  { path: "/admissions/status", priority: 0.6, changeFrequency: "monthly", flag: "admissions" },
   { path: "/research", priority: 0.8, changeFrequency: "monthly", flag: "research" },
   { path: "/research/library", priority: 0.7, changeFrequency: "monthly", flag: "research" },
   { path: "/research/projects", priority: 0.7, changeFrequency: "weekly", flag: "research" },
@@ -51,6 +52,7 @@ const ROUTES: RouteSpec[] = [
   { path: "/notices", priority: 0.9, changeFrequency: "daily", flag: "notices" },
   { path: "/support", priority: 0.9, changeFrequency: "monthly", flag: "donations" },
   { path: "/support/zakat-calculator", priority: 0.8, changeFrequency: "monthly", flag: "donations" },
+  { path: "/support/receipt-lookup", priority: 0.6, changeFrequency: "monthly", flag: "donations" },
   { path: "/contact", priority: 0.7, changeFrequency: "monthly" },
 ];
 

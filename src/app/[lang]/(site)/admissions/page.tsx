@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, BellRing, ClipboardList, Mail } from "lucide-react";
+import { ArrowRight, BellRing, ClipboardList, FileSearch, Mail } from "lucide-react";
 import { PageHero } from "@/components/shared/page-hero";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal } from "@/components/shared/reveal";
@@ -135,6 +135,13 @@ export default async function AdmissionsPage({ params }: { params: Promise<{ lan
                   <BellRing aria-hidden className="h-4 w-4" />
                   {lang === "bn" ? "ভর্তি বিজ্ঞপ্তি দেখুন" : "View Admission Notices"}
                   <ArrowRight aria-hidden className="h-4 w-4" />
+                </Link>
+                <Link
+                  href={langPath(lang, "/admissions/status")}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full border border-gold/50 bg-gold/10 px-7 py-3 text-sm font-semibold text-gold transition-colors outline-none hover:bg-gold hover:text-gold-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                >
+                  <FileSearch aria-hidden className="h-4 w-4" />
+                  {lang === "bn" ? "আবেদনের অবস্থা দেখুন" : "Check Application Status"}
                 </Link>
                 <Link
                   href={langPath(lang, "/admissions/scholarships")}

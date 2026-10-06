@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { CalendarDays, Check, CheckCircle2, Copy, CreditCard, MailCheck, Repeat, ShieldCheck } from "lucide-react";
+import { CalendarDays, CheckCircle2, CreditCard, MailCheck, Repeat, ShieldCheck } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +15,7 @@ import { toast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/format";
 import { langPath } from "@/lib/locale";
 import { formatAmount, type ReceiptData } from "./donation-types";
+import { CopyButton } from "@/components/shared/copy-button";
 import type { FundType, Language } from "@/types";
 
 interface ReceiptDialogProps {
@@ -24,33 +24,6 @@ interface ReceiptDialogProps {
   /** DB-driven fund labels (title per fund key). */
   fundLabels: Record<FundType, { bn: string; en: string }>;
   onClose: () => void;
-}
-
-function CopyButton({ value, label, lang }: { value: string; label: string; lang: Language }) {
-  const [copied, setCopied] = useState(false);
-
-  async function onCopy() {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      toast({ title: lang === "bn" ? "কপি হয়েছে" : "Copied" });
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast({ title: lang === "bn" ? "কপি করা যায়নি" : "Could not copy", variant: "destructive" });
-    }
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={onCopy}
-      className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-      aria-label={`${lang === "bn" ? "কপি করুন" : "Copy"} ${label}`}
-    >
-      {copied ? <Check aria-hidden className="h-3.5 w-3.5 text-emerald-600" /> : <Copy aria-hidden className="h-3.5 w-3.5" />}
-      <span className="sr-only">{lang === "bn" ? "কপি করুন" : "Copy"}</span>
-    </button>
-  );
 }
 
 /** Success dialog shown after a donation intent is created: receipt + payment instructions. */
@@ -99,6 +72,17 @@ export function ReceiptDialog({ receipt, lang, fundLabels, onClose }: ReceiptDia
                   ? "পেমেন্টের সময় রেফারেন্সে এই নম্বরটি অবশ্যই উল্লেখ করুন"
                   : "Please mention this number as the payment reference"}
               </p>
+            </div>
+
+            {/* Tracking code — the key the donor can re-check the status with */}
+            <div className="-mt-2 flex items-center justify-center gap-1.5 text-[12px] text-muted-foreground">
+              <span className="font-mono font-semibold" dir="ltr">
+                {receipt.trackingCode}
+              </span>
+              <CopyButton value={receipt.trackingCode} label={bn ? "ট্র্যাকিং কোড" : "tracking code"} lang={lang} />
+              <span>
+                {bn ? "— এই কোডটি সংরক্ষণ করুন" : "— keep this code"}
+              </span>
             </div>
 
             {/* Donation summary */}
@@ -187,14 +171,22 @@ export function ReceiptDialog({ receipt, lang, fundLabels, onClose }: ReceiptDia
 
             <p className="flex items-start gap-2 rounded-lg bg-primary/[0.06] p-3 text-[12px] leading-relaxed text-muted-foreground">
               <MailCheck aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-              {bn
-                ? "পেমেন্ট নিশ্চিত হওয়ার পর আপনার ডিজিটাল রিসিপ্ট ইমেইলে পাঠানো হবে ইনশাআল্লাহ।"
-                : "Once the payment is confirmed, your digital receipt will be emailed to you, in shaa Allah."}
-              {receipt.anonymous
-                ? bn
-                  ? " আপনার নাম প্রকাশ্য তালিকায় “Anonymous” হিসেবে দেখানো হবে।"
-                  : " Your name will appear as “Anonymous” in public lists."
-                : ""}
+              <span>
+                {bn
+                  ? "পেমেন্ট নিশ্চিত হওয়ার পর আপনার ডিজিটাল রিসিপ্ট ইমেইলে পাঠানো হবে ইনশাআল্লাহ।"
+                  : "Once the payment is confirmed, your digital receipt will be emailed to you, in shaa Allah."}
+                {receipt.anonymous
+                  ? bn
+                    ? " আপনার নাম প্রকাশ্য তালিকায় “Anonymous” হিসেবে দেখানো হবে।"
+                    : " Your name will appear as “Anonymous” in public lists."
+                  : ""}{" "}
+                <Link
+                  href={langPath(lang, "/support/receipt-lookup")}
+                  className="font-semibold text-primary underline decoration-gold/50 underline-offset-4 hover:decoration-gold"
+                >
+                  {bn ? "যেকোনো সময় অবস্থা দেখুন »" : "Check the status anytime »"}
+                </Link>
+              </span>
             </p>
 
             <DialogFooter className="sm:justify-center">
