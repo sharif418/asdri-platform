@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeAll } from "bun:test";
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
+import { installCookieMock } from "../helpers/auth-forge";
 
 /**
  * Responsive media serving, through the REAL media route:
@@ -9,10 +10,16 @@ import { db } from "@/lib/db";
  * without variants, falls back to the original bytes. The variant answer is
  * a different byte stream → a different ETag (so CDN/CDN-adjacent caches key
  * correctly), and PRIVATE gating is unchanged by the width parameter.
+ *
+ * Self-contained auth context: `bun test` parallelizes files across workers,
+ * so this suite must install its own next/headers mock BEFORE importing the
+ * route (it used to pass only via accidental mock leakage from a sibling
+ * file — order-dependent, not parallel-safe).
  */
 
 process.env.SESSION_SECRET ??= "c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2";
 
+installCookieMock();
 const { GET } = await import("@/app/api/media/[...key]/route");
 const { storage } = await import("@/lib/storage");
 
