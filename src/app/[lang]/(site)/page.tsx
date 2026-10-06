@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import type { Lang } from "@/lib/locale";
 import { alternatesFor } from "@/lib/locale";
 import { env } from "@/lib/env";
@@ -37,12 +38,33 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: Lan
   };
 }
 
-/** Home — composes the signature sections in the DB's enabled order. */
+/**
+ * Streaming placeholder for below-fold sections: keeps the scrollbar
+ * geometry roughly stable while the section's DB data resolves, without
+ * shipping any skeleton markup that would flash.
+ */
+function SectionStream({ children }: { children: ReactNode }) {
+  return (
+    <Suspense fallback={<div aria-hidden className="min-h-[420px]" />}>
+      {children}
+    </Suspense>
+  );
+}
+
+/** Home — composes the signature sections in the DB's enabled order.
+ *
+ * Round 4 payload diet: only the first screen (urgent strip, hero, impact
+ * stats) is awaited before the document flushes; every below-fold section
+ * fetches its own data and streams in behind a Suspense boundary, so the
+ * hero paints on the earliest possible byte stream (LCP) while the bank of
+ * sections still ships as crawlable HTML.
+ */
 export default async function HomePage({ params }: { params: Promise<{ lang: Lang }> }) {
   const { lang } = await params;
 
   // Editorial curation: urgent strip renders above the hero only while a
-  // pinned notice exists (newest pinned first).
+  // pinned notice exists (newest pinned first). These queries are tiny and
+  // belong to the first paint.
   const [topPinned, stats, sections, heroMediaId, featuredVideo] = await Promise.all([
     getUrgentNotice(),
     getInstituteStats(),
@@ -77,15 +99,51 @@ export default async function HomePage({ params }: { params: Promise<{ lang: Lan
   const sectionsByKey: Record<string, ReactNode> = {
     hero: <Hero lang={lang} heroImageUrl={heroImageUrl} video={heroVideo} />,
     stats: <StatsBand lang={lang} stats={stats} />,
-    vision: <VisionPillars lang={lang} />,
-    programs: <FeaturedPrograms lang={lang} />,
-    research: <ResearchHighlights lang={lang} />,
-    notices: <NoticesFeed lang={lang} />,
-    campus: <CampusLife lang={lang} />,
-    media: <MediaHub lang={lang} />,
-    leadership: <LeadershipShowcase lang={lang} />,
-    support: <SupportSection lang={lang} />,
-    fatwa: <FatwaGateway lang={lang} />,
+    vision: (
+      <SectionStream>
+        <VisionPillars lang={lang} />
+      </SectionStream>
+    ),
+    programs: (
+      <SectionStream>
+        <FeaturedPrograms lang={lang} />
+      </SectionStream>
+    ),
+    research: (
+      <SectionStream>
+        <ResearchHighlights lang={lang} />
+      </SectionStream>
+    ),
+    notices: (
+      <SectionStream>
+        <NoticesFeed lang={lang} />
+      </SectionStream>
+    ),
+    campus: (
+      <SectionStream>
+        <CampusLife lang={lang} />
+      </SectionStream>
+    ),
+    media: (
+      <SectionStream>
+        <MediaHub lang={lang} />
+      </SectionStream>
+    ),
+    leadership: (
+      <SectionStream>
+        <LeadershipShowcase lang={lang} />
+      </SectionStream>
+    ),
+    support: (
+      <SectionStream>
+        <SupportSection lang={lang} />
+      </SectionStream>
+    ),
+    fatwa: (
+      <SectionStream>
+        <FatwaGateway lang={lang} />
+      </SectionStream>
+    ),
   };
 
   return (

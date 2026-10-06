@@ -103,13 +103,22 @@ Round-3 corrections applied: items made stale by PRs #16–#19 are updated in pl
    (HUMAN_STEPS). A scheduled background worker for queued rows is still absent; staff
    retry manually or a cron curls the admin API.
 8. **i18n of admin** is Bangla-only by design (office staff); no /en admin.
-9. **Mobile performance 56–70 (Lighthouse, production build)**: LCP 7–9 s under
-   simulated slow-4G, dominated by arrival of 734 KB fonts + 225 KB hero JPEG + ~268 KB
-   HTML + client JS. Follow-ups, in value order: (a) sized/responsive hero variants
-   through `/api/media` (sharp already generates variants at upload time — the hero
-   setting serves the original); (b) HTML/RSC payload diet on the home page
-   (force-dynamic + large flight data); (c) JS code-splitting of below-fold home
-   sections. Accessibility is 95+ on all four audited pages; Best-Practices and SEO 100.
+9. **Mobile performance (Lighthouse, production build)**: (a)+(b)+(c) of the old
+   follow-up list are DONE (PR #20 responsive hero; PR #21 server-island home). The
+   home is now fully server-rendered behind Suspense: framer-motion is gone from the
+   client (−138 KB raw JS site-wide), the notices/support/fatwa sections ship in the
+   HTML (SEO, no skeleton flash, no post-hydrate API fetches), and notice category
+   tabs switch instantly client-side. HONEST TRADE: converting those sections from
+   client islands to server components moved their content into the inline RSC flight
+   payload (inherent — flight carries the tree for hydration): home document
+   268 → 408 KB raw / 60 → 97 KB gz, while JS dropped ~40 KB gz and 3 runtime
+   fetches disappeared; Lighthouse perf stayed in its noise band (home 53–62 across
+   three runs vs 57 before; reports in `.qa/lighthouse/r4-final/`). Remaining levers,
+   in value order: **font subsetting to used glyphs** (734 KB Bengali faces are the
+   dominant LCP cost — needs Bangla shaping care, e.g. pyftsubset with a
+   Bengali-specific unicodeset), PPR/ISR for the home shell, and Bangla text
+   compression is already good (UTF-8 3 bytes/char compresses ~5:1). Accessibility
+   95+ on all four audited pages; Best-Practices and SEO 100.
 10. **Lighthouse variance**: this sandbox's shared CPU makes single-run performance
     scores swing ±5–13 points (course-detail measured 56–69 across four runs). The
     committed reports are the final clean run; treat single-digit deltas as noise.

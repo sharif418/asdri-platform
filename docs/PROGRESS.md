@@ -35,6 +35,8 @@ Gates on the final branch state (with this PR applied):
 | #17 | `feat/r3-site-admin` → `fix/r3-money-identity` | Page content + Site settings admin modules; DB-driven menus; flag-gated public APIs |
 | #18 | `fix/r3-i18n-adminux` → `feat/r3-site-admin` | Bangla is LTR; digits per script; admin as a product (dialogs, tables, SSR figures) |
 | #19 | `chore/r3-finish` → `fix/r3-i18n-adminux` | This PR: CI production smoke, hygiene, fonts/mobile perf, Lighthouse, this rewrite |
+| #20 | `perf/r3-responsive-media` → `chore/r3-finish` | Responsive hero via sized webp variants (`/api/media?width=`), in-dialog video embed |
+| #21 | `perf/r4-home-payload-diet` → `perf/r3-responsive-media` | This PR: home as server islands — framer-motion removed, sections SSR + streamed, instant tabs |
 
 The round-1/2 stack (PRs #1–#15 off `main`) is unchanged and still open. The client's
 staging deployment runs `deploy/staging` (commit 406edcf) at
@@ -144,12 +146,63 @@ the client's infrastructure**, which is what surfaced them in the first place.
   text (label removed — content is the name). Home accessibility 89 → **97**.
 - **Lighthouse (production build, mobile profile)** — see §5.
 
+## 4b. PR #21 — home as server islands: payload diet, zero-framer, instant tabs — DONE (this PR)
+
+The §C.9(b)+(c) follow-ups (GAPS) plus the "add features / styling details" mandate, on
+`perf/r4-home-payload-diet` stacked on PR #20.
+
+- **framer-motion removed from the client entirely** (dep deleted): `Reveal`/`Stagger`/
+  `RevealItem` were client components wrapping content at 53 call sites — the wrapped
+  server content serialized into the RSC flight payload, and stayed `opacity:0` forever
+  for no-JS readers (inline framer initial styles). They are now **pure CSS
+  scroll-driven reveals** (`animation-timeline: view()`, `@supports`-gated so Firefox /
+  reduced-motion / no-JS simply see content) — same component API, all 53 call sites
+  unchanged. `StatCounter`'s in-view trigger is a plain `IntersectionObserver` now.
+  Client JS: 1049 → 911 KB raw (−138 KB), 16 script chunks (was 18).
+- **Home sections are server components that stream**: notices / support / fatwa were
+  client islands fetching `/api/notices`, `/api/campaigns`, `/api/fatwa` after hydration
+  (skeleton flash, empty HTML for crawlers, extra round-trips). They now read the DB
+  through shared libs (`src/lib/content/{notices,campaigns,fatwa}.ts`, also used by the
+  refactored API routes) and ship as HTML behind `<Suspense>` — the hero + stats flush
+  first, sections stream in (works mid-scroll; no skeletons anywhere).
+- **Instant notice tabs (feature)**: one server-rendered list (12 cards, each with
+  `data-category` + ranks — no per-category panel duplication); a tiny tabs island
+  flips `hidden`. Tab switches cost zero network. Tabs show per-category **count
+  badges** (Bengali digits in bn). Without JS the curated "all" view renders.
+- **Fatwa gateway split**: the quick-ask form is the only stateful island; the bank is
+  server-rendered with a search island that filters via `data-search` attributes (no
+  serialized data). Shared constants live in `src/content/home-islands.ts` — plain
+  values must not cross a client boundary in either direction (found the hard way:
+  `feedTabs.map is not a function` in dev).
+- **Honest trade**: server components' content is inherently serialized into the inline
+  flight payload, so the home document grew 268 → 408 KB raw / 60 → 97 KB gz while JS
+  dropped ~40 KB gz and 3 runtime fetches disappeared. Perf score stayed inside its
+  noise band (home 53–62 over three runs vs 57 at PR #20). The wins are correctness
+  wins: SEO-visible content, no skeleton flash, no-fetch tab switching, no-JS-visible
+  content everywhere, and the progressive-enhancement bug (framer `opacity:0` without
+  JS) is gone. `content-visibility: auto` was tried and REJECTED — it left below-fold
+  sections unrendered in print and full-page captures.
+- **Campaign progress bars**: Radix client `Progress` → plain server `<div
+  role="progressbar">` with identical visuals (support section now costs zero JS).
+- **Tests**: 214 → **220 pass / 725 expects** (new `tests/integration/home-content.test.ts`
+  pinning the three shared libs: flag-gating, pinned-first curation, COMPLETED-only
+  campaign totals, plain-text fatwa answers). tsc clean, eslint clean, production build
+  + boot + route smoke all-200 (`/`, `/en`, `/notices`, `/admin` 307).
+- **Browser QA** (agent-browser, prod server :3100 + dev :3000): tab clicks switch
+  panels instantly (all/admission/academic/recruitment counts verified), fatwa search
+  filters 4→1→0→4 with empty state, hero video dialog opens, no console/page errors on
+  `/`, `/en`, `/notices`, `/about`, `/academics/courses`, `/support`, `/research`,
+  `/admissions`, `/contact`; 390px no horizontal overflow; section-by-section viewport
+  screenshots VLM-verified (`.qa/r4-*-viewport.png`, `.qa/r4-mobile-final.png`).
+
 ## 5. Lighthouse — production build, mobile profile, four pages
 
-Final clean run on the production server (Lighthouse 13.5, mobile emulation; JSON reports
-committed at `.qa/lighthouse/*.json`). Run-to-run performance variance in this sandbox is
-±5–13 points (course-detail scored 56, 62, 65 and 69 across four runs); the recorded
-numbers are the final run, with the variance stated:
+Numbers below are PR #19's close-out run; PR #20 re-measured (home 57/97/100/100) and
+PR #21 re-measured again after the server-island refactor (`.qa/lighthouse/r4-final/`:
+home 53–62 across three runs, course-list 69, course-detail 58, notices 69 — all within
+the ±5–13 sandbox variance band; see §4b). Run-to-run performance variance in this sandbox
+is ±5–13 points (course-detail scored 56, 62, 65 and 69 across four runs); treat
+single-digit deltas as noise:
 
 | Page | Performance | Accessibility | Best-Practices | SEO |
 |------|------------|----------------|----------------|-----|
@@ -174,8 +227,11 @@ diet, and JS code-splitting are real work, not this PR's.
    is client-infrastructure proof, not sandbox proof.
 3. **The live staging URL** (https://asdri-platform.ailearnersbd.com) is client-attested;
    this sandbox cannot reach it. Its state tracks `deploy/staging`, not this PR stack.
-4. **Mobile performance 56–70** — recorded, root-caused, follow-ups written; not fixed
-   this round (see §5 and GAPS §C).
+4. **Mobile performance 53–72** — the three named §C.9 follow-ups are DONE (PR #20
+   responsive hero; PR #21 server-island home), but the perf SCORE remains in its
+   sandbox noise band because LCP is font-arrival-bound (734 KB Bengali faces). The
+   next real lever is font subsetting (see GAPS §C.9); score movement on this shared-CPU
+   sandbox should not be claimed either way.
 
 ## Known test/demo data in the sandbox DB
 

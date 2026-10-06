@@ -1,13 +1,9 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Calculator, Gift, GraduationCap, HandCoins, HeartHandshake, Sparkles, Target } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
-import { useLanguage } from "@/components/providers/language-provider";
+import { listCampaigns } from "@/lib/content/campaigns";
+import { dictionaries, type DictionaryKey } from "@/lib/i18n";
 import { formatCompactTaka, formatTaka } from "@/lib/format";
 import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
@@ -64,28 +60,34 @@ const fundCards: FundCard[] = [
   },
 ];
 
-/** Support-us band: fund categories, live campaign trackers, zakat CTA. */
-export function SupportSection({ lang }: { lang: Language }) {
-  const { t } = useLanguage();
-  const [campaigns, setCampaigns] = useState<FundingCampaign[]>([]);
-  const [loading, setLoading] = useState(true);
+/** Plain-div progress bar — the Radix Progress is a client component; this
+ *  server version ships identical visuals with zero JS (aria included). */
+function CampaignBar({ percent, label }: { percent: number; label: string }) {
+  const clamped = Math.min(100, Math.max(0, percent));
+  return (
+    <div
+      role="progressbar"
+      aria-valuenow={clamped}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={label}
+      className="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-ivory/15"
+    >
+      <div className="bg-gold-gradient h-full rounded-full transition-[width]" style={{ width: `${clamped}%` }} />
+    </div>
+  );
+}
 
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/campaigns")
-      .then(async (res) => {
-        if (!res.ok) throw new Error("failed");
-        const payload: { data: FundingCampaign[] } = await res.json();
-        if (!cancelled) setCampaigns(payload.data);
-      })
-      .catch(() => undefined)
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+/** Support-us band: fund categories, live campaign trackers, zakat CTA.
+ *
+ * Server component (round 4): campaigns are read from the DB here — the old
+ * client island fetched /api/campaigns after hydration (skeleton flash,
+ * empty HTML for crawlers). The progress bars are plain divs, so this whole
+ * section now costs zero client JS.
+ */
+export async function SupportSection({ lang }: { lang: Language }) {
+  const t = (key: DictionaryKey) => dictionaries[lang][key];
+  const campaigns = await listCampaigns();
 
   return (
     <section className="relative overflow-hidden bg-emerald-deep py-16 text-ivory sm:py-24">
@@ -135,19 +137,14 @@ export function SupportSection({ lang }: { lang: Language }) {
         </Stagger>
 
         {/* Live campaigns */}
-        <div className="mt-12">
-          <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-gold">
-            <Target aria-hidden className="h-4 w-4" />
-            {lang === "bn" ? "চলমান ফান্ডরাইজিং ক্যাম্পেইন" : "Live Funding Campaigns"}
-          </h3>
-          {loading ? (
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <Skeleton className="h-24 w-full rounded-xl bg-white/10" />
-              <Skeleton className="h-24 w-full rounded-xl bg-white/10" />
-            </div>
-          ) : campaigns.length > 0 ? (
+        {campaigns.length > 0 ? (
+          <div className="mt-12">
+            <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-gold">
+              <Target aria-hidden className="h-4 w-4" />
+              {lang === "bn" ? "চলমান ফান্ডরাইজিং ক্যাম্পেইন" : "Live Funding Campaigns"}
+            </h3>
             <Stagger className="mt-4 grid gap-4 md:grid-cols-2">
-              {campaigns.map((campaign) => {
+              {campaigns.map((campaign: FundingCampaign) => {
                 const percent = Math.min(100, Math.round((campaign.raisedAmount / campaign.targetAmount) * 100));
                 return (
                   <RevealItem key={campaign.id}>
@@ -163,11 +160,7 @@ export function SupportSection({ lang }: { lang: Language }) {
                       <p className="mt-1.5 line-clamp-1 text-[12.5px] text-ivory/60">
                         {pick(campaign.description, lang)}
                       </p>
-                      <Progress
-                        value={percent}
-                        className="mt-4 h-2.5 [&>div]:bg-gold-gradient"
-                        aria-label={`${pick(campaign.title, lang)} — ${percent}%`}
-                      />
+                      <CampaignBar percent={percent} label={`${pick(campaign.title, lang)} — ${percent}%`} />
                       <div className="mt-2.5 flex items-center justify-between text-[12.5px]">
                         <span className="font-semibold text-gold">
                           {formatCompactTaka(campaign.raisedAmount, lang)}{" "}
@@ -185,8 +178,8 @@ export function SupportSection({ lang }: { lang: Language }) {
                 );
               })}
             </Stagger>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
 
         {/* Payment channels + zakat calculator CTA */}
         <Reveal className="mt-10 flex flex-col items-center justify-between gap-6 rounded-2xl border border-gold/30 bg-gradient-to-r from-gold/10 via-transparent to-gold/10 p-6 sm:flex-row sm:p-8">
