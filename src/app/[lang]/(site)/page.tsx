@@ -5,6 +5,7 @@ import { env } from "@/lib/env";
 import { Hero } from "@/components/home/hero";
 import { db } from "@/lib/db";
 import { getHeroMediaId } from "@/lib/settings";
+import { parseYouTubeId } from "@/lib/youtube";
 import { StatsBand } from "@/components/home/stats-band";
 import { VisionPillars } from "@/components/home/vision-pillars";
 import { FeaturedPrograms } from "@/components/home/featured-programs";
@@ -42,11 +43,17 @@ export default async function HomePage({ params }: { params: Promise<{ lang: Lan
 
   // Editorial curation: urgent strip renders above the hero only while a
   // pinned notice exists (newest pinned first).
-  const [topPinned, stats, sections, heroMediaId] = await Promise.all([
+  const [topPinned, stats, sections, heroMediaId, featuredVideo] = await Promise.all([
     getUrgentNotice(),
     getInstituteStats(),
     getHomeSections(),
     getHeroMediaId(),
+    // Featured intro video for the hero dialog (first published, office order).
+    db.video.findFirst({
+      where: { isPublished: true },
+      orderBy: [{ sortOrder: "asc" }, { publishedAt: "desc" }],
+      select: { youtubeId: true, titleBn: true, titleEn: true },
+    }),
   ]);
 
   // Office-chosen hero image (site.hero setting); null → default campus photo.
@@ -54,14 +61,21 @@ export default async function HomePage({ params }: { params: Promise<{ lang: Lan
     ? await db.media.findUnique({ where: { id: heroMediaId }, select: { key: true } })
     : null;
   const heroImageUrl = heroMedia ? `/api/media/${heroMedia.key}` : null;
+  // NOTE: no <link rel=preload> — the Hero renders the backdrop as an <img
+  // fetchPriority=high> with a width-aware srcSet, which is itself the
+  // priority hint and lets the browser pick the sized webp variant.
 
-  // The hero backdrop is a CSS background-image (low discovery priority by
-  // design) — preload it so it competes for bandwidth with the fonts instead
-  // of being discovered after CSSOM/layout (mobile LCP).
-  const heroImageHref = heroImageUrl ?? "/images/hero-campus.png";
+  // The office stores whatever they paste (bare id / watch url / youtu.be);
+  // the hero embed only accepts a canonical 11-char id.
+  const heroVideo = featuredVideo && parseYouTubeId(featuredVideo.youtubeId)
+    ? {
+        id: parseYouTubeId(featuredVideo.youtubeId) as string,
+        title: { bn: featuredVideo.titleBn, en: featuredVideo.titleEn },
+      }
+    : null;
 
   const sectionsByKey: Record<string, ReactNode> = {
-    hero: <Hero lang={lang} heroImageUrl={heroImageUrl} />,
+    hero: <Hero lang={lang} heroImageUrl={heroImageUrl} video={heroVideo} />,
     stats: <StatsBand lang={lang} stats={stats} />,
     vision: <VisionPillars lang={lang} />,
     programs: <FeaturedPrograms lang={lang} />,
@@ -76,7 +90,6 @@ export default async function HomePage({ params }: { params: Promise<{ lang: Lan
 
   return (
     <>
-      <link rel="preload" as="image" href={heroImageHref} fetchPriority="high" />
       {topPinned ? <UrgentStrip lang={lang} notice={topPinned} /> : null}
       {sections.map((key) => (
         <Fragment key={key}>{sectionsByKey[key] ?? null}</Fragment>

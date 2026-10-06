@@ -212,7 +212,7 @@ export default async function NoticesPage({
                 href={buildNoticesUrl(lang, { q, category: undefined })}
                 aria-current={category ? undefined : "page"}
                 className={cn(
-                  "rounded-full px-4 py-2 text-[13px] font-medium transition-all",
+                  "rounded-full px-4 py-2 text-[13px] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment",
                   !category
                     ? "bg-primary text-primary-foreground shadow-md"
                     : "border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
@@ -229,7 +229,7 @@ export default async function NoticesPage({
                     href={buildNoticesUrl(lang, { category: tab.id, q })}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium transition-all",
+                      "inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment",
                       active
                         ? "bg-primary text-primary-foreground shadow-md"
                         : "border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
@@ -274,7 +274,7 @@ export default async function NoticesPage({
               </p>
               <Link
                 href={langPath(lang, "/notices")}
-                className="mt-5 inline-flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+                className="mt-5 inline-flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               >
                 {lang === "bn" ? "সব নোটিশ দেখুন" : "View all notices"}
               </Link>
@@ -339,7 +339,7 @@ export default async function NoticesPage({
                 <Link
                   href={buildNoticesUrl(lang, { category, q, page: safePage - 1, keepPage: true })}
                   aria-label={lang === "bn" ? "পূর্ববর্তী পাতা" : "Previous page"}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:border-gold/50 hover:text-foreground"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:border-gold/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50"
                 >
                   <ChevronLeft aria-hidden className="h-4 w-4" />
                 </Link>
@@ -350,7 +350,7 @@ export default async function NoticesPage({
                   href={buildNoticesUrl(lang, { category, q, page: pageNumber })}
                   aria-current={pageNumber === safePage ? "page" : undefined}
                   className={cn(
-                    "inline-flex h-10 min-w-10 items-center justify-center rounded-full px-3 text-sm font-semibold transition-colors",
+                    "inline-flex h-10 min-w-10 items-center justify-center rounded-full px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50",
                     pageNumber === safePage
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "border bg-card text-muted-foreground hover:border-gold/50 hover:text-foreground",
@@ -363,7 +363,7 @@ export default async function NoticesPage({
                 <Link
                   href={buildNoticesUrl(lang, { category, q, page: safePage + 1, keepPage: true })}
                   aria-label={lang === "bn" ? "পরবর্তী পাতা" : "Next page"}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:border-gold/50 hover:text-foreground"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:border-gold/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50"
                 >
                   <ChevronRight aria-hidden className="h-4 w-4" />
                 </Link>
