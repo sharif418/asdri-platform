@@ -20,6 +20,16 @@ Round-3 corrections applied: items made stale by PRs #16–#19 are updated in pl
 3. **Donations have no `recurring` column** — the form's "monthly" flag is stored on the
    `initiated` PaymentTransaction rawPayload only. Recurring execution needs a scheduler +
    gateway support: scoped out. Recorded as a follow-up, not a silent drop.
+3b. **Public self-service lookups pair a code with a second factor (round 5)**:
+   `/admissions/status` (tracking number + the application's mobile) and
+   `/support/receipt-lookup` (tracking/receipt code + the donation form's phone or
+   email). Donation codes are sequential and application numbers live in a ~900k space,
+   so the code alone is never accepted — the pair is what authorises the view, every
+   failed combination returns one indistinguishable 404, and both routes rate-limit
+   8 requests / 15 min / IP. A donation stored with neither phone nor email cannot be
+   verified publicly (office ledger only). Confirm the office is comfortable with
+   applicants seeing their own status track (no officer notes) and donors reprinting
+   their own receipt.
 4. **Donor history is email-linked and verification-gated (updated round 3)**: receipts
    travel by email; the account page shows donation history only when the signed-in
    user's email is verified via the round-3 token flow — registering someone else's

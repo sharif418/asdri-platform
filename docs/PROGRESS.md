@@ -37,7 +37,8 @@ Gates on the final branch state (with this PR applied):
 | #19 | `chore/r3-finish` → `fix/r3-i18n-adminux` | This PR: CI production smoke, hygiene, fonts/mobile perf, Lighthouse, this rewrite |
 | #20 | `perf/r3-responsive-media` → `chore/r3-finish` | Responsive hero via sized webp variants (`/api/media?width=`), in-dialog video embed |
 | #21 | `perf/r4-home-payload-diet` → `perf/r3-responsive-media` | Home as server islands — framer-motion removed, sections SSR + streamed, instant tabs |
-| #22 | `perf/r4-font-delivery` → `perf/r4-home-payload-diet` | This PR: font delivery rebuilt — per-script unicode-range faces, lang-critical preloads, print fixes |
+| #22 | `perf/r4-font-delivery` → `perf/r4-home-payload-diet` | Font delivery rebuilt — per-script unicode-range faces, lang-critical preloads, print fixes |
+| #23 | `feat/r5-status-portal` → `perf/r4-font-delivery` | This PR: public self-service portal — application status + donation receipt lookups |
 
 The round-1/2 stack (PRs #1–#15 off `main`) is unchanged and still open. The client's
 staging deployment runs `deploy/staging` (commit 406edcf) at
@@ -226,6 +227,44 @@ The §C.9(b)+(c) follow-ups (GAPS) plus the "add features / styling details" man
   console errors, Lighthouse re-recorded (`.qa/lighthouse/r4g-fonts/`): home 53–63
   (noise band), **course-list 80** (was 69–72), **course-detail 74** (was 58–64),
   notices 71 (was 69–70).
+
+## 4d. PR #23 — public self-service portal: application status + receipt lookup — DONE (this PR)
+
+`feat/r5-status-portal` stacked on PR #22.
+
+Applicants (notably office-created ones with no online account) and donors previously
+had NO way to check progress without contacting the office. Two public lookups close that:
+
+- **`/admissions/status`** — tracking number (`ASDRI-2026-XXXXXX`) + the mobile number on
+  the application returns the status track (same `StatusTrack` component the account
+  page uses — extracted to `status-track.tsx`, account card refactored onto it, so the
+  two can never drift), stage-change history (status + date only — officer notes stay
+  server-side, pinned by test), and per-status next-step guidance (`STATUS_GUIDANCE`).
+- **`/support/receipt-lookup`** — tracking code (`DN-…`) or receipt number (`ASDRI-R-…`)
+  + the phone OR email from the donation form. PENDING → the manual channels and
+  reference instruction are repeated (a donor who lost the dialog/email can still pay);
+  COMPLETED → receipt number, paid date, and a print button (`printing-receipt` body
+  class + `.print-zone`, gold-bordered pad, verified via DOM + class state).
+- **Security shape** (the reason codes alone never suffice — they are sequential):
+  second factor enforced in `src/lib/self-service.ts` (`phonesMatch` folds +880/0/8800
+  prefixes, Bengali digits accepted; `emailsMatch` case-insensitive); anti-enumeration —
+  unknown number / wrong factor / unsubmitted draft / unverifiable record all return the
+  identical 404; same-origin + 8-per-15-min rate limit per IP on both routes; a
+  mid-review bug (mismatch message returned in the wrong language) was caught by
+  browser QA and pinned by a new test.
+- **Discovery wiring**: admissions CTA row, login page ("track it without logging in"),
+  support page strip, receipt dialog now shows the DN- tracking code with copy + a
+  "check the status anytime" link; sitemap includes both routes (flag-gated with their
+  modules).
+- Styling polish: footer link/contact contrast bumped (/75→/80, /60→/70), print CSS
+  extended, `CopyButton` extracted to a shared component.
+- Gates: 241 tests / 867 expects (new `self-service` suite: 15 tests through the real
+  handlers — happy paths, prefix/digit tolerance, indistinguishable 404s, drafts,
+  no-second-factor, rate limit 429, cross-origin 403), tsc + eslint clean, prod build +
+  11-route smoke all-200 (incl. both new pages + lookup APIs verified on the prod
+  server), fresh-session browser QA zero console errors, 390px no overflow (VLM-checked
+  both langs), Lighthouse mobile: status **74**/100/100/100, receipt **76**/100/100/100
+  (`.qa/lighthouse/r9/`) — above the site band for lightweight utility pages.
 
 ## 5. Lighthouse — production build, mobile profile, four pages
 

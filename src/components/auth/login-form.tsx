@@ -180,6 +180,13 @@ export function LoginForm({ lang }: { lang: Language }) {
           ? "অ্যাকাউন্ট ছাড়াও অনুদান দিতে পারেন — সাপোর্ট পেজে শুধু নাম-ইমেইল দিলেই রিসিপ্ট পাবেন।"
           : "You can donate without an account — just provide your name and email on the support page to get a receipt."}
       </p>
+
+      <p className="text-center text-[12px] leading-relaxed text-muted-foreground">
+        {bn ? "শুধু আবেদনের অবস্থা দেখতে চান?" : "Just checking an application?"}{" "}
+        <Link href={langPath(lang, "/admissions/status")} className="font-semibold text-primary hover:underline">
+          {bn ? "লগইন ছাড়াই ট্র্যাকিং নম্বর দিয়ে দেখুন" : "Track it without logging in"}
+        </Link>
+      </p>
     </div>
   );
 }

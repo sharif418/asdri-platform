@@ -157,7 +157,7 @@ export function SiteFooter() {
               </p>
             </div>
           </div>
-          <p className="mt-4 text-sm leading-relaxed text-ivory/70">
+          <p className="mt-4 text-sm leading-relaxed text-ivory/80">
             {lang === "bn" ? siteConfig.taglineBn : siteConfig.taglineEn}
           </p>
           <div className="mt-6 flex items-center gap-3">
@@ -206,14 +206,14 @@ export function SiteFooter() {
                   {link.raw ? (
                     <a
                       href={link.href}
-                      className="flex min-h-11 items-center text-sm text-ivory/75 transition-colors hover:text-gold"
+                      className="flex min-h-11 items-center text-sm text-ivory/80 transition-colors hover:text-gold"
                     >
                       {link.label}
                     </a>
                   ) : (
                     <Link
                       href={langPath(lang, link.href)}
-                      className="flex min-h-11 items-center text-sm text-ivory/75 transition-colors hover:text-gold"
+                      className="flex min-h-11 items-center text-sm text-ivory/80 transition-colors hover:text-gold"
                     >
                       {link.label}
                     </Link>
@@ -262,14 +262,14 @@ export function SiteFooter() {
             <StarMotif className="h-3 w-3" />
             {t("form.newsletterTitle")}
           </h3>
-          <p className="mt-3 text-sm text-ivory/70">{t("form.newsletterDesc")}</p>
+          <p className="mt-3 text-sm text-ivory/80">{t("form.newsletterDesc")}</p>
           <NewsletterForm />
         </div>
       </div>
 
       {/* Bottom bar */}
       <div className="relative border-t border-ivory/10">
-        <div className="container-site flex flex-col items-center justify-between gap-4 py-6 text-center text-[13px] text-ivory/60 sm:flex-row sm:text-left">
+        <div className="container-site flex flex-col items-center justify-between gap-4 py-6 text-center text-[13px] text-ivory/70 sm:flex-row sm:text-left">
           <p>
             © {lang === "bn" ? "২০২৫" : "2025"}
             {year > 2025 ? `–${lang === "bn" ? "২০" + String(year).slice(2) : year}` : ""}{" "}

@@ -53,6 +53,8 @@ export interface CampaignOption {
 /** Receipt payload rendered in the post-submit success dialog. */
 export interface ReceiptData {
   receiptNo: string;
+  /** DN-… code — the donor's key for the public status lookup. */
+  trackingCode: string;
   fundType: FundType;
   amount: number;
   currency: CurrencyCode;

@@ -323,20 +323,24 @@
   animation: focus-pulse 1.6s ease-in-out 3;
 }
 
-/* ————— Print: isolate the expanded fatwa / open notice as an official pad ————— */
+/* ————— Print: isolate the expanded fatwa / open notice / receipt as an official pad ————— */
 @media print {
   body.printing-fatwa *,
-  body.printing-notice * {
+  body.printing-notice *,
+  body.printing-receipt * {
     visibility: hidden !important;
   }
   body.printing-fatwa .print-zone,
   body.printing-fatwa .print-zone *,
   body.printing-notice .print-zone,
-  body.printing-notice .print-zone * {
+  body.printing-notice .print-zone *,
+  body.printing-receipt .print-zone,
+  body.printing-receipt .print-zone * {
     visibility: visible !important;
   }
   body.printing-fatwa .print-zone,
-  body.printing-notice .print-zone {
+  body.printing-notice .print-zone,
+  body.printing-receipt .print-zone {
     position: absolute !important;
     left: 0;
     top: 0;
@@ -347,8 +351,19 @@
     overflow: visible !important;
   }
   body.printing-fatwa,
-  body.printing-notice {
+  body.printing-notice,
+  body.printing-receipt {
     background: #fff !important;
+  }
+  /* The printed receipt keeps its gold receipt box + amounts readable on
+     white paper; only the decorative shadows are dropped. */
+  body.printing-receipt .print-zone {
+    border: 1.5pt solid #8a6d1d !important;
+    border-radius: 8pt !important;
+    padding: 18pt 20pt !important;
+  }
+  body.printing-receipt a[href]::after {
+    content: "" !important;
   }
 }
 
