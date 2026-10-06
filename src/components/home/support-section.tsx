@@ -163,7 +163,11 @@ export function SupportSection({ lang }: { lang: Language }) {
                       <p className="mt-1.5 line-clamp-1 text-[12.5px] text-ivory/60">
                         {pick(campaign.description, lang)}
                       </p>
-                      <Progress value={percent} className="mt-4 h-2.5 [&>div]:bg-gold-gradient" />
+                      <Progress
+                        value={percent}
+                        className="mt-4 h-2.5 [&>div]:bg-gold-gradient"
+                        aria-label={`${pick(campaign.title, lang)} — ${percent}%`}
+                      />
                       <div className="mt-2.5 flex items-center justify-between text-[12.5px]">
                         <span className="font-semibold text-gold">
                           {formatCompactTaka(campaign.raisedAmount, lang)}{" "}

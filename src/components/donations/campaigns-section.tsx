@@ -88,7 +88,7 @@ export function CampaignsSection({ lang }: { lang: Language }) {
                       <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
                         {pick(campaign.description, lang)}
                       </p>
-                      <Progress value={percent} className="mt-4 h-2.5 [&>div]:bg-gold-gradient" aria-label={`${percent}%`} />
+                      <Progress value={percent} className="mt-4 h-2.5 [&>div]:bg-gold-gradient" aria-label={`${pick(campaign.title, lang)} — ${percent}%`} />
                       <div className="mt-2.5 flex items-center justify-between text-[12.5px]">
                         <span className="font-semibold text-primary">
                           {formatCompactTaka(campaign.raisedAmount, lang)}{" "}

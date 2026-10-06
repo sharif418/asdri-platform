@@ -984,3 +984,57 @@ Task: Round-20 wrap — 20-a QA bug fixes + 20-b outbox retry & branded 404, bra
 - **PR stack discipline**: #2-#12 + #13 all open, none merged by agents — the client's merge review triggers the first real CI run (still unverified in-sandbox by design).
 - Next-phase candidates: **Bangla PDF receipts** (headless Chromium), **recurring-donation scheduler** (needs schema column + worker), **CI first-run after merge**, scheduled outbox send worker (manual retry exists now), donation-ledger deep pagination, tsvector search upgrade.
 - Demo data: 2 sandbox donations (one receipt now manually retried/delivered for the E2E), 11 published articles (5 editorial + 6 clar), outbox rows visible in finance — pristine DB is one `migrate reset` + seed away.
+
+---
+Task ID: 4
+Agent: main (Z.ai Code)
+Task: PR D — chore/r3-finish (CI smoke, hygiene, fonts/mobile perf, PROGRESS/GAPS rewrite)
+
+Work Log:
+- Sandbox was reset between sessions: rebuilt PostgreSQL 16.2 @127.0.0.1:5433 (pgserver via uv),
+  asdri_dev+asdri_test, migrations + seed (identical count table); re-cloned repo, verified
+  PRs #16/#17/#18 open and stacked; 205 tests green on fix/r3-i18n-adminux after rebuild.
+- Deps/hygiene: 35 packages removed (13 named + radix/drivers of deleted UI + react-hook-form +
+  tailwindcss-animate); 25 unused shadcn ui files deleted (zero-import verified each);
+  db:push script removed; download/ (15 PNGs, 12MB) → docs/agent/screenshots/; worklog.md →
+  docs/agent/; upload/ mojibake filenames → website-doc-bn.*; .dockerignore + qa-helpers updated.
+- File splits: course-editor.tsx 823 → course-editor/ (index 123 + meta 230 + curriculum 293 +
+  list-sections 167 + types 80); donation-form.tsx 522 → donation-form/ (index 252 + form-fields
+  287 + summary-panel 157); seed content.ts 542 → content.ts 258 + content-data.ts 289.
+  Seed re-run after split: identical counts. tsc + 205 tests green.
+- CI smoke step (the 431 class): boots REAL production server (next start :3100, manual provider,
+  64-hex secrets) after build, curls / /en /notices /academics/courses + /admin (followed) +
+  sitemap/robots, fails pipeline on non-200. Fixed latent bug found while replicating locally:
+  CI's PAYMENT_CALLBACK_SECRET was 59 hex chars — PR #16's boot validation would have refused
+  the smoke server (now 64). Local replica of the exact step: all routes 200.
+- Fonts (copied-decision instance): every page preloaded ALL 18 woff2 (~1.1MB) incl. 3 Amiri
+  italics nothing uses. Weight/style usage audited per component; trimmed to 10 files ≈734KB
+  (Amiri italics ×3, Cormorant 500+italics ×5, Hind 300 removed; EN headings use Cormorant
+  400/600/700 — kept).
+- Mobile LCP (works-in-sandbox instance): hero h1 animated via framer-motion opacity:0 → visible
+  only after hydration (empty hero ~9s on throttled phone). Converted to CSS keyframes
+  (.hero-rise/.hero-fade, same timing, prefers-reduced-motion guard — which framer lacked);
+  hero backdrop now preloaded (fetchPriority high) since CSS backgrounds are discovered late.
+- A11y from the audit, fixed: campaign Progress bars lacked names (now "<title> — <pct>%");
+  fatwa category Select label unassociated (htmlFor/id); hero video button aria-label didn't
+  contain its visible text (removed — content is the name). Home a11y 89 → 97.
+- Lighthouse (production build, mobile): home 56/97/100/100, course-list 70/98/100/100,
+  course-detail 69/95/100/100, notice-board 69/96/100/100 (final clean run; sandbox perf
+  variance ±5–13 documented; reports committed .qa/lighthouse/*.json). Perf honestly recorded:
+  LCP 7–9s dominated by font+page weight on slow-4G; follow-ups in GAPS §C.9.
+- PROGRESS.md rewritten round-3 style: proof environment, gates (205/682/17 green, tsc+lint
+  clean, prod boot+smoke green), per-PR evidence, Lighthouse table, PARTIAL section (CI runner
+  first-run, Docker build, live URL client-attested, perf follow-ups). GAPS.md corrected:
+  search-is-ILIKE stale claim removed (tsvector since #11), payment contract updated, compose
+  one-step, storage prod-required, next-intl/NextAuth removed-not-just-unused, new perf items.
+- Browser QA after refactors: home clean console + h1 SSR + named progressbars; donation form
+  renders + preset click updates summary live; admin login → course editor all 4 sections +
+  14 subject rows + save → toast "কোর্সের তথ্য সংরক্ষিত হয়েছে"; 390px no horizontal overflow;
+  branded 404 fills viewport. Screenshots .qa/r3d-*.png.
+- Dev-server supervisor daemonized (double-fork, PPID 1) — sandbox reaps plain background
+  processes between tool calls; chrome/postgres-style daemonization survives.
+
+Stage Summary:
+- PR #19 opened (chore/r3-finish → fix/r3-i18n-adminux), NOT merged
+- Round 3 complete: four stacked PRs, every Done row in PROGRESS.md points to a run command,
+  the anti-431 smoke is in CI and locally proven, and the docs tell the truth

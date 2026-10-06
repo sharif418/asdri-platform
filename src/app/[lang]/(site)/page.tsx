@@ -55,6 +55,11 @@ export default async function HomePage({ params }: { params: Promise<{ lang: Lan
     : null;
   const heroImageUrl = heroMedia ? `/api/media/${heroMedia.key}` : null;
 
+  // The hero backdrop is a CSS background-image (low discovery priority by
+  // design) — preload it so it competes for bandwidth with the fonts instead
+  // of being discovered after CSSOM/layout (mobile LCP).
+  const heroImageHref = heroImageUrl ?? "/images/hero-campus.png";
+
   const sectionsByKey: Record<string, ReactNode> = {
     hero: <Hero lang={lang} heroImageUrl={heroImageUrl} />,
     stats: <StatsBand lang={lang} stats={stats} />,
@@ -71,6 +76,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: Lan
 
   return (
     <>
+      <link rel="preload" as="image" href={heroImageHref} fetchPriority="high" />
       {topPinned ? <UrgentStrip lang={lang} notice={topPinned} /> : null}
       {sections.map((key) => (
         <Fragment key={key}>{sectionsByKey[key] ?? null}</Fragment>
