@@ -4,8 +4,6 @@ import {
   Archive,
   Bell,
   Briefcase,
-  ChevronLeft,
-  ChevronRight,
   FileText,
   GraduationCap,
   Megaphone,
@@ -20,6 +18,7 @@ import { isFeatureEnabled } from "@/lib/settings";
 import { getSiteConfig } from "@/lib/content/site";
 import { env } from "@/lib/env";
 import { ModuleUnavailable } from "@/components/shared/module-unavailable";
+import { SitePagination } from "@/components/shared/site-pagination";
 import { NOTICE_CATEGORIES, type Language, type NoticeCategory, type NoticeStatus } from "@/types";
 import { formatMonthYear, toBnDigits } from "@/lib/format";
 import { PageHero } from "@/components/shared/page-hero";
@@ -329,47 +328,23 @@ export default async function NoticesPage({
             </div>
           )}
 
-          {/* ————— Pagination ————— */}
-          {totalPages > 1 ? (
-            <nav
-              aria-label={lang === "bn" ? "পেজিনেশন" : "Pagination"}
-              className="mt-10 flex flex-wrap items-center justify-center gap-1.5"
-            >
-              {safePage > 1 ? (
-                <Link
-                  href={buildNoticesUrl(lang, { category, q, page: safePage - 1, keepPage: true })}
-                  aria-label={lang === "bn" ? "পূর্ববর্তী পাতা" : "Previous page"}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:border-gold/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50"
-                >
-                  <ChevronLeft aria-hidden className="h-4 w-4" />
-                </Link>
-              ) : null}
-              {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
-                <Link
-                  key={pageNumber}
-                  href={buildNoticesUrl(lang, { category, q, page: pageNumber })}
-                  aria-current={pageNumber === safePage ? "page" : undefined}
-                  className={cn(
-                    "inline-flex h-10 min-w-10 items-center justify-center rounded-full px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50",
-                    pageNumber === safePage
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "border bg-card text-muted-foreground hover:border-gold/50 hover:text-foreground",
-                  )}
-                >
-                  {lang === "bn" ? toBnDigits(pageNumber) : pageNumber}
-                </Link>
-              ))}
-              {safePage < totalPages ? (
-                <Link
-                  href={buildNoticesUrl(lang, { category, q, page: safePage + 1, keepPage: true })}
-                  aria-label={lang === "bn" ? "পরবর্তী পাতা" : "Next page"}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:border-gold/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50"
-                >
-                  <ChevronRight aria-hidden className="h-4 w-4" />
-                </Link>
-              ) : null}
-            </nav>
-          ) : null}
+          {/* ————— Pagination (shared component, windowed) ————— */}
+          <SitePagination
+            page={safePage}
+            totalPages={totalPages}
+            buildUrl={(pageNumber) => buildNoticesUrl(lang, { category, q, page: pageNumber })}
+            lang={lang}
+            labels={{
+              prev: lang === "bn" ? "পূর্ববর্তী পাতা" : "Previous page",
+              next: lang === "bn" ? "পরবর্তী পাতা" : "Next page",
+              nav: lang === "bn" ? "পেজিনেশন" : "Pagination",
+              page: (pageNumber) => (lang === "bn" ? `পাতা ${toBnDigits(pageNumber)}` : `Page ${pageNumber}`),
+              status: (pageNumber, totalPages) =>
+                lang === "bn"
+                  ? `পাতা ${toBnDigits(pageNumber)} / ${toBnDigits(totalPages)}`
+                  : `Page ${pageNumber} of ${totalPages}`,
+            }}
+          />
         </div>
       </section>
 
