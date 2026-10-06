@@ -151,6 +151,11 @@ const bn = {
   "search.notices": "নোটিশ",
   "search.fatwas": "ফতোয়া",
   "search.actions": "দ্রুত কাজ",
+  "search.news": "সংবাদ ও ইভেন্ট",
+  "search.people": "শিক্ষক ও গবেষকবৃন্দ",
+  "search.albums": "ফটো অ্যালবাম",
+  "search.metaTitle": "সাইট অনুসন্ধান",
+  "search.metaDescription": "কোর্স, নোটিশ, ফতোয়া, ব্লগ আর্টিকেল ও পেজ — আস-সুন্নাহ ইনস্টিটিউটের সব কনটেন্ট এক জায়গায় খুঁজুন।",
   "search.hintKbd": "নেভিগেট করতে ↑↓ · বাছতে Enter",
   "search.shortcut": "Ctrl+K",
 
@@ -309,6 +314,11 @@ const en: Record<DictionaryKey, string> = {
   "search.notices": "Notices",
   "search.fatwas": "Fatwa",
   "search.actions": "Quick Actions",
+  "search.news": "News & Events",
+  "search.people": "Faculty & Researchers",
+  "search.albums": "Photo Albums",
+  "search.metaTitle": "Site Search",
+  "search.metaDescription": "Search courses, notices, fatwa, blog articles, faculty and pages — all As-Sunnah Institute content in one place.",
   "search.hintKbd": "Navigate with ↑↓ · Select with Enter",
   "search.shortcut": "Ctrl+K",
 

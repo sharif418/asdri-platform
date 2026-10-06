@@ -3,9 +3,16 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight, FileQuestion, Sparkles } from "lucide-react";
 import type { Lang } from "@/lib/locale";
-import { langPath } from "@/lib/locale";
-import { db } from "@/lib/db";
-import { orderByIds, searchNoticeEntries, searchFatwaEntries } from "@/lib/db-search";
+import { alternatesFor, langPath } from "@/lib/locale";
+import { env } from "@/lib/env";
+import {
+  EMPTY_SEARCH_PAGE_RESULTS,
+  searchPageDatabase,
+  toFatwaResult,
+  toNoticeResult,
+  type SearchPageResults,
+} from "@/lib/search-view";
+import { getEnabledFlags } from "@/lib/settings";
 import { PageHero } from "@/components/shared/page-hero";
 import { Reveal } from "@/components/shared/reveal";
 import { SearchBox } from "@/components/search/search-box";
@@ -17,90 +24,30 @@ import {
   searchStaticEntries,
   type SearchEntryType,
 } from "@/lib/search-index";
-import { toBnDigits, formatDate } from "@/lib/format";
+import { toBnDigits } from "@/lib/format";
 import { pick } from "@/types";
 import { dictionaries } from "@/lib/i18n";
 
-export const metadata: Metadata = {
-  title: "সাইট অনুসন্ধান",
-  description: "কোর্স, নোটিশ, ফতোয়া, ব্লগ আর্টিকেল ও পেজ — আস-সুন্নাহ ইনস্টিটিউটের সব কনটেন্ট এক জায়গায় খুঁজুন।",
-};
+/**
+ * /search — static content index + the live database in one result list.
+ * Search result pages are personal query state, never indexable content:
+ * robots noindex, canonical/hreflang still emitted for both languages.
+ */
+export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+  const { lang } = await params;
+  const dict = dictionaries[lang];
+  const { canonical, languages } = alternatesFor("/search", env.siteUrl);
+  return {
+    title: dict["search.metaTitle"],
+    description: dict["search.metaDescription"],
+    alternates: { canonical, languages },
+    robots: { index: false, follow: true },
+  };
+}
 
 interface SearchPageProps {
   params: Promise<{ lang: Lang }>;
   searchParams: Promise<{ q?: string }>;
-}
-
-interface DbResults {
-  notices: {
-    id: string;
-    slug: string;
-    titleBn: string;
-    titleEn: string;
-    excerptBn: string;
-    excerptEn: string;
-    category: string;
-    publishedAt: Date;
-  }[];
-  fatwas: {
-    id: string;
-    slug: string;
-    category: { key: string; nameBn: string; nameEn: string } | null;
-    questionBn: string;
-    questionEn: string;
-    answeredBy: string;
-  }[];
-  noticeTotal: number;
-  fatwaTotal: number;
-}
-
-const EMPTY_RESULTS: DbResults = { notices: [], fatwas: [], noticeTotal: 0, fatwaTotal: 0 };
-
-async function queryDatabase(q: string): Promise<DbResults> {
-  try {
-    const [noticeSearch, fatwaSearch] = await Promise.all([
-      searchNoticeEntries({ q, skip: 0, take: 5 }),
-      searchFatwaEntries({ q, skip: 0, take: 5 }),
-    ]);
-    const [notices, fatwas] = await Promise.all([
-      noticeSearch.ids.length > 0
-        ? db.notice.findMany({
-            where: { id: { in: noticeSearch.ids }, isPublished: true },
-            select: {
-              id: true,
-              slug: true,
-              titleBn: true,
-              titleEn: true,
-              excerptBn: true,
-              excerptEn: true,
-              category: true,
-              publishedAt: true,
-            },
-          })
-        : Promise.resolve([] as DbResults["notices"]),
-      fatwaSearch.ids.length > 0
-        ? db.fatwaEntry.findMany({
-            where: { id: { in: fatwaSearch.ids }, isPublished: true },
-            select: {
-              id: true,
-              slug: true,
-              category: { select: { key: true, nameBn: true, nameEn: true } },
-              questionBn: true,
-              questionEn: true,
-              answeredBy: true,
-            },
-          })
-        : Promise.resolve([] as DbResults["fatwas"]),
-    ]);
-    return {
-      notices: orderByIds(notices, noticeSearch.ids),
-      fatwas: orderByIds(fatwas, fatwaSearch.ids),
-      noticeTotal: noticeSearch.total,
-      fatwaTotal: fatwaSearch.total,
-    };
-  } catch {
-    return EMPTY_RESULTS;
-  }
 }
 
 export default async function SearchPage({ params, searchParams }: SearchPageProps) {
@@ -113,7 +60,9 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
   const dict = dictionaries[lang];
 
   const staticHits = query.length > 0 ? searchStaticEntries(query, 14) : [];
-  const dbResults: DbResults = query.length > 0 ? await queryDatabase(query) : EMPTY_RESULTS;
+  const flags = query.length > 0 ? await getEnabledFlags() : null;
+  const dbResults: SearchPageResults =
+    query.length > 0 ? await searchPageDatabase(query, lang, flags) : EMPTY_SEARCH_PAGE_RESULTS;
 
   const grouped = new Map<SearchEntryType, ResultCardData[]>();
   for (const hit of staticHits) {
@@ -128,33 +77,38 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
     grouped.set(hit.entry.type, list);
   }
 
-  const noticeResults: ResultCardData[] = dbResults.notices.map((row) => ({
-    id: `notice:${row.slug}`,
-    type: "notice",
-    href: langPath(lang, `/notices?notice=${encodeURIComponent(row.slug)}`),
-    title: lang === "bn" ? row.titleBn : row.titleEn,
-    excerpt: lang === "bn" ? row.excerptBn : row.excerptEn,
-    meta: `${lang === "bn" ? "নোটিশ" : "Notice"} · ${formatDate(row.publishedAt, lang)}`,
-  }));
+  // Live database entries merge into the matching static sections — the
+  // static corpus and the seeded rows describe the same slugs, so dedupe by
+  // canonical href keeps every item listed exactly once (static hits keep
+  // their token ranking; live extras append after them).
+  const staticHrefs = new Set(staticHits.map((hit) => hit.entry.href));
+  const canonicalHref = (href: string) => (lang === "en" && href.startsWith("/en") ? href.slice(3) : href);
+  const appendLive = (type: SearchEntryType, items: SearchPageResults["posts"]) => {
+    for (const item of items) {
+      if (staticHrefs.has(canonicalHref(item.href))) continue;
+      const list = grouped.get(type) ?? [];
+      list.push({ id: item.id, type: item.type, href: item.href, title: item.title, excerpt: item.excerpt, meta: item.meta });
+      grouped.set(type, list);
+    }
+  };
+  appendLive("course", dbResults.courses);
+  appendLive("article", dbResults.posts.filter((item) => item.type === "article"));
 
-  const fatwaResults: ResultCardData[] = dbResults.fatwas.map((row) => ({
-    id: `fatwa:${row.slug}`,
-    type: "fatwa",
-    href: langPath(lang, `/research/fatwa?focus=${encodeURIComponent(row.slug)}`),
-    title: lang === "bn" ? row.questionBn : row.questionEn,
-    excerpt: lang === "bn" ? `${row.answeredBy} কর্তৃক উত্তরপ্রাপ্ত` : `Answered by ${row.answeredBy}`,
-    meta: lang === "bn" ? "ফতোয়া" : "Fatwa",
-  }));
+  const noticeResults: ResultCardData[] = dbResults.notices.map((row) => toNoticeResult(row, lang));
+  const fatwaResults: ResultCardData[] = dbResults.fatwas.map((row) => toFatwaResult(row, lang));
 
-  const total =
-    staticHits.length + noticeResults.length + fatwaResults.length;
+  const newsResults: ResultCardData[] = dbResults.posts.filter((item) => item.type === "news");
+  const peopleResults: ResultCardData[] = dbResults.people.map((item) => ({ ...item }));
+  const albumResults: ResultCardData[] = dbResults.albums.map((item) => ({ ...item }));
 
   const allSections: { type: SearchEntryType; label: string; items: ResultCardData[]; footer?: ReactNode }[] = [
     { type: "course", label: dict["search.courses"], items: grouped.get("course") ?? [] },
     { type: "page", label: dict["search.pages"], items: grouped.get("page") ?? [] },
     { type: "article", label: dict["search.articles"], items: grouped.get("article") ?? [] },
+    { type: "news", label: dict["search.news"], items: newsResults },
     { type: "topic", label: dict["search.topics"], items: grouped.get("topic") ?? [] },
     { type: "action", label: dict["search.actions"], items: grouped.get("action") ?? [] },
+    { type: "person", label: dict["search.people"], items: peopleResults },
     {
       type: "notice",
       label: dict["search.notices"],
@@ -189,8 +143,10 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
           </Link>
         ) : undefined,
     },
+    { type: "album", label: dict["search.albums"], items: albumResults },
   ];
   const sectionOrder = allSections.filter((section) => section.items.length > 0);
+  const total = sectionOrder.reduce((sum, section) => sum + section.items.length, 0);
 
   const showLanding = query.length === 0;
 
@@ -223,7 +179,7 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
                   <Link
                     key={item.q}
                     href={langPath(lang, `/search?q=${encodeURIComponent(item.q)}`)}
-                    className="rounded-full border border-gold/30 bg-card px-4 py-2 text-sm font-medium text-foreground transition-all hover:border-gold hover:bg-gold-soft hover:text-gold-foreground dark:hover:text-accent-foreground"
+                    className="rounded-full border border-gold/30 bg-card px-4 py-2 text-sm font-medium text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-gold hover:bg-gold-soft hover:text-gold-foreground hover:shadow-sm hover:shadow-gold/20 dark:hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment dark:focus-visible:ring-offset-secondary"
                   >
                     {pick({ bn: item.bn, en: item.en }, lang)}
                   </Link>
@@ -257,12 +213,12 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
                     <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                       {dict["search.noResultsHint"]}
                     </p>
-                    <div className="mt-6 flex flex-wrap justify-center gap-2">
+                    <div className="mt-6 flex flex-wrap justify-center gap-2.5">
                       {POPULAR_QUERIES.slice(0, 4).map((item) => (
                         <Link
                           key={item.q}
                           href={langPath(lang, `/search?q=${encodeURIComponent(item.q)}`)}
-                          className="rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors hover:border-gold hover:text-primary"
+                          className="rounded-full border border-gold/30 bg-card px-4 py-2 text-[13px] font-medium transition-all duration-200 hover:border-gold hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
                         >
                           {pick({ bn: item.bn, en: item.en }, lang)}
                         </Link>

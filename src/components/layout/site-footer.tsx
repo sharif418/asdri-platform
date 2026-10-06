@@ -51,8 +51,9 @@ function useFooterColumns(): FooterColumn[] {
         { label: t("nav.research.library"), href: "/research/library" },
         { label: t("nav.research.fatwa"), href: "/research/fatwa" },
         { label: t("nav.support.calculator"), href: "/support/zakat-calculator" },
-        // root-level route handler — bypasses the /:lang prefix (raw href)
-        { label: t("footer.rss"), href: "/feed.xml", raw: true },
+        // root-level route handler — bypasses the /:lang prefix (raw href);
+        // the EN footer points at the English feed variant (?lang=en)
+        { label: t("footer.rss"), href: lang === "en" ? "/feed.xml?lang=en" : "/feed.xml", raw: true },
       ],
     },
   ];
@@ -67,7 +68,7 @@ function useFooterColumns(): FooterColumn[] {
       { titleKey: "footer.quickLinks", links: menu.footerPrimary.map(resolve) },
       {
         titleKey: "footer.resources",
-        links: [...menu.footerSecondary.map(resolve), { label: t("footer.rss"), href: "/feed.xml", raw: true }],
+        links: [...menu.footerSecondary.map(resolve), { label: t("footer.rss"), href: lang === "en" ? "/feed.xml?lang=en" : "/feed.xml", raw: true }],
       },
     ];
   }

@@ -1,13 +1,9 @@
-"use client";
-
-import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, Clock3, User } from "lucide-react";
 import { pick, type Language, type LocalizedText } from "@/types";
 import { formatDate, toBnDigits } from "@/lib/format";
 import { langPath } from "@/lib/locale";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
-import { cn } from "@/lib/utils";
 
 /** Card-shaped article projection passed from the server (no markdown body). */
 export interface ArticleCardData {
@@ -28,80 +24,22 @@ interface BlogExplorerProps {
 }
 
 /**
- * Blog index body: category filter chips + responsive article grid.
- * Pure client-side filtering over the serialized server list.
+ * Blog index body — the article grid for the CURRENT server-rendered page.
+ * Category filtering and pagination moved server-side in round 7 (URL
+ * params + shared SitePagination), so this is a pure server component now:
+ * no client island, no duplicated article payload.
  */
 export function BlogExplorer({ articles, lang }: BlogExplorerProps) {
-  const categories = useMemo(() => {
-    const seen: string[] = [];
-    for (const article of articles) {
-      const key = article.category.bn;
-      if (!seen.includes(key)) seen.push(key);
-    }
-    return seen;
-  }, [articles]);
-
-  const [active, setActive] = useState<string>("all");
-
-  const filtered = useMemo(
-    () => (active === "all" ? articles : articles.filter((a) => a.category.bn === active)),
-    [articles, active],
-  );
-
   return (
     <div>
-      {/* ————— Category chips ————— */}
-      <div className="mb-10 flex flex-wrap items-center justify-center gap-2" role="tablist" aria-label={lang === "bn" ? "ক্যাটাগরি ফিল্টার" : "Category filter"}>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={active === "all"}
-          onClick={() => setActive("all")}
-          className={cn(
-            "rounded-full px-4 py-2 text-[13px] font-medium transition-all",
-            active === "all"
-              ? "bg-primary text-primary-foreground shadow-md"
-              : "border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
-          )}
-        >
-          {lang === "bn" ? "সব প্রবন্ধ" : "All articles"}
-          <span className="ml-1.5 opacity-70">{lang === "bn" ? toBnDigits(articles.length) : articles.length}</span>
-        </button>
-        {categories.map((key) => {
-          const label = pick(
-            articles.find((a) => a.category.bn === key)?.category ?? { bn: key, en: key },
-            lang,
-          );
-          const count = articles.filter((a) => a.category.bn === key).length;
-          return (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={active === key}
-              onClick={() => setActive(key)}
-              className={cn(
-                "rounded-full px-4 py-2 text-[13px] font-medium transition-all",
-                active === key
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
-              )}
-            >
-              {label}
-              <span className="ml-1.5 opacity-70">{lang === "bn" ? toBnDigits(count) : count}</span>
-            </button>
-          );
-        })}
-      </div>
-
       {/* ————— Article cards ————— */}
-      {filtered.length === 0 ? (
+      {articles.length === 0 ? (
         <p className="rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">
           {lang === "bn" ? "এই ক্যাটাগরিতে কোনো প্রবন্ধ নেই।" : "No articles in this category."}
         </p>
       ) : (
         <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((article, index) => (
+          {articles.map((article, index) => (
             <RevealItem key={article.slug}>
               <article className="group flex h-full flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-gold/50 hover:shadow-lg">
                 <Link href={langPath(lang, `/media/blog/${article.slug}`)} className="relative block aspect-[16/10] overflow-hidden" tabIndex={-1} aria-hidden>

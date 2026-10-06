@@ -41,10 +41,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
     <>
       {parts.map((part, index) =>
         index % 2 === 1 ? (
-          <mark
-            key={index}
-            className="rounded-sm bg-gold-soft px-0.5 font-semibold text-gold-foreground dark:text-accent-foreground"
-          >
+          <mark key={index} className="search-mark">
             {part}
           </mark>
         ) : (
@@ -118,7 +115,10 @@ export function ResultSection({ title, count, footer, children }: ResultSectionP
         </span>
         <span aria-hidden className="h-px flex-1 bg-gradient-to-r from-gold/40 to-transparent" />
       </div>
-      <ul className="grid gap-3">{children}</ul>
+      {/* grid-cols-1 = minmax(0,1fr): lets long truncated titles shrink at
+          narrow viewports — an implicit auto track sizes to their nowrap
+          min-content and overflows the page (same lesson as r6 prev/next). */}
+      <ul className="grid grid-cols-1 gap-3">{children}</ul>
       {footer}
     </section>
   );

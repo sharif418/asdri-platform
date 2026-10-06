@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 import { rotateFallback } from "@/lib/content/html";
 import type { BlogArticle } from "@/types";
 
@@ -118,6 +119,96 @@ export async function getBlogArticles(): Promise<BlogArticle[]> {
     select: ARTICLE_SELECT,
   });
   return rows.map((row, index) => toArticle(row, index));
+}
+
+/* ————————— Paginated blog index (round 7) ————————— */
+
+export interface PostListQuery {
+  /** 1-based page number (out-of-range pages clamp to the last page). */
+  page?: number;
+  pageSize?: number;
+  /** PostCategory slug — covers `clar-<topicId>` deep-links from the research pages. */
+  categorySlug?: string;
+  /** PostCategory Bengali name — chips for categories whose slug is empty. */
+  categoryName?: string;
+}
+
+export interface PostListResult {
+  articles: BlogArticle[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+/** Published ARTICLE posts, newest first, page-sliced with the full total. */
+export async function listPublishedPosts({
+  page = 1,
+  pageSize = 9,
+  categorySlug,
+  categoryName,
+}: PostListQuery): Promise<PostListResult> {
+  const where: Prisma.PostWhereInput = {
+    kind: "ARTICLE",
+    isPublished: true,
+    // Same visibility rule as the notice board: unpublished and future-dated
+    // posts are indistinguishable from missing ones.
+    publishedAt: { not: null, lte: new Date() },
+    ...(categorySlug
+      ? { category: { slug: categorySlug } }
+      : categoryName
+        ? { category: { nameBn: categoryName } }
+        : {}),
+  };
+
+  const [total, rows] = await Promise.all([
+    db.post.count({ where }),
+    db.post.findMany({
+      where,
+      orderBy: { publishedAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      select: ARTICLE_SELECT,
+    }),
+  ]);
+  return {
+    articles: rows.map((row, index) => toArticle(row, index)),
+    total,
+    page,
+    pageSize,
+    totalPages: Math.max(1, Math.ceil(total / pageSize)),
+  };
+}
+
+export interface PostCategoryFacet {
+  /** May be empty (a seeded category has no slug) — chips then filter by name. */
+  slug: string;
+  name: { bn: string; en: string };
+  /** Published ARTICLE posts in the category. */
+  count: number;
+}
+
+/** Category chips for the blog index — only categories with published articles. */
+export async function listPostCategoryFacets(): Promise<PostCategoryFacet[]> {
+  const visible: Prisma.PostWhereInput = {
+    kind: "ARTICLE",
+    isPublished: true,
+    publishedAt: { not: null, lte: new Date() },
+  };
+  const [categories, counts] = await Promise.all([
+    db.postCategory.findMany({
+      where: { posts: { some: visible } },
+      orderBy: { sortOrder: "asc" },
+      select: { id: true, slug: true, nameBn: true, nameEn: true },
+    }),
+    db.post.groupBy({ by: ["categoryId"], where: visible, _count: { _all: true } }),
+  ]);
+  const countById = new Map(counts.map((row) => [row.categoryId, row._count._all]));
+  return categories.map((category) => ({
+    slug: category.slug,
+    name: { bn: category.nameBn, en: category.nameEn },
+    count: countById.get(category.id) ?? 0,
+  }));
 }
 
 /** Single article by slug (published only). */

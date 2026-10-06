@@ -18,6 +18,20 @@ export function generateStaticParams(): Array<{ lang: string }> {
   return [{ lang: "bn" }, { lang: "en" }];
 }
 
+/**
+ * RSS autodiscovery values, lang-aware: the Bangla feed lives at /feed.xml,
+ * the English variant at /feed.xml?lang=en (each advertises its own channel
+ * title). Used both by generateMetadata's alternates.types and by the
+ * React-hoisted <link> in the tree — the metadata form alone is dropped
+ * on every page that sets its own `alternates` (Next replaces the object
+ * per top-level key instead of deep-merging it).
+ */
+function rssAlternate(lang: Lang): { url: string; title: string } {
+  return lang === "bn"
+    ? { url: "/feed.xml", title: `${siteConfig.nameBn} — নোটিশ বোর্ড` }
+    : { url: "/feed.xml?lang=en", title: `${siteConfig.nameEn} — Notice Board` };
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -70,8 +84,13 @@ export async function generateMetadata({
         en: `${env.siteUrl}/en`,
         "x-default": env.siteUrl,
       },
+      // RSS autodiscovery (lang-aware). CAVEAT: Next merges metadata per
+      // top-level key, so a page-level `alternates` object REPLACES this
+      // one wholesale — and every page sets its own canonical/hreflang.
+      // The layout therefore also renders the <link> directly (React 19
+      // hoists it into <head>); see rssAlternate below.
       types: {
-        "application/rss+xml": [{ url: "/feed.xml", title: `${siteConfig.nameBn} — নোটিশ বোর্ড` }],
+        "application/rss+xml": [rssAlternate(lang)],
       },
     },
   };
@@ -101,6 +120,7 @@ export default async function SiteRootLayout({
   const { lang: raw } = await params;
   if (!isLang(raw)) notFound();
   const lang: Lang = raw;
+  const rss = rssAlternate(lang);
 
   // Only the language-critical faces are preloaded (next/font used to eager-
   // preload every weight of every family on every page). Font requests are
@@ -117,6 +137,9 @@ export default async function SiteRootLayout({
       suppressHydrationWarning
     >
       <body className="antialiased bg-background text-foreground">
+        {/* RSS autodiscovery — React hoists this <link> into <head> so it
+            survives every page's own `alternates` metadata (see rssAlternate). */}
+        <link rel="alternate" type="application/rss+xml" title={rss.title} href={rss.url} />
         <ThemeProvider>
           <LanguageProvider initialLang={lang}>{children}</LanguageProvider>
         </ThemeProvider>
