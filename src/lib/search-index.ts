@@ -17,7 +17,10 @@ export type SearchEntryType =
   | "topic"
   | "notice"
   | "fatwa"
-  | "action";
+  | "action"
+  | "news"
+  | "person"
+  | "album";
 
 export interface SearchEntry {
   id: string;

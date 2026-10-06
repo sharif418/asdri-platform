@@ -41,10 +41,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
     <>
       {parts.map((part, index) =>
         index % 2 === 1 ? (
-          <mark
-            key={index}
-            className="rounded-sm bg-gold-soft px-0.5 font-semibold text-gold-foreground dark:text-accent-foreground"
-          >
+          <mark key={index} className="search-mark">
             {part}
           </mark>
         ) : (

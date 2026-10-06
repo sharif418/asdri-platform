@@ -4,8 +4,11 @@ import {
   Compass,
   FileText,
   GraduationCap,
+  Images,
   Lightbulb,
   MessageCircleQuestion,
+  Newspaper,
+  User,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -20,6 +23,9 @@ export const RESULT_ICONS: Record<SearchEntryType, LucideIcon> = {
   notice: Bell,
   fatwa: MessageCircleQuestion,
   action: Zap,
+  news: Newspaper,
+  person: User,
+  album: Images,
 };
 
 /** Medallion tone per search result type. */
@@ -31,6 +37,9 @@ export const RESULT_TONES: Record<SearchEntryType, string> = {
   notice: "bg-gold-soft text-gold-foreground dark:text-accent-foreground",
   fatwa: "bg-emerald-deep text-ivory",
   action: "bg-gold-gradient text-gold-foreground",
+  news: "bg-parchment text-emerald-950 dark:bg-secondary dark:text-ivory",
+  person: "bg-emerald-deep text-ivory",
+  album: "bg-gold-soft text-gold-foreground dark:text-accent-foreground",
 };
 
 /** Fallback icon for unknown result types. */

@@ -1,7 +1,14 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { searchNoticeEntries } from "@/lib/db-search";
+import {
+  searchAlbumEntries,
+  searchCourseEntries,
+  searchNoticeEntries,
+  searchPersonEntries,
+  searchPostEntries,
+} from "@/lib/db-search";
+import { searchPageDatabase, toNoticeResult } from "@/lib/search-view";
 
 /**
  * Ranked full-text search against a real PostgreSQL (asdri_test, pre-migrated
@@ -182,5 +189,242 @@ describe("searchNoticeEntries — lib level (the /search page path)", () => {
   test("HTML in bodies is stripped before tokenising (no <p> token matches)", async () => {
     const result = await searchNoticeEntries({ q: "p body", skip: 0, take: 5 });
     expect(result.total).toBe(0);
+  });
+});
+
+/* ————————— Round 7: live content corpus + permalinks + flag gating ————————— */
+
+describe("live content corpus — posts, courses, people, albums", () => {
+  const day = 86_400_000;
+  const publishedAt = new Date(Date.now() - day);
+
+  beforeAll(async () => {
+    await Promise.all([
+      db.post.create({
+        data: {
+          slug: slug("post-live"),
+          titleBn: `জীবন্ত পোস্ট ${MARK} শিরোনাম`,
+          titleEn: `Live post ${MARK} headline`,
+          excerptBn: "সারসংক্ষেপ",
+          excerptEn: "Live post excerpt",
+          kind: "ARTICLE",
+          isPublished: true,
+          publishedAt,
+        },
+      }),
+      // AND-control: unpublished posts must never surface.
+      db.post.create({
+        data: {
+          slug: slug("post-hidden"),
+          titleBn: `অপ্রকাশিত ${MARK} পোস্ট`,
+          titleEn: `Unpublished ${MARK} post`,
+          kind: "ARTICLE",
+          isPublished: false,
+          publishedAt,
+        },
+      }),
+      // Future-dated "published" post — same visibility rule as the board.
+      db.post.create({
+        data: {
+          slug: slug("post-future"),
+          titleBn: `ভবিষ্যতের ${MARK} পোস্ট`,
+          titleEn: `Future ${MARK} post`,
+          kind: "ARTICLE",
+          isPublished: true,
+          publishedAt: new Date(Date.now() + day),
+        },
+      }),
+      db.post.create({
+        data: {
+          slug: slug("post-news"),
+          titleBn: `সংবাদ ${MARK} ইভেন্ট`,
+          titleEn: `News ${MARK} event`,
+          kind: "NEWS",
+          isPublished: true,
+          publishedAt,
+        },
+      }),
+      db.course.create({
+        data: {
+          code: `R7${Date.now().toString(36).slice(-4).toUpperCase()}`,
+          slug: slug("course-live"),
+          titleBn: `উপস্থিত কোর্স ${MARK}`,
+          titleEn: `Present course ${MARK}`,
+          taglineBn: "ট্যাগলাইন",
+          taglineEn: "Course tagline",
+          isPublished: true,
+        },
+      }),
+      db.course.create({
+        data: {
+          code: `H7${Date.now().toString(36).slice(-4).toUpperCase()}`,
+          slug: slug("course-hidden"),
+          titleBn: `লুকানো কোর্স ${MARK}`,
+          titleEn: `Hidden course ${MARK}`,
+          isPublished: false,
+        },
+      }),
+      db.person.create({
+        data: {
+          slug: slug("person-live"),
+          nameBn: `শিক্ষক ${MARK} নাম`,
+          nameEn: `Teacher ${MARK} name`,
+          titleBn: "উস্তাজ",
+          titleEn: "Ustadh",
+          roleTitleBn: "সিনিয়র গবেষক",
+          roleTitleEn: "Senior researcher",
+          isPublished: true,
+        },
+      }),
+      db.person.create({
+        data: {
+          slug: slug("person-hidden"),
+          nameBn: `অদৃশ্য ${MARK} শিক্ষক`,
+          nameEn: `Hidden ${MARK} teacher`,
+          isPublished: false,
+        },
+      }),
+      db.album.create({
+        data: {
+          slug: slug("album-live"),
+          titleBn: `অ্যালবাম ${MARK} শীর্ষক`,
+          titleEn: `Album ${MARK} title`,
+          descriptionBn: "বর্ণনা",
+          descriptionEn: "Album description",
+          isPublished: true,
+        },
+      }),
+      db.album.create({
+        data: {
+          slug: slug("album-hidden"),
+          titleBn: `অপ্রকাশিত ${MARK} অ্যালবাম`,
+          titleEn: `Unpublished ${MARK} album`,
+          isPublished: false,
+        },
+      }),
+    ]);
+  });
+
+  afterAll(async () => {
+    await db.post.deleteMany({ where: { slug: { startsWith: `${MARK}-` } } });
+    await db.course.deleteMany({ where: { slug: { startsWith: `${MARK}-` } } });
+    await db.person.deleteMany({ where: { slug: { startsWith: `${MARK}-` } } });
+    await db.album.deleteMany({ where: { slug: { startsWith: `${MARK}-` } } });
+  });
+
+  test("published ARTICLE posts match by Bengali and English title (case-insensitive)", async () => {
+    const bn = await searchPostEntries(MARK.toLowerCase(), "bn");
+    const article = bn.find((item) => item.href.endsWith(slug("post-live")));
+    expect(article).toBeDefined();
+    expect(article!.type).toBe("article");
+    expect(article!.href).toBe(`/media/blog/${slug("post-live")}`);
+    expect(article!.title).toContain(MARK);
+
+    const en = await searchPostEntries(MARK.toLowerCase(), "en");
+    const articleEn = en.find((item) => item.href.endsWith(slug("post-live")));
+    expect(articleEn!.href).toBe(`/en/media/blog/${slug("post-live")}`);
+    expect(articleEn!.title).toBe(`Live post ${MARK} headline`);
+  });
+
+  test("unpublished and future-dated posts are excluded", async () => {
+    const results = await searchPostEntries(MARK, "bn");
+    const hrefs = results.map((item) => item.href);
+    expect(hrefs).not.toContain(`/media/blog/${slug("post-hidden")}`);
+    expect(hrefs).not.toContain(`/media/blog/${slug("post-future")}`);
+  });
+
+  test("NEWS posts surface as news entries pointing at the news page", async () => {
+    const results = await searchPostEntries(MARK, "bn");
+    const news = results.find((item) => item.href.endsWith("/media/news"));
+    expect(news).toBeDefined();
+    expect(news!.type).toBe("news");
+    expect(news!.title).toContain("সংবাদ");
+    const en = await searchPostEntries(MARK, "en");
+    expect(en.find((item) => item.type === "news")!.href).toBe("/en/media/news");
+  });
+
+  test("published courses match with /academics/courses/[slug] hrefs", async () => {
+    const bn = await searchCourseEntries(MARK, "bn");
+    const course = bn.find((item) => item.href.endsWith(slug("course-live")));
+    expect(course).toBeDefined();
+    expect(course!.href).toBe(`/academics/courses/${slug("course-live")}`);
+    expect(course!.title).toContain("উপস্থিত কোর্স");
+    expect(bn.find((item) => item.href.endsWith(slug("course-hidden")))).toBeUndefined();
+
+    const en = await searchCourseEntries(MARK, "en");
+    expect(en.find((item) => item.href.endsWith(slug("course-live")))!.href).toBe(
+      `/en/academics/courses/${slug("course-live")}`,
+    );
+  });
+
+  test("published faculty match by name and link the faculty directory", async () => {
+    const bn = await searchPersonEntries(MARK, "bn");
+    const person = bn.find((item) => item.id === `person:${slug("person-live")}`);
+    expect(person).toBeDefined();
+    expect(person!.href).toBe("/academics/faculty");
+    expect(person!.excerpt).toBe("সিনিয়র গবেষক");
+    expect(bn.find((item) => item.id === `person:${slug("person-hidden")}`)).toBeUndefined();
+
+    const en = await searchPersonEntries(MARK, "en");
+    const personEn = en.find((item) => item.id === `person:${slug("person-live")}`);
+    expect(personEn!.href).toBe("/en/academics/faculty");
+    expect(personEn!.title).toBe(`Teacher ${MARK} name`);
+  });
+
+  test("published albums match by title and link the gallery", async () => {
+    const bn = await searchAlbumEntries(MARK, "bn");
+    const album = bn.find((item) => item.id === `album:${slug("album-live")}`);
+    expect(album).toBeDefined();
+    expect(album!.href).toBe("/media/gallery");
+    expect(bn.find((item) => item.id === `album:${slug("album-hidden")}`)).toBeUndefined();
+
+    const en = await searchAlbumEntries(MARK, "en");
+    expect(en.find((item) => item.id === `album:${slug("album-live")}`)!.href).toBe("/en/media/gallery");
+  });
+
+  test("searchPageDatabase gates posts/albums behind blog/gallery flags (fail-open)", async () => {
+    const gated = await searchPageDatabase(MARK, "bn", new Map([["blog", false], ["gallery", false]]));
+    expect(gated.posts).toHaveLength(0);
+    expect(gated.albums).toHaveLength(0);
+    // ungated modules still contribute
+    expect(gated.courses.length).toBeGreaterThanOrEqual(1);
+    expect(gated.people.length).toBeGreaterThanOrEqual(1);
+
+    const open = await searchPageDatabase(MARK, "bn", new Map());
+    expect(open.posts.length).toBeGreaterThanOrEqual(2); // article + news
+    expect(open.albums).toHaveLength(1);
+
+    const nullFlags = await searchPageDatabase(MARK, "bn", null);
+    expect(nullFlags.posts.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe("toNoticeResult — search results point at permalinks", () => {
+  test("href is the /notices/[slug] permalink in both languages", async () => {
+    const row = {
+      id: "n1",
+      slug: slug("notice-en"),
+      titleBn: "বাংলা শিরোনাম",
+      titleEn: "English title",
+      excerptBn: "সারসংক্ষেপ",
+      excerptEn: "Excerpt",
+      publishedAt: new Date("2026-01-15T00:00:00Z"),
+    };
+    const bn = toNoticeResult(row, "bn");
+    expect(bn.href).toBe(`/notices/${slug("notice-en")}`);
+    expect(bn.href).not.toContain("?notice=");
+    expect(bn.title).toBe("বাংলা শিরোনাম");
+
+    const en = toNoticeResult(row, "en");
+    expect(en.href).toBe(`/en/notices/${slug("notice-en")}`);
+    expect(en.title).toBe("English title");
+  });
+
+  test("the live notice hydrates through searchPageDatabase with the permalink mapping", async () => {
+    const results = await searchPageDatabase(`admission ${MARK.toLowerCase()}`, "bn", null);
+    const notice = results.notices.find((row) => row.slug === slug("notice-en"));
+    expect(notice).toBeDefined();
+    const card = toNoticeResult(notice!, "bn");
+    expect(card.href).toBe(`/notices/${slug("notice-en")}`);
   });
 });

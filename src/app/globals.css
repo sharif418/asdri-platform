@@ -259,6 +259,31 @@
   transform-origin: left;
 }
 
+/* Search result token highlight — the gold underlay language of
+   .prose-islamic strong, sized for inline result titles: text keeps the
+   surrounding foreground colour (AA contrast is never overridden), the
+   underside carries a soft gold wash with a slightly stronger baseline. */
+.search-mark {
+  border-radius: 0.25rem;
+  padding-inline: 0.125rem;
+  font-weight: 600;
+  color: inherit;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--gold) 16%, transparent) 0%,
+    color-mix(in oklab, var(--gold) 16%, transparent) 72%,
+    color-mix(in oklab, var(--gold) 32%, transparent) 72%
+  );
+}
+.dark .search-mark {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--gold) 26%, transparent) 0%,
+    color-mix(in oklab, var(--gold) 26%, transparent) 72%,
+    color-mix(in oklab, var(--gold) 44%, transparent) 72%
+  );
+}
+
 /* Marquee for utility bar notices */
 @keyframes marquee-x {
   from {
