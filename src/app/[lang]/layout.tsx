@@ -70,8 +70,15 @@ export async function generateMetadata({
         en: `${env.siteUrl}/en`,
         "x-default": env.siteUrl,
       },
+      // RSS autodiscovery — lang-aware: the EN page advertises the ?lang=en
+      // feed variant, each with its own channel language/title.
       types: {
-        "application/rss+xml": [{ url: "/feed.xml", title: `${siteConfig.nameBn} — নোটিশ বোর্ড` }],
+        "application/rss+xml": [
+          {
+            url: isBn ? "/feed.xml" : "/feed.xml?lang=en",
+            title: isBn ? `${siteConfig.nameBn} — নোটিশ বোর্ড` : `${siteConfig.nameEn} — Notice Board`,
+          },
+        ],
       },
     },
   };
