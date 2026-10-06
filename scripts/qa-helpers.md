@@ -86,6 +86,6 @@ an agent checkout). The cron tool is not available to delete it. Defenses:
 
 ## 7. QA evidence
 
-Screenshots go to `download/qa-rNN-<subject>.png` and are committed with the
+Screenshots go to `docs/agent/screenshots/qa-rNN-<subject>.png` and are committed with the
 PR (`.gitignore` keeps `.qa/` tracked deliberately). Round-number prefix
 keeps them sortable next to the worklog entries that reference them.

@@ -9,7 +9,6 @@ storage-local
 dev.log
 server.log
 upload
-download
 skills
 tool-results
 agent-ctx

@@ -184,9 +184,9 @@ export function FatwaGateway({ lang }: { lang: Language }) {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>{t("label.category")} *</Label>
+                  <Label htmlFor="fatwa-category-select">{t("label.category")} *</Label>
                   <Select value={category} onValueChange={(v) => setCategory(v as FatwaCategory)}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger id="fatwa-category-select" className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

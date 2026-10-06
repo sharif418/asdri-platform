@@ -272,6 +272,40 @@
   animation-play-state: paused;
 }
 
+/* Hero entrance — CSS keyframes (not framer-motion) so the above-the-fold
+   headline paints with the first render instead of waiting for client JS
+   hydration; identical timing to the previous motion config. */
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes hero-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.hero-rise {
+  animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.hero-fade {
+  animation: hero-fade 0.7s ease both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-rise,
+  .hero-fade {
+    animation: none;
+  }
+}
+
 /* Deep-link focus: gold ring breathing pulse on the targeted bank card */
 @keyframes focus-pulse {
   0%,

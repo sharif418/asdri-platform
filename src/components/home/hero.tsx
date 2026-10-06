@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowRight, Download, ExternalLink, Play, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,25 +54,22 @@ export function Hero({ lang, heroImageUrl }: HeroProps) {
       <div aria-hidden className="pattern-lattice-light absolute inset-0 -z-10 opacity-50" />
 
       <div className="container-site relative flex flex-col items-center py-20 text-center sm:py-28 lg:py-32">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-col items-center"
-        >
+        {/* Entrance animations are CSS keyframes (.hero-rise/.hero-fade in
+            globals.css) — the headline paints with the first server render,
+            not after client-JS hydration, so mobile LCP doesn't wait on the
+            bundle. Identical timing to the previous framer-motion config. */}
+        <div className="hero-rise flex flex-col items-center">
           <Bismillah className="text-gold/90" />
           <p className="mt-5 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.3em] text-gold/90 sm:text-xs">
             <span aria-hidden className="h-px w-10 bg-gold/60" />
             {copy.overline}
             <span aria-hidden className="h-px w-10 bg-gold/60" />
           </p>
-        </motion.div>
+        </div>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
-          className="font-heading mt-6 max-w-4xl text-balance text-4xl font-semibold leading-[1.15] sm:text-5xl lg:text-6xl"
+        <h1
+          className="hero-rise font-heading mt-6 max-w-4xl text-balance text-4xl font-semibold leading-[1.15] sm:text-5xl lg:text-6xl"
+          style={{ animationDelay: "0.12s" }}
         >
           {lang === "bn" ? (
             <>
@@ -84,31 +80,25 @@ export function Hero({ lang, heroImageUrl }: HeroProps) {
               As-Sunnah <span className="text-gold-gradient">Dawah & Research</span> Institute
             </>
           )}
-        </motion.h1>
+        </h1>
 
-        <motion.p
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.22, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-4 text-base font-medium leading-relaxed tracking-wide text-gold sm:text-lg"
+        <p
+          className="hero-rise mt-4 text-base font-medium leading-relaxed tracking-wide text-gold sm:text-lg"
+          style={{ animationDelay: "0.22s" }}
         >
           {copy.subHeading}
-        </motion.p>
+        </p>
 
-        <motion.p
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.32, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-5 max-w-2xl text-balance text-[15px] leading-[1.75] text-ivory/80 sm:text-lg"
+        <p
+          className="hero-rise mt-5 max-w-2xl text-balance text-[15px] leading-[1.75] text-ivory/80 sm:text-lg"
+          style={{ animationDelay: "0.32s" }}
         >
           {copy.tagline}
-        </motion.p>
+        </p>
 
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.42, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-9 flex flex-col items-center gap-3 sm:flex-row"
+        <div
+          className="hero-rise mt-9 flex flex-col items-center gap-3 sm:flex-row"
+          style={{ animationDelay: "0.42s" }}
         >
           <Button
             asChild
@@ -132,17 +122,14 @@ export function Hero({ lang, heroImageUrl }: HeroProps) {
               {t("action.downloadProspectus")}
             </Link>
           </Button>
-        </motion.div>
+        </div>
 
         {/* Intro video trigger */}
-        <motion.button
+        <button
           type="button"
           onClick={() => setVideoOpen(true)}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.7, delay: 0.55 }}
-          className="group mt-12 flex flex-col items-center gap-3"
-          aria-label={lang === "bn" ? "পরিচিতিমূলক ভিডিও দেখুন" : "Watch the introductory video"}
+          className="hero-fade group mt-12 flex flex-col items-center gap-3"
+          style={{ animationDelay: "0.55s" }}
         >
           <span className="relative flex h-16 w-16 items-center justify-center rounded-full border border-gold/50 bg-white/10 backdrop-blur transition-all group-hover:scale-105 group-hover:border-gold group-hover:bg-white/20">
             <span
@@ -155,7 +142,7 @@ export function Hero({ lang, heroImageUrl }: HeroProps) {
           <span className="text-sm font-medium text-ivory/85 transition-colors group-hover:text-gold">
             {lang === "bn" ? "পরিচিতিমূলক ভিডিও দেখুন" : "Watch Introductory Video"}
           </span>
-        </motion.button>
+        </button>
       </div>
 
       {/* Bottom fade into page */}

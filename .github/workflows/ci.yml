@@ -38,8 +38,10 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://asdri:asdri@localhost:5432/asdri_test
+      # Both secrets are exactly 64 hex chars — src/lib/env.ts refuses shorter
+      # values at production boot (the smoke step boots the real server).
       SESSION_SECRET: c14d0e2f6a8b4c9d3e5f7a1b6c8d0e2f4a6b8c9d0e2f4a6b8c9d0e2f4a6b8c9d
-      PAYMENT_CALLBACK_SECRET: a7f1c9b3e5d2a4c6b8e0f2d4a6c8b0e2f4a6c8d0e2f4a6b8c9d0e2f4a6b
+      PAYMENT_CALLBACK_SECRET: a7f1c9b3e5d2a4c6b8e0f2d4a6c8b0e2f4a6c8d0e2f4a6b8c9d0e2f4a6b8c9d0
       MAIL_DRIVER: log
       PAYMENT_PROVIDER: sandbox
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
@@ -74,3 +76,53 @@ jobs:
 
       - name: Build
         run: bunx next build
+
+      # ————— The 431 class of failure —————
+      # A green build proves nothing about serving. This step boots the REAL
+      # production server against the migrated+seeded database and requests the
+      # four routes the proxy-loop regression took down (/, /en, /notices,
+      # /admin). A rewrite loop / 5xx / non-response fails the pipeline here,
+      # not on the client's VPS after deploy.
+      - name: Smoke — boot production server, request real routes
+        env:
+          # The production server refuses PAYMENT_PROVIDER=sandbox at boot
+          # (PR #16) — the smoke test runs the REAL production rules, so it
+          # boots with the manual provider like a real deployment would.
+          PAYMENT_PROVIDER: manual
+          # CI has no S3/MinIO: acknowledge local-disk explicitly (dev-only escape hatch).
+          STORAGE_LOCAL_OK: "1"
+        run: |
+          set -euo pipefail
+          bunx next start -p 3100 > server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+          # readiness (max ~60s)
+          ready=0
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://127.0.0.1:3100/ || true)
+            if [ "$code" != "000" ] && [ "$code" != "" ]; then ready=1; break; fi
+            sleep 1
+          done
+          [ "$ready" = "1" ] || { echo "server never became ready"; cat server.log; exit 1; }
+          fail=0
+          for path in / /en /notices /academics/courses; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 http://127.0.0.1:3100"$path")
+            echo "$path -> $code"
+            [ "$code" = "200" ] || fail=1
+          done
+          # /admin unauthenticated redirects to the login gate — follow it.
+          admin=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 -L http://127.0.0.1:3100/admin)
+          echo "/admin (login redirect followed) -> $admin"
+          [ "$admin" = "200" ] || fail=1
+          # sitemap + robots render on request (DB-free build contract)
+          for path in /sitemap.xml /robots.txt; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 http://127.0.0.1:3100"$path")
+            echo "$path -> $code"
+            [ "$code" = "200" ] || fail=1
+          done
+          if [ "$fail" != "0" ]; then
+            echo "SMOKE FAILED — production server responded wrong on a core route"
+            cat server.log
+            exit 1
+          fi
+          echo "Smoke OK — production server serves all core routes"
