@@ -140,6 +140,13 @@ export const faqGroups: FaqGroup[] = [
           en: "Circulars are published on our Facebook page and this website's notice board. Follow the page or subscribe to the newsletter for updates.",
         },
       },
+      {
+        question: { bn: "আবেদনের ট্র্যাকিং নম্বর কোথায় পাব? অবস্থা কীভাবে জানব?", en: "Where is my application tracking number? How do I check status?" },
+        answer: {
+          bn: "অনলাইনে আবেদন জমা দেওয়ার সঙ্গে সঙ্গে ASDRI-2026-XXXXXX আকারের ট্র্যাকিং নম্বর পাওয়া যায় — কাগজে-কলমে সংরক্ষণ করুন। অবস্থা জানতে আবেদনের সময় দেওয়া মোবাইল নম্বর ও ট্র্যাকিং নম্বর দিয়ে “আবেদনের অবস্থা” পাতায় যাচাই করুন। সরাসরি অফিসে ফোন করার আগে এখানে দেখে নিলে সময় বাঁচে।",
+          en: "Your ASDRI-2026-XXXXXX tracking number is issued the moment an online application is submitted — keep it written down. Check status any time on the Application Status page with that number plus the mobile number you applied with; it is faster than calling the office.",
+        },
+      },
     ],
   },
   {
@@ -178,6 +185,13 @@ export const faqGroups: FaqGroup[] = [
         answer: {
           bn: "যাকাত ফান্ড শতভাগ যাকাত পাওয়ার যোগ্য ও অস্বচ্ছল শিক্ষার্থীদের ফ্রি শিক্ষা, আবাসন ও খাবারের জন্য ব্যয় হয় — শরীয়াহর বিধান কঠোরভাবে মেনে।",
           en: "The Zakat Fund is spent exclusively on zakat-eligible, underprivileged students' education, accommodation, and meals — in strict compliance with Shariah.",
+        },
+      },
+      {
+        question: { bn: "অনুদানের ট্র্যাকিং কোড বা রশিদ হারিয়ে গেলে কী করব?", en: "I lost my donation tracking code or receipt — what now?" },
+        answer: {
+          bn: "প্রতিটি অনুদানের সঙ্গে DN-2026-XXXXXX আকারের ট্র্যাকিং কোড দেওয়া হয়। রশিদ খুঁজতে ওই কোড (বা রশিদ নম্বর) সঙ্গে ফর্মে দেওয়া মোবাইল বা ইমেইল দিয়ে রশিদ অনুসন্ধান পাতায় যাচাই করুন — অনলাইনেই রশিদ দেখা ও প্রিন্ট করা যায়। কোড হারিয়ে গেলে যে নম্বর/ইমেইল দিয়ে দান করেছিলেন সেটি অফিসকে জানান।",
+          en: "Every donation receives a DN-2026-XXXXXX tracking code. Verify it (or the receipt number) with the mobile/email you donated with on the Receipt Lookup page — the receipt can be viewed and printed online. If the code is lost, tell the office the number or email you donated from.",
         },
       },
       {

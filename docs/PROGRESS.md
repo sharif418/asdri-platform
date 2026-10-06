@@ -38,7 +38,8 @@ Gates on the final branch state (with this PR applied):
 | #20 | `perf/r3-responsive-media` → `chore/r3-finish` | Responsive hero via sized webp variants (`/api/media?width=`), in-dialog video embed |
 | #21 | `perf/r4-home-payload-diet` → `perf/r3-responsive-media` | Home as server islands — framer-motion removed, sections SSR + streamed, instant tabs |
 | #22 | `perf/r4-font-delivery` → `perf/r4-home-payload-diet` | Font delivery rebuilt — per-script unicode-range faces, lang-critical preloads, print fixes |
-| #23 | `feat/r5-status-portal` → `perf/r4-font-delivery` | This PR: public self-service portal — application status + donation receipt lookups |
+| #23 | `feat/r5-status-portal` → `perf/r4-font-delivery` | Public self-service portal — application status + donation receipt lookups |
+| #24 | `feat/r6-notice-pages` → `feat/r5-status-portal` | This PR: notice permalinks (/notices/[slug], OG + JSON-LD + print pad), Amiri ayah micro-face (106→37 KB/page) |
 
 The round-1/2 stack (PRs #1–#15 off `main`) is unchanged and still open. The client's
 staging deployment runs `deploy/staging` (commit 406edcf) at
@@ -265,6 +266,46 @@ had NO way to check progress without contacting the office. Two public lookups c
   server), fresh-session browser QA zero console errors, 390px no overflow (VLM-checked
   both langs), Lighthouse mobile: status **74**/100/100/100, receipt **76**/100/100/100
   (`.qa/lighthouse/r9/`) — above the site band for lightweight utility pages.
+
+## 4e. PR #24 — notice permalinks + Amiri ayah micro-face — DONE (this PR)
+
+`feat/r6-notice-pages` stacked on PR #23.
+
+Notices lived only behind a dialog (`?notice=slug` param) — no URL a crawler could
+index, no WhatsApp/Facebook link preview, no print source for a pinned circular.
+
+- **`/notices/[slug]`** — server-rendered permalink per notice: gold-edged official
+  pad (same visual language as the board dialog) with the stored rich HTML rendered
+  through the strict re-sanitise-on-read path (`prose-islamic`), attachment download,
+  the shared `ArticleShare` toolbar, and the print flow (`printing-notice` body class
+  + `.print-zone` + print-only masthead/ref footer). OG article card (title,
+  description, published/modified time, section) + twitter summary + canonical +
+  hreflang alternates + NewsArticle JSON-LD. Prev/next chronological neighbours,
+  back-to-board, and the board keeps its quick-view dialog — card titles are now real
+  links (crawlable, middle-click), the dialog links out ("সম্পূর্ণ পাতা খুলুন"),
+  and shares use the permalink. Sitemap rows upgraded from `?notice=` params to
+  permalinks (both languages). Unpublished/future-dated/unknown slug → the same 404.
+- **Amiri ayah micro-face** — the hero bismillah pulled the full 106 KB Arabic face
+  on every page; the site's own Arabic markup is a FIXED set of 46 codepoints (scan
+  in `subset-fonts.py`). `amiri-ayah-400` (~37 KB) claims exactly those (declared
+  after the broad faces — CSS font matching, later rule wins — pinned by test);
+  any other Arabic (DB quotes, admin-pasted text) still falls through to the broad
+  faces. Shaping parity re-proven with uharfbuzz: 30/30 source Arabic strings shape
+  identically (glyph ids + advances + offsets). Browser-verified: home now fetches
+  only the 37 KB face.
+- **Label helpers server-safe**: `categoryLabel`/`statusLabel`/`statusBadgeClass`
+  moved from the `"use client"` dialog module to `src/lib/notice-labels.ts` (server
+  pages can call them; dialog re-exports for existing importers).
+- **FAQ**: two self-service entries seeded (tracking number → `/admissions/status`,
+  lost receipt → `/support/receipt-lookup`) so the lookup pages are discoverable
+  from the FAQ the office already maintains.
+- Also: parallel-safe test fix (`media-variants` installed its own `next/headers`
+  mock — it had passed only via accidental cross-file mock leakage; bun's file
+  workers exposed it), shared `PrintButton` extracted.
+- Gates: 250 tests / 916 expects (new `notice-detail` suite: 7 tests pinning
+  publication/flag gating, field serialisation, attachment URL, neighbour chain,
+  hidden/future exclusion; font-delivery suite extended to 8 with the ayah
+  contract), tsc + eslint clean, fresh-session browser QA zero errors.
 
 ## 5. Lighthouse — production build, mobile profile, four pages
 
