@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Bell, Briefcase, CalendarDays, ChevronRight, FileText, GraduationCap, Megaphone, Pin } from "lucide-react";
 import { pick, type Language, type NoticeCategory } from "@/types";
 import { daysAgoLabel, formatDate } from "@/lib/format";
+import { langPath } from "@/lib/locale";
 import { Badge } from "@/components/ui/badge";
 import {
   NoticeDialogView,
@@ -64,7 +66,7 @@ export function NoticeCard({ notice, lang, pinned = false }: NoticeCardProps) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             {pinned ? (
-              <Badge variant="outline" className="gap-1 border-gold/40 bg-gold/15 text-[10px] font-semibold text-gold">
+              <Badge variant="outline" className="gap-1 border-gold/40 bg-gold/15 text-[10px] font-semibold text-[#7a5c15] dark:text-gold">
                 <Pin aria-hidden className="h-3 w-3" />
                 {lang === "bn" ? "পিন করা" : "Pinned"}
               </Badge>
@@ -79,7 +81,14 @@ export function NoticeCard({ notice, lang, pinned = false }: NoticeCardProps) {
           </div>
 
           <h3 className="mt-1.5 font-heading text-[15px] font-semibold leading-snug sm:text-base">
-            {pick(notice.title, lang)}
+            {/* Real permalink — crawlable, middle-click/new-tab friendly; the
+                Details button below keeps the instant quick-view dialog. */}
+            <Link
+              href={langPath(lang, `/notices/${notice.slug}`)}
+              className="decoration-gold/50 decoration-2 underline-offset-4 transition-colors hover:text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold dark:hover:text-gold"
+            >
+              {pick(notice.title, lang)}
+            </Link>
           </h3>
           <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
             {pick(notice.excerpt, lang)}

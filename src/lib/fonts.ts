@@ -18,7 +18,7 @@ import manifest from "../../public/fonts/manifest.json";
 
 type FaceInfo = {
   family: string;
-  script: "bengali" | "latin" | "arabic";
+  script: "bengali" | "latin" | "arabic" | "ayah";
   weight: number;
   unicodeRange: string;
   bytes: number;

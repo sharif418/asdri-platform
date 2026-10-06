@@ -67,7 +67,7 @@ function NoticeCard({
       hidden={!initiallyVisible}
     >
       <Link
-        href={langPath(lang, `/notices?notice=${notice.slug}`)}
+        href={langPath(lang, `/notices/${notice.slug}`)}
         className="group flex items-start gap-4 rounded-xl border bg-card p-4 shadow-sm transition-all hover:border-gold/50 hover:shadow-md sm:items-center sm:p-5"
       >
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
@@ -78,7 +78,7 @@ function NoticeCard({
             {notice.pinned ? (
               <Badge
                 variant="outline"
-                className="gap-1 border-gold/40 bg-gold/15 text-[10px] font-semibold text-gold"
+                className="gap-1 border-gold/40 bg-gold/15 text-[10px] font-semibold text-[#7a5c15] dark:text-gold"
               >
                 <Pin aria-hidden className="h-3 w-3" />
                 {lang === "bn" ? "পিন করা" : "Pinned"}

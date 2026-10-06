@@ -86,6 +86,39 @@ def codepoints_outside_orbits(cmap: dict, orbits) -> list[int]:
     return [cp for cp in sorted(cmap) if not orbit_membership(cp, orbits)]
 
 
+# ————— Amiri "ayah" micro-face ——————————————————————————————————————————
+# Every Arabic string the site itself renders (bismillah, hero/page echoes,
+# ornaments, admin editor hints) is a FIXED literal in the source tree. A
+# micro-face covering exactly those codepoints ships ~37 KB instead of the
+# ~106 KB broad Arabic face on pages that render nothing else in Arabic —
+# which is every page (the hero bismillah loads Amiri everywhere). The broad
+# amiri-arabic-* faces stay declared BEFORE the ayah face (CSS font matching:
+# the LATER rule wins for the same family/weight), so the micro-face claims
+# exactly its codepoints and any OTHER Arabic (DB-authored quotes,
+# admin-pasted text) falls through to the broad faces unchanged.
+
+def decorative_arabic_codepoints() -> list[int]:
+    """Union of Arabic-orbit codepoints appearing anywhere under src/ (and
+    the seed data the office ships). Superset by design — a codepoint used
+    even in a comment costs one glyph, missing one costs broken render."""
+    cps: set[int] = {0x0020}  # space — Arabic runs need Amiri's own advance
+    roots = [REPO / "src", REPO / "scripts" / "seed-data"]
+    for root in roots:
+        for path in root.rglob("*"):
+            if path.suffix not in {".ts", ".tsx", ".css"}:
+                continue
+            text = path.read_text(encoding="utf-8")
+            for ch in text:
+                cp = ord(ch)
+                if (
+                    0x0600 <= cp <= 0x08FF
+                    or 0xFB50 <= cp <= 0xFEFF
+                    or cp in (0x200C, 0x200D, 0x2E41, 0x204F)
+                ):
+                    cps.add(cp)
+    return sorted(cps)
+
+
 def fmt_ranges(cps: list[int]) -> str:
     """Collapse sorted codepoints into U+XXXX, U+XXXX-YYYY ranges for unicode-range."""
     if not cps:
@@ -197,6 +230,24 @@ def main() -> int:
         if dropped:
             sample = ", ".join(f"U+{c:04X}" for c in sorted(dropped)[:10])
             print(f"  ({family_dir} w={weight}: {len(dropped)} cps dropped -> other scripts/fallbacks: {sample})")
+
+    # Emit the Amiri micro-face LAST: in CSS font matching the LATER
+    # @font-face rule wins for the same family/weight, so the micro-face must
+    # be declared after the broad amiri-arabic faces to claim its codepoints;
+    # any other Arabic (DB quotes, admin-pasted text) still falls through to
+    # the broad faces — coverage identical, bytes ~3x smaller.
+    ayah_cps = decorative_arabic_codepoints()
+    amiri_regular = SRC / "amiri" / "amiri-v30-arabic_latin-regular.woff2"
+    amiri_cmap = set(TTFont(amiri_regular).getBestCmap())
+    ayah_supported = [cp for cp in ayah_cps if cp in amiri_cmap]
+    ayah_font = subset_to(amiri_regular, ayah_supported, no_hinting=False)
+    ayah_name, ayah_ur, ayah_size = emit(ayah_font, "amiri-ayah-400", OUT)
+    total += ayah_size
+    report[ayah_name] = {
+        "family": "amiri", "script": "ayah", "weight": 400,
+        "unicodeRange": ayah_ur, "bytes": ayah_size,
+    }
+    print(f"{ayah_name:44s} {ayah_size/1024:7.1f} KB  w=400 ayah  ({len(ayah_supported)} cps of {len(ayah_cps)} scanned)")
 
     manifest = OUT / "manifest.json"
     manifest.write_text(json.dumps(report, indent=2) + "\n")

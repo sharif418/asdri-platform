@@ -140,7 +140,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       orderBy: { publishedAt: "desc" },
     });
     for (const notice of notices) {
-      out.push(bnEntry(`/notices?notice=${notice.slug}`, notice.updatedAt, 0.5, "monthly"));
+      out.push(bnEntry(`/notices/${notice.slug}`, notice.updatedAt, 0.6, "monthly"));
+      out.push(enEntry(`/notices/${notice.slug}`, notice.updatedAt, 0.55, "monthly"));
     }
   }
 

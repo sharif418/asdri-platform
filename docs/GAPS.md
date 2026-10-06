@@ -20,6 +20,12 @@ Round-3 corrections applied: items made stale by PRs #16–#19 are updated in pl
 3. **Donations have no `recurring` column** — the form's "monthly" flag is stored on the
    `initiated` PaymentTransaction rawPayload only. Recurring execution needs a scheduler +
    gateway support: scoped out. Recorded as a follow-up, not a silent drop.
+3c. **Notices have permalinks as well as the board dialog (round 6)**:
+   `/notices/[slug]` is the canonical, shareable URL (OG article card, JSON-LD,
+   print pad); the board keeps the quick-view dialog and `?notice=` deep links,
+   and card titles link to the permalink. The sitemap lists permalinks now.
+   Board dialog and permalink render the same stored body; the permalink is what
+   the office should print/forward (WhatsApp previews need no extra setup).
 3b. **Public self-service lookups pair a code with a second factor (round 5)**:
    `/admissions/status` (tracking number + the application's mobile) and
    `/support/receipt-lookup` (tracking/receipt code + the donation form's phone or
@@ -128,10 +134,29 @@ Round-3 corrections applied: items made stale by PRs #16–#19 are updated in pl
    preloads; see PROGRESS §4c): per-page font bytes 760 → 350 KB (bn) / 269 KB (en),
    shaping parity proven via uharfbuzz, and course-list/detail scored +8/+16 above
    their old bands — but home stays 53–63 on this shared CPU (LCP is hero-image +
-   CPU bound here; the byte cut should show on real hardware). Remaining levers in
-   value order: PPR/ISR for the home shell once Next 16 stabilizes it, and Bangla
-   text compression is already good (UTF-8 3 bytes/char compresses ~5:1). Accessibility
-   95+ on all four audited pages; Best-Practices and SEO 100.
+   CPU bound here; the byte cut should show on real hardware). PR #24 then added the
+   Amiri ayah micro-face: the site's own Arabic markup is a fixed 46-codepoint set,
+   now served by a ~37 KB face instead of the 106 KB broad face on every page
+   (broad faces remain the fallback for any other Arabic — coverage unchanged,
+   shaping parity re-proven via uharfbuzz; browser-verified only the 37 KB face
+   loads). Remaining levers in value order: PPR/ISR for the home shell once Next 16
+   stabilizes it, and Bangla text compression is already good (UTF-8 3 bytes/char
+   compresses ~5:1). Accessibility 95+ on all four audited pages; Best-Practices
+   and SEO 100.
+9b. **Hind 400/500 consolidation — audited, recommendation: KEEP both (round 6)**.
+    A computed-style audit of the bn home page (every visible Bengali element at
+    font-weight 500, family Hind) found 500 is NOT a spare weight: it is the
+    site's medium-emphasis workhorse — header nav links (`link-sweep`), the
+    utility-bar site title, the hero description paragraph, hero CTA labels,
+    course-duration chips, and every `font-medium` badge/label (~20+ above-fold
+    elements, plus the same roles on /en via hind-latin-500 at only ~7.4 KB).
+    Dropping 400→500 duplication would save ~37 KB raw (~15 KB gz) per bn page
+    but requires re-skinning either all navigation/CTAs to 400 (visibly thinner —
+    flattens the hierarchy the design leans on) or to 600 (heavier, no byte saved
+    since 600 already ships). If the office ever wants the cut, the mechanical
+    change is: delete the 500 faces + preload entries and re-point `font-medium`
+    usages; the audit snapshot above is the checklist. Not taken unilaterally —
+    this entry is the design proposal with the data.
 10. **Lighthouse variance**: this sandbox's shared CPU makes single-run performance
     scores swing ±5–13 points (course-detail measured 56–69 across four runs). The
     committed reports are the final clean run; treat single-digit deltas as noise.

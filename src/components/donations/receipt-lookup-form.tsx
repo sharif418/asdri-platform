@@ -47,7 +47,7 @@ interface ReceiptLookupFormProps {
 function StatusPill({ status, lang }: { status: LookupResult["status"]; lang: Lang }) {
   const bn = lang === "bn";
   const map: Record<LookupResult["status"], { label: string; cls: string }> = {
-    PENDING: { label: bn ? "পেমেন্ট অপেক্ষমাণ" : "Awaiting payment", cls: "bg-gold/15 text-gold" },
+    PENDING: { label: bn ? "পেমেন্ট অপেক্ষমাণ" : "Awaiting payment", cls: "bg-gold/15 text-[#7a5c15] dark:text-gold" },
     COMPLETED: { label: bn ? "সম্পন্ন" : "Completed", cls: "bg-emerald-600/15 text-emerald-700" },
     FAILED: { label: bn ? "ব্যর্থ" : "Failed", cls: "bg-destructive/15 text-destructive" },
     REFUNDED: { label: bn ? "ফেরত দেওয়া" : "Refunded", cls: "bg-muted text-muted-foreground" },
