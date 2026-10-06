@@ -14,6 +14,7 @@ import { PaymentChannels, type PaymentChannelInfo } from "@/components/donations
 import { FUND_TYPES } from "@/types";
 import type { FundType } from "@/types";
 import { getFunds, getFundLabels } from "@/lib/content/funds";
+import { listCampaigns } from "@/lib/content/campaigns";
 import { getSiteConfig } from "@/lib/content/site";
 import { env } from "@/lib/env";
 import { db } from "@/lib/db";
@@ -108,11 +109,12 @@ export default async function SupportPage({ params, searchParams }: SupportPageP
       : null;
   const campaignParam = Array.isArray(sp.campaign) ? sp.campaign[0] : sp.campaign;
 
-  const [funds, fundLabels, siteConfig, campaigns] = await Promise.all([
+  const [funds, fundLabels, siteConfig, campaigns, campaignList] = await Promise.all([
     getFunds(),
     getFundLabels(),
     getSiteConfig(),
     getTargetableCampaigns(),
+    listCampaigns(),
   ]);
   const payment: PaymentChannelInfo = siteConfig.payment;
 
@@ -143,8 +145,8 @@ export default async function SupportPage({ params, searchParams }: SupportPageP
         initialCampaignSlug={campaignParam ?? null}
       />
 
-      {/* Live campaigns */}
-      <CampaignsSection lang={lang} />
+      {/* Live campaigns — server-rendered from the same Promise.all above */}
+      <CampaignsSection lang={lang} campaigns={campaignList} />
 
       {/* Transparency */}
       <section className="py-16 sm:py-20" aria-label={lang === "bn" ? "স্বচ্ছতা" : "Transparency"}>

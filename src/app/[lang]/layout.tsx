@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
-import { amiri, cormorant, hindSiliguri, tiroBangla } from "@/lib/fonts";
+import ReactDOM from "react-dom";
+import { criticalFontHrefs } from "@/lib/fonts";
 import "../globals.css";
 
 // Public pages render on request: the image is built before the database exists.
@@ -101,6 +102,13 @@ export default async function SiteRootLayout({
   if (!isLang(raw)) notFound();
   const lang: Lang = raw;
 
+  // Only the language-critical faces are preloaded (next/font used to eager-
+  // preload every weight of every family on every page). Font requests are
+  // CORS-mode, so crossorigin is required even same-origin.
+  for (const href of criticalFontHrefs(lang)) {
+    ReactDOM.preload(href, { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
+  }
+
   return (
     <html
       lang={lang === "bn" ? "bn" : "en"}
@@ -108,9 +116,7 @@ export default async function SiteRootLayout({
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
-      <body
-        className={`${tiroBangla.variable} ${hindSiliguri.variable} ${amiri.variable} ${cormorant.variable} antialiased bg-background text-foreground`}
-      >
+      <body className="antialiased bg-background text-foreground">
         <ThemeProvider>
           <LanguageProvider initialLang={lang}>{children}</LanguageProvider>
         </ThemeProvider>

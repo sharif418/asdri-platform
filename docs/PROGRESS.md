@@ -36,7 +36,8 @@ Gates on the final branch state (with this PR applied):
 | #18 | `fix/r3-i18n-adminux` → `feat/r3-site-admin` | Bangla is LTR; digits per script; admin as a product (dialogs, tables, SSR figures) |
 | #19 | `chore/r3-finish` → `fix/r3-i18n-adminux` | This PR: CI production smoke, hygiene, fonts/mobile perf, Lighthouse, this rewrite |
 | #20 | `perf/r3-responsive-media` → `chore/r3-finish` | Responsive hero via sized webp variants (`/api/media?width=`), in-dialog video embed |
-| #21 | `perf/r4-home-payload-diet` → `perf/r3-responsive-media` | This PR: home as server islands — framer-motion removed, sections SSR + streamed, instant tabs |
+| #21 | `perf/r4-home-payload-diet` → `perf/r3-responsive-media` | Home as server islands — framer-motion removed, sections SSR + streamed, instant tabs |
+| #22 | `perf/r4-font-delivery` → `perf/r4-home-payload-diet` | This PR: font delivery rebuilt — per-script unicode-range faces, lang-critical preloads, print fixes |
 
 The round-1/2 stack (PRs #1–#15 off `main`) is unchanged and still open. The client's
 staging deployment runs `deploy/staging` (commit 406edcf) at
@@ -194,6 +195,37 @@ The §C.9(b)+(c) follow-ups (GAPS) plus the "add features / styling details" man
   `/`, `/en`, `/notices`, `/about`, `/academics/courses`, `/support`, `/research`,
   `/admissions`, `/contact`; 390px no horizontal overflow; section-by-section viewport
   screenshots VLM-verified (`.qa/r4-*-viewport.png`, `.qa/r4-mobile-final.png`).
+
+## 4c. PR #22 — font delivery rebuilt: per-script faces, lang-critical preloads — DONE (this PR)
+
+`perf/r4-font-delivery` stacked on PR #21.
+
+- **Root cause found & fixed**: `next/font/local` eager-preloads EVERY src file via RSC
+  `:HL` hints — every page downloaded all **760 KB** of fonts (both Amiri weights + all
+  Cormorant weights even where zero elements used them; FontFaceSet confirmed `unloaded`).
+  Replaced with manual `@font-face` + `unicode-range` per-script faces
+  (`scripts/subset-fonts.py` → `public/fonts/` ×15 content-hashed faces, deterministic;
+  Hind/Tiro hinting stripped — Halves their bytes; Amiri Latin dropped).
+- **Shaping parity proven offline**: uharfbuzz shapes heavy conjunct Bengali + diacritic
+  Arabic samples to IDENTICAL glyph sequences on original vs subset (all 5 pairs).
+- **Lang-critical preloads** (`src/lib/fonts.ts` + `ReactDOM.preload` in the layout):
+  bn → hind-bn 400/500/600 + tiro-bn 400 + hind-lat 400; en → hind-lat 400/500/600 +
+  cormorant-lat 600. Immutable `Cache-Control` on `/fonts/*` (next.config headers).
+- **Measured (production build, resource-timing)**: BN home 760 → **350 KB** (−54%),
+  EN home 760 → **269 KB** (−65%); Cormorant + Amiri-700 now zero bytes where unused.
+- **Support page campaigns band** converted client-fetch → server component (page's
+  existing `Promise.all`, zero extra latency; shared server `ProgressBar` component;
+  `/api/campaigns` fetch + skeleton gone from the network trace).
+- **Two latent print bugs fixed** (new print-additions block in globals.css): scroll-
+  driven reveals printed below-fold sections at opacity 0 (fill-mode `both`, no scroll in
+  print) and `.text-gold-gradient` printed invisible (background-clip:text + printers skip
+  backgrounds). Verified via PDF text extraction + VLM on rendered pages (stats/courses
+  now print; gradient headings get ink).
+- Gates: 226 tests / 809 expects (new `font-delivery` suite pins the contract), tsc +
+  eslint clean, prod build + boot + 7-route smoke all-200, fresh-session browser QA zero
+  console errors, Lighthouse re-recorded (`.qa/lighthouse/r4g-fonts/`): home 53–63
+  (noise band), **course-list 80** (was 69–72), **course-detail 74** (was 58–64),
+  notices 71 (was 69–70).
 
 ## 5. Lighthouse — production build, mobile profile, four pages
 

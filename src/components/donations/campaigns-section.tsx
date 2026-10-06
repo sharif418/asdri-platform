@@ -1,42 +1,30 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { HandCoins, Target } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
+import { ProgressBar } from "@/components/shared/progress-bar";
 import { formatCompactTaka, formatTaka } from "@/lib/format";
 import { langPath } from "@/lib/locale";
 import { pick } from "@/types";
 import type { FundingCampaign, Language } from "@/types";
 
-/** Live fundraising campaigns with progress bars, fetched from GET /api/campaigns. */
-export function CampaignsSection({ lang }: { lang: Language }) {
+/**
+ * Live fundraising campaigns with progress bars.
+ *
+ * Server component (round 4): the support page reads the campaigns from the
+ * DB in its existing Promise.all and passes them in — the old client island
+ * fetched /api/campaigns after hydration (skeleton flash, empty HTML for
+ * crawlers). The progress bar is a plain server div, so this section costs
+ * zero client JS.
+ */
+export function CampaignsSection({
+  lang,
+  campaigns,
+}: {
+  lang: Language;
+  campaigns: FundingCampaign[];
+}) {
   const bn = lang === "bn";
-  const [campaigns, setCampaigns] = useState<FundingCampaign[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/campaigns")
-      .then(async (res) => {
-        if (!res.ok) throw new Error("failed");
-        const payload: { data: FundingCampaign[] } = await res.json();
-        if (!cancelled) setCampaigns(payload.data);
-      })
-      .catch(() => {
-        if (!cancelled) setFailed(true);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   return (
     <section className="bg-parchment py-16 sm:py-20" aria-label={bn ? "চলমান ক্যাম্পেইন" : "Live campaigns"}>
@@ -55,12 +43,7 @@ export function CampaignsSection({ lang }: { lang: Language }) {
         </Reveal>
 
         <div className="mt-10">
-          {loading ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              <Skeleton className="h-36 w-full rounded-2xl" />
-              <Skeleton className="h-36 w-full rounded-2xl" />
-            </div>
-          ) : failed || campaigns.length === 0 ? (
+          {campaigns.length === 0 ? (
             <p className="rounded-2xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
               {bn
                 ? "এই মুহূর্তে কোনো সক্রিয় ক্যাম্পেইন নেই — আপনার নিয়মিত অনুদান শিক্ষার্থীদের জন্য সদকায়ে জারিয়া হিসেবে ব্যয় হচ্ছে।"
@@ -88,8 +71,12 @@ export function CampaignsSection({ lang }: { lang: Language }) {
                       <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
                         {pick(campaign.description, lang)}
                       </p>
-                      <Progress value={percent} className="mt-4 h-2.5 [&>div]:bg-gold-gradient" aria-label={`${pick(campaign.title, lang)} — ${percent}%`} />
-                      <div className="mt-2.5 flex items-center justify-between text-[12.5px]">
+                      <ProgressBar
+                        percent={percent}
+                        label={`${pick(campaign.title, lang)} — ${percent}%`}
+                        className="mt-4"
+                      />
+                      <div className="mt-2.5 flex items-center justify-between text-[12.5px] tabular-nums">
                         <span className="font-semibold text-primary">
                           {formatCompactTaka(campaign.raisedAmount, lang)}{" "}
                           <span className="font-normal text-muted-foreground">

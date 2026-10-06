@@ -73,8 +73,10 @@ export function StatCounter({ value, suffix = "", lang, durationMs = 1600, class
   const text = lang === "bn" ? toBnDigits(display) : String(display);
 
   return (
+    /* tabular-nums: the animated digits keep a constant advance width, so the
+       count-up doesn't jitter the surrounding layout. */
     <span ref={ref} className={className}>
-      {text}
+      <span className="tabular-nums">{text}</span>
       {suffix}
     </span>
   );

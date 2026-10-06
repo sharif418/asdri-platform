@@ -16,6 +16,13 @@ const nextConfig: NextConfig = {
     remotePatterns: [],
   },
   serverExternalPackages: ["@prisma/client"],
+  headers: async () => [
+    {
+      // Content-hashed font filenames (scripts/subset-fonts.py) — cache forever.
+      source: "/fonts/:path*",
+      headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+    },
+  ],
 };
 
 export default nextConfig;

@@ -1,44 +1,68 @@
-import localFont from "next/font/local";
+import manifest from "../../public/fonts/manifest.json";
 
 /**
- * Self-hosted typefaces (woff2, subset to the scripts the site uses). The build no longer
- * reaches fonts.googleapis.com — the server's build network cannot — and visitors load the
- * fonts from this origin, which the brief asked for. Same CSS variables as before.
+ * Self-hosted typefaces, served per-script from /public/fonts via @font-face
+ * with unicode-range (see src/app/fonts.css + scripts/subset-fonts.py).
+ *
+ * This replaces next/font/local: next/font eagerly preloads EVERY src file via
+ * RSC :HL hints, so every page downloaded all ~760 KB of fonts (both Amiri
+ * weights + all Cormorant weights even on pages that never render them) in
+ * direct competition with the hero image for bandwidth. Now the browser only
+ * fetches the script/weight faces a page actually renders, and the layout
+ * preloads just the language-critical faces (see criticalFontHrefs).
+ *
+ * The manifest is generated together with the woff2 files, so filenames stay
+ * in sync with the CSS (re-run scripts/subset-fonts.py after touching
+ * anything under src/fonts/).
  */
-export const tiroBangla = localFont({
-  variable: "--font-heading",
-  display: "swap",
-  src: [
-    { path: "../fonts/tiro-bangla/tiro-bangla-v8-bengali_latin-regular.woff2", weight: "400", style: "normal" },
-  ],
-});
 
-export const hindSiliguri = localFont({
-  variable: "--font-body",
-  display: "swap",
-  src: [
-    { path: "../fonts/hind-siliguri/hind-siliguri-v14-bengali_latin-500.woff2", weight: "500", style: "normal" },
-    { path: "../fonts/hind-siliguri/hind-siliguri-v14-bengali_latin-600.woff2", weight: "600", style: "normal" },
-    { path: "../fonts/hind-siliguri/hind-siliguri-v14-bengali_latin-700.woff2", weight: "700", style: "normal" },
-    { path: "../fonts/hind-siliguri/hind-siliguri-v14-bengali_latin-regular.woff2", weight: "400", style: "normal" },
-  ],
-});
+type FaceInfo = {
+  family: string;
+  script: "bengali" | "latin" | "arabic";
+  weight: number;
+  unicodeRange: string;
+  bytes: number;
+};
 
-export const amiri = localFont({
-  variable: "--font-arabic",
-  display: "swap",
-  src: [
-    { path: "../fonts/amiri/amiri-v30-arabic_latin-700.woff2", weight: "700", style: "normal" },
-    { path: "../fonts/amiri/amiri-v30-arabic_latin-regular.woff2", weight: "400", style: "normal" },
-  ],
-});
+const faces = manifest as Record<string, FaceInfo>;
 
-export const cormorant = localFont({
-  variable: "--font-latin-display",
-  display: "swap",
-  src: [
-    { path: "../fonts/cormorant-garamond/cormorant-garamond-v21-latin-600.woff2", weight: "600", style: "normal" },
-    { path: "../fonts/cormorant-garamond/cormorant-garamond-v21-latin-700.woff2", weight: "700", style: "normal" },
-    { path: "../fonts/cormorant-garamond/cormorant-garamond-v21-latin-regular.woff2", weight: "400", style: "normal" },
-  ],
-});
+function faceUrl(family: string, script: FaceInfo["script"], weight: number): string {
+  const hit = Object.entries(faces).find(
+    ([, info]) => info.family === family && info.script === script && info.weight === weight,
+  );
+  if (!hit) {
+    throw new Error(`font face not found: ${family} ${script} ${weight} — re-run scripts/subset-fonts.py`);
+  }
+  return `/fonts/${hit[0]}`;
+}
+
+/**
+ * Fonts whose early arrival gates first paint of above-fold text, per site
+ * language (audited via computed styles of above-fold leaf elements):
+ *   bn — Hind Bengali body weights + Tiro Bangla headings + Hind Latin (spaces).
+ *   en — Hind Latin body weights + Cormorant 600 headings.
+ * Everything else (Amiri for the bismillah, Bengali names on /en, the odd
+ * bold weight) is fetched lazily by the first layout that needs it.
+ */
+export function criticalFontHrefs(lang: "bn" | "en"): string[] {
+  if (lang === "bn") {
+    return [
+      faceUrl("hind-siliguri", "bengali", 400),
+      faceUrl("hind-siliguri", "bengali", 500),
+      faceUrl("hind-siliguri", "bengali", 600),
+      faceUrl("tiro-bangla", "bengali", 400),
+      faceUrl("hind-siliguri", "latin", 400),
+    ];
+  }
+  return [
+    faceUrl("hind-siliguri", "latin", 400),
+    faceUrl("hind-siliguri", "latin", 500),
+    faceUrl("hind-siliguri", "latin", 600),
+    faceUrl("cormorant-garamond", "latin", 600),
+  ];
+}
+
+/** All faces, for diagnostics/tests. */
+export function allFontFaces(): Array<{ url: string; info: FaceInfo }> {
+  return Object.entries(faces).map(([name, info]) => ({ url: `/fonts/${name}`, info }));
+}
