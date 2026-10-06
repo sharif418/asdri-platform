@@ -12,20 +12,43 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Bismillah, StarMotif } from "@/components/shared/ornaments";
+import { youtubeEmbedUrl } from "@/lib/youtube";
 import { useSiteConfig } from "@/components/providers/site-config-provider";
 import { useLanguage } from "@/components/providers/language-provider";
 import { langPath } from "@/lib/locale";
 import type { Language } from "@/types";
 import { pick } from "@/types";
 
+interface HeroVideo {
+  /** Canonical 11-char YouTube id (parsed at the source). */
+  id: string;
+  title: { bn: string; en: string };
+}
+
 interface HeroProps {
   lang: Language;
   /** Office-chosen hero image (from /admin/content/home); null = default campus photo. */
   heroImageUrl?: string | null;
+  /** Featured institute video to embed inside the dialog (null → static fallback). */
+  video?: HeroVideo | null;
+}
+
+/**
+ * Responsive hero backdrop descriptor. Office-chosen media is served through
+ * /api/media which resolves `?width=` to the sharp-generated webp variants
+ * (md ≈ 800w ~110 KB, lg ≈ 1200w ~190 KB) — a 390 px phone downloads the md
+ * variant instead of the full original. srcset/sizes let the browser pick.
+ */
+function heroSrcSet(heroImageUrl: string): { src: string; srcSet: string } | null {
+  if (!heroImageUrl.startsWith("/api/media/")) return null;
+  return {
+    src: `${heroImageUrl}?width=1200`,
+    srcSet: `${heroImageUrl}?width=800 800w, ${heroImageUrl}?width=1200 1200w`,
+  };
 }
 
 /** Full-bleed hero — campus backdrop, bismillah, headline, dual CTAs, video dialog. */
-export function Hero({ lang, heroImageUrl }: HeroProps) {
+export function Hero({ lang, heroImageUrl, video }: HeroProps) {
   const { t } = useLanguage();
   const siteConfig = useSiteConfig();
   const [videoOpen, setVideoOpen] = useState(false);
@@ -39,14 +62,33 @@ export function Hero({ lang, heroImageUrl }: HeroProps) {
     tagline: lang === "bn" ? siteConfig.taglineBn : siteConfig.taglineEn,
   };
 
+  const responsive = heroImageUrl ? heroSrcSet(heroImageUrl) : null;
+
   return (
     <section className="texture-grain relative isolate overflow-hidden bg-emerald-deep text-ivory">
-      {/* Backdrop */}
-      <div
-        aria-hidden
-        className={`absolute inset-0 -z-10 bg-cover bg-center${heroImageUrl ? "" : " bg-[url('/images/hero-campus.png')]"}`}
-        style={heroImageUrl ? { backgroundImage: `url(${heroImageUrl})` } : undefined}
-      />
+      {/* Backdrop — an <img> (not a CSS background) so the browser can pick a
+          sized webp variant per viewport/DPR and treat it as the LCP priority. */}
+      {responsive ? (
+        <img
+          aria-hidden
+          src={responsive.src}
+          srcSet={responsive.srcSet}
+          sizes="100vw"
+          fetchPriority="high"
+          decoding="async"
+          alt=""
+          className="absolute inset-0 -z-10 h-full w-full object-cover"
+        />
+      ) : (
+        <img
+          aria-hidden
+          src="/images/hero-campus.png"
+          fetchPriority="high"
+          decoding="async"
+          alt=""
+          className="absolute inset-0 -z-10 h-full w-full object-cover"
+        />
+      )}
       <div
         aria-hidden
         className="absolute inset-0 -z-10 bg-gradient-to-b from-emerald-deep/95 via-emerald-deep/80 to-emerald-deep/95"
@@ -164,23 +206,39 @@ export function Hero({ lang, heroImageUrl }: HeroProps) {
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4">
-            <div className="relative w-full overflow-hidden rounded-lg border border-gold/30">
-              <img
-                src="/images/campus-seminar.png"
-                alt={lang === "bn" ? "ইনস্টিটিউট সেমিনার" : "Institute seminar"}
-                className="aspect-video w-full object-cover"
-              />
-              <div aria-hidden className="absolute inset-0 bg-emerald-deep/50" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="flex h-14 w-14 items-center justify-center rounded-full border border-gold bg-emerald-deep/70 backdrop-blur">
-                  <Play aria-hidden className="h-5 w-5 fill-gold text-gold" />
-                </span>
+            {/* The embed mounts only while the dialog is open (zero page cost
+                until then; privacy-enhanced nocookie host; CSP allows it). */}
+            {video ? (
+              <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-gold/30 bg-black">
+                <iframe
+                  src={youtubeEmbedUrl(video.id)}
+                  title={lang === "bn" ? video.title.bn : video.title.en}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full"
+                />
               </div>
-            </div>
-            <Button asChild className="w-full bg-gold-gradient font-semibold text-gold-foreground hover:opacity-95">
+            ) : (
+              <div className="relative w-full overflow-hidden rounded-lg border border-gold/30">
+                <img
+                  src="/images/campus-seminar.png"
+                  alt={lang === "bn" ? "ইনস্টিটিউট সেমিনার" : "Institute seminar"}
+                  className="aspect-video w-full object-cover"
+                />
+                <div aria-hidden className="absolute inset-0 bg-emerald-deep/50" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full border border-gold bg-emerald-deep/70 backdrop-blur">
+                    <Play aria-hidden className="h-5 w-5 fill-gold text-gold" />
+                  </span>
+                </div>
+              </div>
+            )}
+            <Button asChild variant="outline" className="w-full border-ivory/30 text-ivory hover:bg-white/10 hover:text-ivory">
               <a href={siteConfig.socials.youtube} target="_blank" rel="noopener noreferrer">
                 <ExternalLink aria-hidden className="h-4 w-4" />
-                {lang === "bn" ? "YouTube-এ ভিডিও দেখুন" : "Watch on YouTube"}
+                {lang === "bn" ? "YouTube চ্যানেলে আরও ভিডিও" : "More videos on YouTube"}
               </a>
             </Button>
           </div>
