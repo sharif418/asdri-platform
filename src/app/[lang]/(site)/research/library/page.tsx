@@ -1,153 +1,325 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowRight, BookMarked, FileQuestion, SearchX } from "lucide-react";
 import { alternatesFor, langPath, type Lang } from "@/lib/locale";
 import { isFeatureEnabled } from "@/lib/settings";
 import { ModuleUnavailable } from "@/components/shared/module-unavailable";
 import { env } from "@/lib/env";
-import Link from "next/link";
-import { ArrowRight, BookMarked } from "lucide-react";
+import { formatNumber } from "@/lib/format";
 import { PageHero } from "@/components/shared/page-hero";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal, Stagger, RevealItem } from "@/components/shared/reveal";
 import { GoldRule } from "@/components/shared/ornaments";
-import { JournalCard } from "@/components/research/journal-card";
-import { getPublications, getDownloadItems } from "@/lib/content/research";
+import { SitePagination } from "@/components/shared/site-pagination";
+import {
+  LibraryFilters,
+  type LibraryFilterValues,
+} from "@/components/library/library-filters";
+import { LibraryCard } from "@/components/library/library-card";
+import { LibraryJournalGroups } from "@/components/library/library-journal-groups";
+import { buildLibraryUrl } from "@/components/library/library-shared";
+import {
+  getLibraryCategories,
+  getLibraryLanguages,
+  getLibraryYears,
+  getJournalGroups,
+} from "@/lib/content/library-shelves";
+import { searchLibraryItems } from "@/lib/content/library-search";
 import { getSiteConfig } from "@/lib/content/site";
-import { pick } from "@/types";
 
-export async function generateMetadata({ params }: { params: Promise<{ lang: Lang }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: Lang }>;
+}): Promise<Metadata> {
   const { lang } = await params;
   const siteConfig = await getSiteConfig();
-  const { canonical, languages } = alternatesFor("/research/library", env.siteUrl);
+  const { canonical, languages } = alternatesFor(
+    "/research/library",
+    env.siteUrl,
+  );
   return {
-    title: lang === "bn" ? `লাইব্রেরি ও জার্নাল — ${siteConfig.nameBn}` : `Library & Journals — ${siteConfig.nameEn}`,
+    title:
+      lang === "bn"
+        ? `লাইব্রেরি ও জার্নাল — ${siteConfig.nameBn}`
+        : `Library & Journals — ${siteConfig.nameEn}`,
     description:
       lang === "bn"
-        ? "আস-সুন্নাহ জার্নাল ও গবেষণা বার্তা — মেটাডেটা, সাইটেশন জেনারেটর (APA/Chicago/MLA) ও ডিজিটাল রিডারসহ লাইব্রেরি ক্যাটালগ।"
-        : "As-Sunnah journals and research bulletins — a library catalog with metadata, an APA/Chicago/MLA citation generator, and a digital reader.",
+        ? "অনুসন্ধানযোগ্য লাইব্রেরি ক্যাটালগ — বই, জার্নাল সংখ্যা ও গবেষণাপত্র; প্রতিটি আইটেমের রেকর্ড পাতায় সাইটেশন জেনারেটর ও ব্রাউজারেই পিডিএফ রিডার।"
+        : "A searchable library catalogue — books, journal issues, and papers; every record page carries a citation generator and an in-browser PDF reader.",
     alternates: { canonical, languages },
+    // a nav destination like the blog list: indexed, canonical absorbs ?q= states
+    robots: { index: true, follow: true },
   };
 }
 
-/** Library & journals — catalog cards with citation generator and reader. */
-export default async function LibraryPage({ params }: { params: Promise<{ lang: Lang }> }) {
+const PAGE_SIZE = 12;
+
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+function firstParam(value: string | string[] | undefined): string {
+  return (Array.isArray(value) ? value[0] : (value ?? "")).trim();
+}
+
+/** Catalogue — bilingual search + facets + journals by issue + pagination. */
+export default async function LibraryPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ lang: Lang }>;
+  searchParams: SearchParams;
+}) {
   const { lang } = await params;
   if (!(await isFeatureEnabled("research"))) {
-    return <ModuleUnavailable lang={lang} moduleLabelBn="লাইব্রেরি ও জার্নাল" moduleLabelEn="Library & journals" />;
+    return (
+      <ModuleUnavailable
+        lang={lang}
+        moduleLabelBn="লাইব্রেরি ও জার্নাল"
+        moduleLabelEn="Library & journals"
+      />
+    );
   }
-  const [publications, downloadItems] = await Promise.all([getPublications(), getDownloadItems()]);
-  const siteConfig = await getSiteConfig();
-  const journals = publications.filter((item) => item.type === "journal");
-  const referenceFiles = downloadItems.filter((item) => item.category === "prospectus" || item.category === "syllabus");
+  const bn = lang === "bn";
+  const sp = await searchParams;
+
+  const values: LibraryFilterValues = {
+    q: firstParam(sp.q).slice(0, 120),
+    type: firstParam(sp.type),
+    category: firstParam(sp.category),
+    year: firstParam(sp.year),
+    language: firstParam(sp.language),
+    journalKey: firstParam(sp.journal),
+  };
+  const requestedPage = Number.parseInt(firstParam(sp.page) || "1", 10);
+  const page =
+    Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+
+  const [result, categories, years, languages, journalGroups, catalogueSize] =
+    await Promise.all([
+      searchLibraryItems({
+        q: values.q,
+        type: values.type,
+        category: values.category,
+        year: values.year ? Number.parseInt(values.year, 10) : null,
+        language: values.language,
+        journalKey: values.journalKey,
+        page,
+        perPage: PAGE_SIZE,
+      }),
+      getLibraryCategories(),
+      getLibraryYears(),
+      getLibraryLanguages(),
+      getJournalGroups(),
+      searchLibraryItems({ page: 1, perPage: 1 }), // total shelf size for the hero pill
+    ]);
+
+  const hasAnyFilter = Boolean(
+    values.q ||
+    values.type ||
+    values.category ||
+    values.year ||
+    values.language ||
+    values.journalKey,
+  );
+  const safePage = Math.min(page, result.totalPages);
+  const firstShown = result.total === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1;
+  const lastShown = Math.min(safePage * PAGE_SIZE, result.total);
 
   return (
     <>
       <PageHero
-        eyebrow={lang === "bn" ? "গবেষণা ও প্রকাশনা" : "Research & Publications"}
-        title={lang === "bn" ? "লাইব্রেরি ও জার্নাল" : "Library & Journals"}
+        eyebrow={bn ? "গবেষণা ও প্রকাশনা" : "Research & Publications"}
+        title={bn ? "লাইব্রেরি ও জার্নাল" : "Library & Journals"}
         description={
-          lang === "bn"
-            ? "ইনস্টিটিউটের জার্নাল ও পত্রিকা — সম্পাদক, প্রকাশকাল ও ISSN মেটাডেটাসহ; এক ক্লিকে APA/Chicago/MLA সাইটেশন কপি করুন।"
-            : "The institute's journals and periodicals — with editor, date, and ISSN metadata; copy APA/Chicago/MLA citations in one click."
+          bn
+            ? "ইনস্টিটিউটের বই, জার্নাল সংখ্যা ও গবেষণাপত্রের অনুসন্ধানযোগ্য ক্যাটালগ — দুই ভাষাতেই খুঁজুন, প্রতিটি আইটেমের রেকর্ড থেকে সাইটেশন কপি করুন বা ব্রাউজারেই পড়া শুরু করুন।"
+            : "A searchable catalogue of the institute's books, journal issues, and research papers — search in either language, copy a citation from any record, or start reading in the browser."
         }
         lang={lang}
+        section="research"
         breadcrumb={[
-          { label: lang === "bn" ? "গবেষণা" : "Research", href: langPath(lang, "/research") },
-          { label: lang === "bn" ? "লাইব্রেরি ও জার্নাল" : "Library & Journals" },
+          {
+            label: bn ? "গবেষণা" : "Research",
+            href: langPath(lang, "/research"),
+          },
+          { label: bn ? "লাইব্রেরি ও জার্নাল" : "Library & Journals" },
         ]}
         arabicEcho="اقْرَأْ بِاسْمِ رَبِّكَ الَّذِي خَلَقَ"
+        meta={{
+          textBn: `ক্যাটালগে ${formatNumber(catalogueSize.total, "bn")}টি আইটেম`,
+          textEn: `${catalogueSize.total} items in the catalogue`,
+        }}
       />
 
-      {/* ————— journal catalog ————— */}
-      <section className="py-16 sm:py-24">
+      <section className="bg-parchment/60 py-10 sm:py-14 dark:bg-secondary/30">
         <div className="container-site">
+          {/* ————— search + filters (GET form — no JS required) ————— */}
           <Reveal>
-            <SectionHeading
-              eyebrow={lang === "bn" ? "ক্যাটালগ" : "Catalog"}
-              title={lang === "bn" ? "জার্নাল ও পত্রিকাসমূহ" : "Journals & Periodicals"}
-              description={
-                lang === "bn"
-                  ? "প্রতিটি কার্ড থেকে সরাসরি সাইটেশন কপি করুন অথবা ডিজিটাল রিডারে পিডিএফ প্রিভিউ দেখুন।"
-                  : "Copy a citation directly from each card or preview the PDF inside the digital reader."
-              }
+            <LibraryFilters
               lang={lang}
+              values={values}
+              categories={categories}
+              years={years}
+              languages={languages}
             />
           </Reveal>
-          <Stagger className="mt-12 grid gap-6 md:grid-cols-2">
-            {journals.map((journal) => (
-              <RevealItem key={journal.id}>
-                <JournalCard item={journal} lang={lang} />
-              </RevealItem>
-            ))}
-          </Stagger>
-        </div>
-      </section>
 
-      {/* ————— how the reader works ————— */}
-      <section className="bg-parchment py-16 sm:py-20">
-        <div className="container-site">
-          <Reveal>
-            <div className="mx-auto max-w-3xl text-center">
-              <BookMarked aria-hidden className="mx-auto h-8 w-8 text-gold" />
-              <h2 className="font-heading mt-4 text-2xl font-semibold sm:text-3xl">
-                {lang === "bn" ? "এমবেডেড পিডিএফ ভিউয়ার" : "The Embedded PDF Reader"}
+          {/* ————— journals by issue (unfiltered shelf only) ————— */}
+          {!hasAnyFilter && journalGroups.length > 0 ? (
+            <Reveal className="mt-12" delay={0.05}>
+              <SectionHeading
+                eyebrow={bn ? "পত্রিকা" : "Periodicals"}
+                title={bn ? "জার্নাল ও পত্রিকা" : "Journals & Periodicals"}
+                description={
+                  bn
+                    ? "প্রতিটি জার্নাল তার সংখ্যা অনুযায়ী সাজানো — যেকোনো সংখ্যায় সরাসরি ঢুকে পড়ুন।"
+                    : "Every journal organised by its issues — jump straight into any of them."
+                }
+                lang={lang}
+              />
+              <Stagger className="mt-8">
+                <LibraryJournalGroups groups={journalGroups} lang={lang} />
+              </Stagger>
+            </Reveal>
+          ) : null}
+
+          {/* ————— results ————— */}
+          <Reveal className="mt-12" delay={0.05}>
+            <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="font-heading text-lg font-semibold">
+                {hasAnyFilter
+                  ? bn
+                    ? "অনুসন্ধানের ফলাফল"
+                    : "Search results"
+                  : bn
+                    ? "সম্পূর্ণ ক্যাটালগ"
+                    : "The full catalogue"}
               </h2>
-              <p className="mt-4 leading-relaxed text-muted-foreground">
-                {lang === "bn"
-                  ? "প্রতিটি জার্নাল কার্ডের “রিডারে খুলুন” বোতামে ক্লিক করলে ইনস্টিটিউটের অফিসিয়াল প্যাডে সাজানো প্রিভিউ খুলে — সেখানে পৃষ্ঠা নেভিগেটর, জুম, ফুল-টেক্সট সার্চ ও অফলাইন রিডিংয়ের সুবিধা বর্ণিত আছে, সঙ্গে ডাউনলোড ও শেয়ার বোতাম।"
-                  : "Clicking \"Open in Reader\" on any journal card opens a pad-styled preview describing page navigation, zoom, full-text search, and offline reading — with download and share actions."}
+              <p className="text-[12.5px] text-muted-foreground">
+                {result.total === 0
+                  ? bn
+                    ? "কিছু পাওয়া যায়নি"
+                    : "Nothing found"
+                  : bn
+                    ? `${formatNumber(firstShown, "bn")}–${formatNumber(lastShown, "bn")} / মোট ${formatNumber(result.total, "bn")}টি`
+                    : `${firstShown}–${lastShown} of ${result.total}`}
               </p>
             </div>
+
+            {result.items.length === 0 ? (
+              <div className="mx-auto max-w-xl rounded-2xl border border-dashed border-gold/40 bg-card px-6 py-14 text-center">
+                {hasAnyFilter ? (
+                  <SearchX
+                    aria-hidden
+                    className="mx-auto h-10 w-10 text-muted-foreground/60"
+                  />
+                ) : (
+                  <FileQuestion
+                    aria-hidden
+                    className="mx-auto h-10 w-10 text-muted-foreground/60"
+                  />
+                )}
+                <h3 className="font-heading mt-4 text-base font-semibold">
+                  {bn
+                    ? "এই অনুসন্ধানে কোনো আইটেম পাওয়া যায়নি"
+                    : "No items match this search"}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {bn
+                    ? "বানান পরীক্ষা করুন বা ফিল্টার একটু কমিয়ে আবার চেষ্টা করুন।"
+                    : "Check the spelling, or loosen the filters and try again."}
+                </p>
+                {hasAnyFilter ? (
+                  <Link
+                    href={buildLibraryUrl(lang, {})}
+                    className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                  >
+                    {bn ? "সব ফিল্টার মুছুন" : "Clear all filters"}
+                    <ArrowRight aria-hidden className="h-4 w-4" />
+                  </Link>
+                ) : null}
+              </div>
+            ) : (
+              <Stagger className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {result.items.map((item) => (
+                  <RevealItem key={item.id}>
+                    <LibraryCard item={item} lang={lang} />
+                  </RevealItem>
+                ))}
+              </Stagger>
+            )}
           </Reveal>
+
+          <SitePagination
+            page={safePage}
+            totalPages={result.totalPages}
+            buildUrl={(pageNumber) =>
+              buildLibraryUrl(lang, {
+                q: values.q,
+                type: values.type,
+                category: values.category,
+                year: values.year,
+                language: values.language,
+                journalKey: values.journalKey,
+                page: pageNumber,
+              })
+            }
+            lang={lang}
+            labels={{
+              prev: bn ? "পূর্ববর্তী পাতা" : "Previous page",
+              next: bn ? "পরবর্তী পাতা" : "Next page",
+              nav: bn ? "লাইব্রেরি পেজিনেশন" : "Library pagination",
+              page: (pageNumber) =>
+                bn
+                  ? `পাতা ${formatNumber(pageNumber, "bn")}`
+                  : `Page ${pageNumber}`,
+              status: (pageNumber, totalPages) =>
+                bn
+                  ? `পাতা ${formatNumber(pageNumber, "bn")} / ${formatNumber(totalPages, "bn")}`
+                  : `Page ${pageNumber} of ${totalPages}`,
+            }}
+          />
         </div>
       </section>
 
-      {/* ————— reference downloads ————— */}
-      <section className="py-16 sm:py-24">
+      {/* ————— reference downloads (link-out) ————— */}
+      <section className="py-12 sm:py-16">
         <div className="container-site">
           <Reveal>
-            <SectionHeading
-              eyebrow={lang === "bn" ? "রেফারেন্স" : "Reference"}
-              title={lang === "bn" ? "লাইব্রেরি-সংশ্লিষ্ট ডাউনলোড" : "Library-Related Downloads"}
-              description={
-                lang === "bn"
-                  ? "গবেষণার সঙ্গে সরাসরি সম্পর্কিত প্রসপেক্টাস ও সিলেবাস ডকুমেন্ট।"
-                  : "Prospectus and syllabus documents directly relevant to research."
-              }
-              lang={lang}
-            />
-          </Reveal>
-          <Stagger className="mt-12 grid gap-4 sm:grid-cols-2">
-            {referenceFiles.map((file) => (
-              <RevealItem key={file.id}>
-                <a
-                  href={file.url ?? "#"}
-                  download
-                  className="group flex items-center justify-between gap-4 rounded-xl border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-md"
-                >
-                  <div>
-                    <h3 className="text-sm font-semibold leading-snug group-hover:text-primary">
-                      {pick(file.title, lang)}
-                    </h3>
-                    <p className="mt-1 text-[12px] text-muted-foreground">
-                      {file.fileType} · {file.sizeLabel}
-                    </p>
-                  </div>
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gold/40 bg-gold/10 text-gold">
-                    <ArrowRight aria-hidden className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                  </span>
-                </a>
-              </RevealItem>
-            ))}
-          </Stagger>
+            <GoldRule />
+            <div className="mt-8 flex flex-col items-center justify-between gap-5 rounded-2xl border bg-card p-6 text-center shadow-sm sm:flex-row sm:text-left">
+              <div className="flex items-start gap-4">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-gold/40 bg-gold/10 text-gold">
+                  <BookMarked aria-hidden className="h-5 w-5" />
+                </span>
+                <div>
+                  <h2 className="font-heading text-base font-semibold">
+                    {bn ? "প্রসপেক্টাস ও সিলেবাস" : "Prospectus & Syllabus"}
+                  </h2>
+                  <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
+                    {bn
+                      ? "গবেষণার সঙ্গে সরাসরি সম্পর্কিত রেফারেন্স ডকুমেন্ট — ডাউনলোড কেন্দ্রে গিয়ে নিন।"
+                      : "The reference documents that matter to research — collect them from the download center."}
+                  </p>
+                </div>
+              </div>
+              <Link
+                href={langPath(lang, "/academics/downloads")}
+                className="inline-flex shrink-0 items-center gap-2 rounded-full border border-gold/50 px-6 py-2.5 text-[13px] font-semibold text-gold transition-colors hover:bg-gold hover:text-gold-foreground"
+              >
+                {bn ? "ডাউনলোড কেন্দ্রে যান" : "Open the download center"}
+                <ArrowRight aria-hidden className="h-4 w-4" />
+              </Link>
+            </div>
 
-          <Reveal delay={0.12}>
-            <GoldRule className="mt-14" />
-            <div className="mt-8 text-center">
+            <div className="mt-10 text-center">
               <Link
                 href={langPath(lang, "/research/publications")}
                 className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
               >
-                {lang === "bn" ? "শিক্ষক-গবেষকদের প্রকাশনা দেখুন" : "Browse Faculty Publications"}
+                {bn
+                  ? "শিক্ষক-গবেষকদের প্রকাশনা দেখুন"
+                  : "Browse Faculty Publications"}
                 <ArrowRight aria-hidden className="h-4 w-4" />
               </Link>
             </div>
