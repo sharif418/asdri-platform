@@ -33,10 +33,13 @@ export function CourseEditor({ initial }: { initial: CourseEditorValues }) {
     if (savingMeta) return;
     setSavingMeta(true);
     try {
+      // `cover` is preview-only state (r4 M5) — the API takes coverMediaId.
+      const { cover, ...metaPayload } = meta;
+      void cover;
       const res = await fetch(`/api/admin/courses/${initial.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...csrfHeader() },
-        body: JSON.stringify(meta),
+        body: JSON.stringify(metaPayload),
       });
       const json = (await res.json()) as { ok: boolean; error?: string };
       if (!res.ok || !json.ok) {

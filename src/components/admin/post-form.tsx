@@ -41,6 +41,17 @@ export interface CategoryOption {
 export interface AuthorOption {
   id: string;
   nameBn: string;
+  /** খেতাব / পদবি — appended to the option label to disambiguate the
+   *  several same-named teachers (round 4 M14), e.g. "শায়খ আহমাদুল্লাহ (চেয়ারম্যান)". */
+  titleBn?: string | null;
+  /** Team name fallback when the person has no খেতাব. */
+  teamNameBn?: string | null;
+}
+
+/** Option label with the designation in parentheses when known (M14). */
+function authorOptionLabel(author: AuthorOption): string {
+  const tag = author.titleBn?.trim() || author.teamNameBn?.trim() || "";
+  return tag ? `${author.nameBn} (${tag})` : author.nameBn;
 }
 
 const KIND_LABELS = { ARTICLE: "আর্টিকল", CLARIFICATION: "সংশয় নিরসন", NEWS: "খবর / ইভেন্ট" } as const;
@@ -267,7 +278,7 @@ export function PostForm({
 
         <div>
           <div className="flex items-center justify-between">
-            <label className="text-sm font-semibold">ক্যাটাগরি</label>
+            <label htmlFor={fieldId("categoryId")} className="text-sm font-semibold">ক্যাটাগরি</label>
             <button
               type="button"
               onClick={() => setNewCatOpen((o) => !o)}
@@ -320,8 +331,9 @@ export function PostForm({
         </div>
 
         <div>
-          <label className="text-sm font-semibold">লেখক</label>
+          <label htmlFor={fieldId("authorId")} className="text-sm font-semibold">লেখক</label>
           <select
+            id={fieldId("authorId")}
             value={values.authorId}
             onChange={(e) => set("authorId", e.target.value)}
             className="mt-1.5 w-full rounded-lg border bg-background px-3 py-2 text-sm"
@@ -329,7 +341,7 @@ export function PostForm({
             <option value="">— লেখক নির্বাচন করুন —</option>
             {authors.map((author) => (
               <option key={author.id} value={author.id}>
-                {author.nameBn}
+                {authorOptionLabel(author)}
               </option>
             ))}
           </select>
@@ -344,8 +356,9 @@ export function PostForm({
         </div>
 
         <div>
-          <label className="text-sm font-semibold">প্রকাশের সময়</label>
+          <label htmlFor={fieldId("publishedAt")} className="text-sm font-semibold">প্রকাশের সময়</label>
           <input
+            id={fieldId("publishedAt")}
             type="datetime-local"
             value={values.publishedAt}
             onChange={(e) => set("publishedAt", e.target.value)}

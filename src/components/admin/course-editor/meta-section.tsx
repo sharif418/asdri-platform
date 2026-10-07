@@ -193,13 +193,19 @@ export function MetaSection({
 
           <MediaPicker
             label="কভার ছবি"
-            current={null}
-            onSelect={(media) => setMetaField("coverMediaId", media?.id ?? null)}
+            current={meta.cover}
+            onSelect={(media) => {
+              setMetaField("coverMediaId", media?.id ?? null);
+              setMetaField("cover", media);
+            }}
           />
           {meta.coverMediaId && (
             <button
               type="button"
-              onClick={() => setMetaField("coverMediaId", null)}
+              onClick={() => {
+                setMetaField("coverMediaId", null);
+                setMetaField("cover", null);
+              }}
               className="text-[11.5px] font-semibold text-muted-foreground hover:text-destructive"
             >
               কভার সরান
@@ -219,7 +225,7 @@ export function MetaSection({
           <div className="flex items-center justify-between rounded-lg border px-3.5 py-2.5">
             <div>
               <p className="text-sm font-semibold">প্রকাশিত</p>
-              <p className="text-[11px] text-muted-foreground">বন্ধ থাকলে পেজ ৪০৪ দেখাবে</p>
+              <p className="text-[11px] text-muted-foreground">বন্ধ থাকলে ওয়েবসাইটে কোর্সটি দেখা যাবে না।</p>
             </div>
             <Switch checked={meta.isPublished} onCheckedChange={(v) => setMetaField("isPublished", v)} aria-label="প্রকাশিত" />
           </div>

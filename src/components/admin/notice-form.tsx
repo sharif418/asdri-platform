@@ -217,8 +217,9 @@ export function NoticeForm({ initial, mode }: { initial: NoticeFormValues; mode:
         </div>
 
         <div>
-          <label className="text-sm font-semibold">অবস্থা</label>
+          <label htmlFor={fieldId("status")} className="text-sm font-semibold">অবস্থা</label>
           <select
+            id={fieldId("status")}
             value={values.status}
             onChange={(e) => set("status", e.target.value as NoticeFormValues["status"])}
             className="mt-1.5 w-full rounded-lg border bg-background px-3 py-2 text-sm"

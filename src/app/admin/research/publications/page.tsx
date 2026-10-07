@@ -3,7 +3,7 @@ import { FileText, Plus, Search } from "lucide-react";
 import { db } from "@/lib/db";
 import { getSession, roleCan } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { formatNumber } from "@/lib/format";
+import { toBnDigits } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "জার্নাল ও বই" };
@@ -17,6 +17,22 @@ const KIND_LABELS: Record<string, string> = {
 };
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+/** Sample/placeholder identifiers from the seed ("2789-XXXX", "(sample)") — not real data. */
+const PLACEHOLDER_ID_RE = /xxxx|sample/i;
+
+/** Strip a redundant leading "ISSN "/"ISBN " the seed stored inside the value. */
+function cleanIdentifier(value: string): string {
+  return value.replace(/^\s*ISSN\s+/i, "").replace(/^\s*ISBN\s+/i, "").trim();
+}
+
+/** Real (non-sample) identifiers of a row, prefix-stripped — null when absent/placeholder. */
+function realIdentifiers(publication: { issn: string | null; isbn: string | null }): { issn: string | null; isbn: string | null } {
+  return {
+    issn: publication.issn && !PLACEHOLDER_ID_RE.test(publication.issn) ? cleanIdentifier(publication.issn) : null,
+    isbn: publication.isbn && !PLACEHOLDER_ID_RE.test(publication.isbn) ? cleanIdentifier(publication.isbn) : null,
+  };
+}
 
 /** Publications admin — journals, books, bulletins, papers list. */
 export default async function AdminPublicationsPage({ searchParams }: { searchParams: SearchParams }) {
@@ -107,7 +123,9 @@ export default async function AdminPublicationsPage({ searchParams }: { searchPa
               </tr>
             </thead>
             <tbody className="divide-y">
-              {publications.map((publication) => (
+              {publications.map((publication) => {
+                const ids = realIdentifiers(publication);
+                return (
                 <tr key={publication.id} className="transition-colors hover:bg-secondary/20">
                   <td className="max-w-md px-4 py-3">
                     <Link href={`/admin/research/publications/${publication.id}`} className="flex items-center gap-3">
@@ -136,13 +154,13 @@ export default async function AdminPublicationsPage({ searchParams }: { searchPa
                     </span>
                   </td>
                   <td className="hidden px-4 py-3 text-[12.5px] font-semibold md:table-cell" dir="ltr">
-                    {formatNumber(publication.year, "bn")}
+                    {toBnDigits(publication.year)}
                   </td>
                   <td className="hidden px-4 py-3 text-[11.5px] text-muted-foreground lg:table-cell" dir="ltr">
-                    {publication.issn ? <span className="font-mono">ISSN {publication.issn}</span> : null}
-                    {publication.issn && publication.isbn ? " · " : ""}
-                    {publication.isbn ? <span className="font-mono">ISBN {publication.isbn}</span> : null}
-                    {!publication.issn && !publication.isbn ? "—" : ""}
+                    {ids.issn ? <span className="font-mono">ISSN {ids.issn}</span> : null}
+                    {ids.issn && ids.isbn ? " · " : ""}
+                    {ids.isbn ? <span className="font-mono">ISBN {ids.isbn}</span> : null}
+                    {!ids.issn && !ids.isbn ? "—" : ""}
                   </td>
                   <td className="hidden max-w-40 truncate px-4 py-3 text-[11.5px] text-muted-foreground lg:table-cell" dir="ltr">
                     {publication.fileMedia?.filename ?? "—"}
@@ -158,7 +176,8 @@ export default async function AdminPublicationsPage({ searchParams }: { searchPa
                     </Link>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         )}

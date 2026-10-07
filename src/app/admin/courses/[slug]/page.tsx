@@ -16,7 +16,7 @@ export default async function EditCoursePage({ params }: { params: Promise<{ slu
   const course = await db.course.findUnique({
     where: { slug },
     include: {
-      coverMedia: { select: { id: true } },
+      coverMedia: { select: { id: true, filename: true, key: true, width: true, height: true, size: true } },
       semesters: {
         orderBy: { number: "asc" },
         include: { subjects: { orderBy: { sortOrder: "asc" } } },
@@ -72,6 +72,16 @@ export default async function EditCoursePage({ params }: { params: Promise<{ slu
             courseTypeEn: course.courseTypeEn,
             seats: course.seats,
             coverMediaId: course.coverMedia?.id ?? null,
+            cover: course.coverMedia
+              ? {
+                  id: course.coverMedia.id,
+                  filename: course.coverMedia.filename,
+                  key: course.coverMedia.key,
+                  width: course.coverMedia.width,
+                  height: course.coverMedia.height,
+                  size: course.coverMedia.size,
+                }
+              : null,
             isFeatured: course.isFeatured,
             isPublished: course.isPublished,
             sortOrder: course.sortOrder,

@@ -191,8 +191,9 @@ export function PublicationForm({
 
       <aside className="space-y-4 rounded-2xl border bg-card p-5 shadow-sm xl:sticky xl:top-20 h-fit">
         <div>
-          <label className="text-sm font-semibold">ধরন</label>
+          <label htmlFor="publication-kind" className="text-sm font-semibold">ধরন</label>
           <select
+            id="publication-kind"
             value={values.kind}
             onChange={(e) => set("kind", e.target.value as PublicationFormValues["kind"])}
             className="mt-1.5 w-full rounded-lg border bg-background px-3 py-2 text-sm"
@@ -206,8 +207,9 @@ export function PublicationForm({
         </div>
 
         <div>
-          <label className="text-sm font-semibold">প্রকাশের সাল</label>
+          <label htmlFor="publication-year" className="text-sm font-semibold">প্রকাশের সাল</label>
           <input
+            id="publication-year"
             type="number"
             min={1950}
             max={2100}
@@ -220,8 +222,9 @@ export function PublicationForm({
 
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-sm font-semibold">ISSN</label>
+            <label htmlFor="publication-issn" className="text-sm font-semibold">ISSN</label>
             <input
+              id="publication-issn"
               value={values.issn}
               onChange={(e) => set("issn", e.target.value)}
               dir="ltr"
@@ -230,8 +233,9 @@ export function PublicationForm({
             />
           </div>
           <div>
-            <label className="text-sm font-semibold">ISBN</label>
+            <label htmlFor="publication-isbn" className="text-sm font-semibold">ISBN</label>
             <input
+              id="publication-isbn"
               value={values.isbn}
               onChange={(e) => set("isbn", e.target.value)}
               dir="ltr"
@@ -257,8 +261,9 @@ export function PublicationForm({
         </div>
 
         <div>
-          <label className="text-sm font-semibold">ক্রম</label>
+          <label htmlFor="publication-sort-order" className="text-sm font-semibold">ক্রম</label>
           <input
+            id="publication-sort-order"
             type="number"
             min={0}
             max={999}

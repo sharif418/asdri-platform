@@ -19,13 +19,17 @@ export default async function EditPostPage({ params }: { params: Promise<{ slug:
   if (!session || !roleCan(session.user.role, "content")) redirect("/admin");
 
   const { slug } = await params;
-  const [post, categories, authors] = await Promise.all([
+  const [post, categories, authorRows] = await Promise.all([
     db.post.findUnique({
       where: { slug },
       include: { coverMedia: { select: { id: true, filename: true, key: true, width: true, height: true, size: true } } },
     }),
     db.postCategory.findMany({ orderBy: { sortOrder: "asc" }, select: { id: true, nameBn: true } }),
-    db.person.findMany({ orderBy: [{ teamId: "asc" }, { sortOrder: "asc" }], select: { id: true, nameBn: true } }),
+    // খেতাব/দল সহ — একই নামের একাধিক শিক্ষক আলাদা করতে অপশন লেবেলে পদবি যোগ হয় (r4 M14)।
+    db.person.findMany({
+      orderBy: [{ teamId: "asc" }, { sortOrder: "asc" }],
+      select: { id: true, nameBn: true, titleBn: true, team: { select: { nameBn: true } } },
+    }),
   ]);
   if (!post) notFound();
 
@@ -46,7 +50,12 @@ export default async function EditPostPage({ params }: { params: Promise<{ slug:
       <PostForm
         mode="edit"
         categories={categories}
-        authors={authors}
+        authors={authorRows.map((person) => ({
+          id: person.id,
+          nameBn: person.nameBn,
+          titleBn: person.titleBn,
+          teamNameBn: person.team?.nameBn ?? null,
+        }))}
         initial={{
           id: post.id,
           slug: post.slug,
