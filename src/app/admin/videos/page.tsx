@@ -85,7 +85,7 @@ export default async function AdminVideosPage({ searchParams }: { searchParams: 
                   <Link
                     key={video.id}
                     href={`/admin/videos/${video.id}`}
-                    className="flex items-center gap-3 rounded-xl border bg-card p-3 shadow-sm transition-colors hover:border-gold/50"
+                    className="flex min-w-0 items-center gap-3 rounded-xl border bg-card p-3 shadow-sm transition-colors hover:border-gold/50"
                   >
                     <span
                       className={cn(
@@ -97,11 +97,16 @@ export default async function AdminVideosPage({ searchParams }: { searchParams: 
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[13.5px] font-semibold">{video.titleBn}</p>
-                      <p className="truncate text-[11.5px] text-muted-foreground" dir="ltr">
+                      <p className="break-all text-[11.5px] text-muted-foreground" dir="ltr">
                         {video.youtubeId}
                       </p>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1">
+                      {video.youtubeId.includes("ASDRI000") && (
+                        <span className="rounded-full bg-gold/15 px-2 py-0.5 text-[10px] font-bold text-gold">
+                          প্লেসহোল্ডার
+                        </span>
+                      )}
                       <span className={cn("text-[10.5px] font-bold", video.isPublished ? "text-primary" : "text-muted-foreground")}>
                         {video.isPublished ? "প্রকাশিত" : "ড্রাফট"}
                       </span>
