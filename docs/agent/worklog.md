@@ -1038,3 +1038,55 @@ Stage Summary:
 - PR #19 opened (chore/r3-finish → fix/r3-i18n-adminux), NOT merged
 - Round 3 complete: four stacked PRs, every Done row in PROGRESS.md points to a run command,
   the anti-431 smoke is in CI and locally proven, and the docs tell the truth
+
+---
+Task ID: R4-final
+Agent: main (Z.ai Code) — round 4 coordinator
+Task: Round 4 — the people who will use this, and the face it shows them
+
+Work Log:
+- Restored the proof environment from scratch (PostgreSQL 16.2 @5433 via pgserver, .env with
+  real secrets, migrate + seed, 291-test baseline, production build + smoke, site opened in
+  both languages). Read all round docs + the office's brand commit before starting.
+- Workstream 1 (fix/r4-admin-audit, PR #26): three audit passes over every admin route at
+  1440+390 (findings-cms/ops/fin.md, 36 findings with file:line evidence); every Critical,
+  High, Medium and Low finding fixed + browser-verified (mobile admin nav, Bangla slug
+  collision, videos overflow, inline validation errors, Bangla audit labels, course-editor
+  delete confirms, sticky-thead, inverted switch semantics, dates, RTE, pagination, 11
+  markdown seed bodies converted to HTML, …). 319 tests.
+- Workstream 2 (feat/r4-identity, PR #27): brand.ts extended (mono marks, email lockup, OG
+  card, size/clear-space rules + generator script); header designed as one piece (parent-
+  click = navigate everywhere + visible chevron affordance, panels under their own trigger,
+  utility bar scrolls away, condensed scrolled state, account chip, skip link, zero overflow
+  measured in both languages at 9 widths); the inner-page band carries per-section Amiri
+  calligraphy on an illuminated-frame ground; carried through: email template, receipt +
+  notice print mastheads, the NEW exam-call letter (A4 pad + date/time/venue dialog),
+  branded loading state, empty-state watermarks, OG wiring. Lighthouse home 72/97 (LCP
+  9.2s→5.7s). 319 tests.
+- Workstream 3 (feat/r4-roles-portals, PR #28): permission model (12 roles → permission
+  sets, canAccessModule fail-closed, all 52 call sites migrated); relation-based scoping
+  (GuardianLink/TeacherAssignment); /portal for student/guardian/teacher/donor/alumni
+  (live-verified as demo guardian + teacher); invitations (single-use hashed tokens, 7-day
+  expiry, /accept-invite, admin manager UI; full flow live-verified: create → email →
+  accept → portal); login routes by role. The brief's named proofs as tests: guardian
+  cannot see another family's child; FINANCE → curriculum PUT = 403 through the real
+  handler. 317 tests.
+- Workstream 4 (feat/r4-library, PR #29): full library module — 7-model schema (migration
+  20261008120000), librarian admin (catalogue/categories/checkouts; LIBRARIAN door
+  verified), public catalogue (bilingual search + facet chips, journals by issue,
+  pagination), record pages (citations, identifiers, JSON-LD), in-browser pdfjs reader
+  (page/zoom/keyboard/search, isolated to the route, print CSS, readings counter), MEMBERS
+  visibility proven both ways. 337 tests.
+- Workstream 5 (chore/r4-finish, PR #30): ContentRevision history + field-level diff UI +
+  HMAC preview links (same render path, regression-verified); latent zod .partial() data-
+  loss bug found + fixed; uuid removed; last Bangla dir=rtl fields fixed; .qa Lighthouse
+  compacted 15MB→12KB summary; upload/ → docs/source-documents/; perf measured honestly
+  (home 69–72, courses 78, notices 83, library 78; target 90 documented as LCP-bound with
+  next levers). 353 tests.
+- All five branches pushed; PRs #26–#30 open, stacked, never self-merged.
+
+Stage Summary:
+- Round 4 complete: the audit happened and is recorded, the identity is carried the whole
+  way through, the header and band are designed, roles/portals/invitations run the
+  institute's real shape, the library is a real module, and the review's open list is
+  closed or honestly accounted. 291 → 353 tests. PROGRESS.md carries proof per row.
