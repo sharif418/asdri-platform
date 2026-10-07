@@ -11,6 +11,47 @@ route smoke (/, /en, /notices, /academics/courses 200, /admin 307, sitemap/robot
 site opened in both languages at 1920px and 390px with zero console errors.
 
 
+
+## Workstream 3 — roles, portals & invitations (PR: feat/r4-roles-portals → feat/r4-identity)
+
+**The model** (decided where the brief was silent; recorded in GAPS): permissions, not role
+names, decide access — 12 roles (+TEACHER/STUDENT/GUARDIAN/LIBRARIAN/DONOR/ALUMNI) each map
+to a permission set (`src/lib/permissions.ts`); `roleCan` asks a permission;
+`canAccessModule` maps admin modules to permissions once, unknown modules fail closed.
+Data scoping is a RELATION, not a role: `GuardianLink` + `TeacherAssignment` are the
+authorisation; portal queries go through `src/lib/portals/access.ts` and cannot express
+another family's child. Staff (now incl. LIBRARIAN) land in /admin; applicants keep
+/account; everyone else has /portal — one door per responsibility, Bangla-first.
+
+**Portals (live-verified end-to-end)**: guardian portal shows exactly the linked child
+(student, relation, tracking no, course, status) — verified as the demo guardian; teacher
+portal shows exactly the assigned course (PYS, ৩ সেমিস্টার · ১৪ বিষয়) — verified as the demo
+teacher; student portal with application tracking + empty states; donor portal
+(verification-gated history + totals); alumni home (honest v1: notices/publications/library
++ recorded follow-ups). Login routes by role; the proxy reserves /portal and /accept-invite.
+
+**Invitations (live-verified end-to-end)**: admin creates (users page — আমন্ত্রণ ব্যবস্থাপনা:
+create with role hints, revoke, copy-link) → e-mail queued (branded template, log driver) →
+invitee opens /accept-invite (branded page naming the role) → sets password → account created
+with the invited role, e-mail counted as verified, teacher scope assignment created → lands
+in their portal. Tokens: 32 random bytes, only SHA-256 in the DB, single-use, 7-day expiry,
+revocable, every refusal indistinguishable, same-origin + 8/15-min rate limit (a first-pass
+rate-limit bug — the result object is not a boolean — was caught by this very QA and fixed).
+
+**Tests (the brief's named proofs, all green)**: guardian A cannot see guardian B's child
+(relation-scoped reads asserted both ways); a FINANCE account cannot edit a curriculum —
+through the real `PUT /api/admin/courses/[id]/curriculum` handler: **403**; teacher sees only
+their assigned courses; invitation single-use, expiry-refused (indistinguishable from
+unknown), role applied, teacher scope assignment created. The authz matrix test was rewritten
+for the permission model (full role × permission + module mapping + fail-closed fallback).
+Gates: tsc clean · lint clean · **317 pass / 0 fail / 2120 expects** (319→317: the rewritten
+authz suite consolidated ~40 matrix assertions into behavioral ones and added the portals
+suite; net +6 behavioral proofs). Evidence: `.qa/r4-audit/rp-*.png`.
+
+Known-honest notes: LIBRARIAN sees only the media library in the admin until the library
+module lands in the immediately-following stacked PR; alumni portal is v1 (batch directory +
+contact updates recorded as follow-ups in GAPS).
+
 ## Workstream 2 — the identity carried the whole way through (PR: feat/r4-identity → fix/r4-admin-audit)
 
 **The brand system** (`src/lib/brand.ts`, still the single source): true one-colour marks
