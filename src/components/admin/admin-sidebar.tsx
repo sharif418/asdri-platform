@@ -16,6 +16,7 @@ import {
   HandCoins,
   Images,
   LayoutDashboard,
+  LibraryBig,
   ListChecks,
   Mail,
   Megaphone,
@@ -91,6 +92,17 @@ const NAV: AdminNavItem[] = [
       { href: "/admin/research/publications", label: "জার্নাল ও বই" },
       { href: "/admin/research/projects", label: "গবেষণা প্রকল্প" },
       { href: "/admin/research/downloads", label: "ডাউনলোড আইটেম" },
+    ],
+  },
+  {
+    href: "/admin/library",
+    label: "লাইব্রেরি",
+    icon: LibraryBig,
+    roles: ["ADMIN", "LIBRARIAN"],
+    children: [
+      { href: "/admin/library", label: "ক্যাটালগ" },
+      { href: "/admin/library/categories", label: "ক্যাটাগরি" },
+      { href: "/admin/library/checkouts", label: "ধার ও পাঠ" },
     ],
   },
   {
