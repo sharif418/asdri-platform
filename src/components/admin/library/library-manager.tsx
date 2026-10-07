@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BookOpen, FileText, Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { BookOpen, ExternalLink, FileText, Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -267,6 +267,15 @@ export function LibraryManager({ categories }: { categories: LibraryCategoryOpti
                     </span>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-right">
+                    <a
+                      href={`/research/library/${row.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex h-8 items-center gap-1 rounded-md px-2.5 text-[12.5px] font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
+                    >
+                      <ExternalLink aria-hidden className="h-3.5 w-3.5" />
+                      ওয়েবসাইটে দেখুন
+                    </a>
                     <Button
                       type="button"
                       variant="ghost"
