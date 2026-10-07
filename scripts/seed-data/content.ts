@@ -5,6 +5,7 @@ import type { LocalizedText } from "@/types";
 import type { Prisma, PrismaClient } from "@prisma/client";
 
 import { NOTICE_SEEDS, FATWA_CATEGORIES, FATWA_SEEDS, FUND_SEEDS, CAMPAIGN_SEEDS } from "./content-data";
+import { mdToHtml } from "./markdown";
 
 type Db = PrismaClient;
 
@@ -64,8 +65,8 @@ export async function seedContent(db: Db): Promise<void> {
       titleEn: article.title.en,
       excerptBn: article.excerpt.bn,
       excerptEn: article.excerpt.en,
-      bodyBn: article.contentBn,
-      bodyEn: article.contentEn ?? "",
+      bodyBn: mdToHtml(article.contentBn),
+      bodyEn: mdToHtml(article.contentEn ?? ""),
       readingMinutes: article.readMinutes,
       publishedAt: new Date(article.publishedAt),
       isPublished: true,

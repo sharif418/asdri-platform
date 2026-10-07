@@ -1,5 +1,6 @@
 import { clarificationArticles } from "@/content/blog";
 import type { PrismaClient } from "@prisma/client";
+import { mdToHtml } from "./markdown";
 
 type Db = PrismaClient;
 
@@ -42,8 +43,8 @@ export async function seedClarificationPosts(db: Db): Promise<void> {
       titleEn: article.title.en,
       excerptBn: article.excerpt.bn,
       excerptEn: article.excerpt.en,
-      bodyBn: article.contentBn,
-      bodyEn: article.contentEn ?? "",
+      bodyBn: mdToHtml(article.contentBn),
+      bodyEn: mdToHtml(article.contentEn ?? ""),
       readingMinutes: article.readMinutes,
       publishedAt: new Date(article.publishedAt),
       isPublished: true,
