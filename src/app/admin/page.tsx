@@ -19,6 +19,7 @@ import { getSession, isStaff, roleCan } from "@/lib/auth";
 import { formatNumber, formatTaka } from "@/lib/format";
 import { toBnDigits } from "@/lib/format";
 import { formatDate } from "@/lib/format";
+import { auditActionLabelBn } from "@/lib/audit-labels";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "ড্যাশবোর্ড" };
@@ -200,7 +201,9 @@ export default async function AdminDashboardPage() {
               <li key={log.id} className="flex items-start gap-2.5">
                 <BadgeCheck aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                 <div className="min-w-0">
-                  <p className="truncate text-[12.5px] font-medium">{log.action}</p>
+                  <p className="truncate text-[12.5px] font-medium" title={log.action}>
+                    {auditActionLabelBn(log.action)}
+                  </p>
                   <p className="text-[11px] text-muted-foreground">
                     {log.actor?.name ?? "সিস্টেম"} · {formatDate(log.createdAt, "bn")}
                   </p>
