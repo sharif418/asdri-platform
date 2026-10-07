@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, Newspaper } from "lucide-react";
@@ -15,17 +15,23 @@ import type { UserRole } from "@prisma/client";
  * Mobile navigation for the admin shell (round 4, C1). Phones (< lg) have no
  * sidebar — this right-side Sheet lists the SAME tree the sidebar renders
  * (roles + feature-flag filtered, inbox unread badge), closing on navigation
- * (usePathname effect covers browser back/forward; links close it directly)
- * and on Escape (Radix Dialog behaviour).
+ * (pathname change during render covers browser back/forward; links close
+ * it directly) and on Escape (Radix Dialog behaviour).
  */
 export function AdminMobileNav({ role, unread }: { role: UserRole; unread: number }) {
   const pathname = usePathname();
   const flags = useFeatureFlags();
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
+  // Close the drawer whenever navigation happens — including browser
+  // back/forward, which the link onClick handlers can't see. React's
+  // derive-state-during-render pattern (the effect variant trips
+  // react-hooks/set-state-in-effect).
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
     setOpen(false);
-  }, [pathname]);
+  }
 
   const visible = ADMIN_NAV.filter((item) => {
     if (item.roles && !item.roles.includes(role)) return false;
