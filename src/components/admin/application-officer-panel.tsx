@@ -177,7 +177,6 @@ export function ApplicationOfficerPanel({
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={2}
-          dir="rtl"
           placeholder="যেমন: কাগজপত্র যাচাই সম্পন্ন, পরীক্ষার রোল নম্বর ১৭…"
           className={cn(inputClass, "mt-1 resize-y")}
           maxLength={400}
@@ -211,7 +210,6 @@ export function ApplicationOfficerPanel({
           value={reviewNote}
           onChange={(e) => setReviewNote(e.target.value)}
           rows={2}
-          dir="rtl"
           placeholder="অফিসারের নোট — আবেদনকারী দেখবেন না…"
           className={cn(inputClass, "mt-1 resize-y")}
           maxLength={1000}

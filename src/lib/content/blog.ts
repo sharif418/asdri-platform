@@ -218,6 +218,17 @@ export async function getArticleBySlug(slug: string): Promise<BlogArticle | null
   return toArticle(row, 0);
 }
 
+/**
+ * Preview variant (round 4 ws 5): by id, ignores the published gate. Reached
+ * only through a signed /preview/<token> link; same view-model as the
+ * permalink so the render is identical.
+ */
+export async function getPostForPreview(id: string): Promise<BlogArticle | null> {
+  const row = await db.post.findUnique({ where: { id }, select: ARTICLE_SELECT });
+  if (!row) return null;
+  return toArticle(row, 0);
+}
+
 /** Articles of a clarification topic (category slug `clar-<topicId>`). */
 export async function getArticlesByCategorySlug(categorySlug: string): Promise<BlogArticle[]> {
   const rows = await db.post.findMany({

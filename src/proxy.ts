@@ -23,6 +23,7 @@ const RESERVED = [
   "/offline",
   "/portal",
   "/accept-invite",
+  "/preview",
   "/sw.js",
 ];
 

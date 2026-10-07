@@ -1,0 +1,375 @@
+{
+ "note": "Raw Lighthouse reports were compacted in round 4 (48k-line JSONs the round-2 review flagged). Each entry keeps the scores, key metrics and URL; re-run Lighthouse to reproduce a full report.",
+ "reports": {
+  "course-detail.json": {
+   "scores": {
+    "performance": 74,
+    "accessibility": 95,
+    "best-practices": 100,
+    "seo": 100
+   },
+   "metrics": {
+    "first-contentful-paint": "2.3 s",
+    "largest-contentful-paint": "4.2 s",
+    "total-blocking-time": "380 ms",
+    "cumulative-layout-shift": "0",
+    "speed-index": "2.3 s"
+   },
+   "url": "http://127.0.0.1:3100/academics/courses/preparatory-year-for-specialization",
+   "lighthouseVersion": "13.5.0"
+  },
+  "course-list.json": {
+   "scores": {
+    "performance": 80,
+    "accessibility": 98,
+    "best-practices": 100,
+    "seo": 100
+   },
+   "metrics": {
+    "first-contentful-paint": "2.2 s",
+    "largest-contentful-paint": "4.1 s",
+    "total-blocking-time": "220 ms",
+    "cumulative-layout-shift": "0.001",
+    "speed-index": "2.2 s"
+   },
+   "url": "http://127.0.0.1:3100/academics/courses",
+   "lighthouseVersion": "13.5.0"
+  },
+  "home-run2.json": {
+   "scores": {
+    "performance": 63
+   },
+   "metrics": {
+    "first-contentful-paint": "2.9 s",
+    "largest-contentful-paint": "6.7 s",
+    "total-blocking-time": "370 ms",
+    "cumulative-layout-shift": "0",
+    "speed-index": "2.9 s"
+   },
+   "url": "http://127.0.0.1:3100/",
+   "lighthouseVersion": "13.5.0"
+  },
+  "home.json": {
+   "scores": {
+    "performance": 53,
+    "accessibility": 97,
+    "best-practices": 100,
+    "seo": 100
+   },
+   "metrics": {
+    "first-contentful-paint": "3.1 s",
+    "largest-contentful-paint": "6.3 s",
+    "total-blocking-time": "620 ms",
+    "cumulative-layout-shift": "0",
+    "speed-index": "5.2 s"
+   },
+   "url": "http://127.0.0.1:3100/",
+   "lighthouseVersion": "13.5.0"
+  },
+  "notice-board.json": {
+   "scores": {
+    "performance": 71,
+    "accessibility": 96,
+    "best-practices": 100,
+    "seo": 100
+   },
+   "metrics": {
+    "first-contentful-paint": "2.3 s",
+    "largest-contentful-paint": "5.8 s",
+    "total-blocking-time": "200 ms",
+    "cumulative-layout-shift": "0",
+    "speed-index": "4.1 s"
+   },
+   "url": "http://127.0.0.1:3100/notices",
+   "lighthouseVersion": "13.5.0"
+  },
+  "r10-notice/home.json": {
+   "scores": {
+    "performance": 74,
+    "accessibility": 97,
+    "best-practices": 96,
+    "seo": 100,
+    "agentic-browsing": 100
+   },
+   "metrics": {
+    "first-contentful-paint": "2.4 s",
+    "largest-contentful-paint": "5.5 s",
+    "total-blocking-time": "70 ms",
+    "cumulative-layout-shift": "0",
+    "speed-index": "4.4 s"
+   },
+   "url": "http://127.0.0.1:3100/",
+   "lighthouseVersion": "13.5.0"
+  },
+  "r10-notice/notice-board.json": {
+   "scores": {
+    "performance": 81,
+    "accessibility": 96,
+    "best-practices": 96,
+    "seo": 100,
+    "agentic-browsing": 100
+   },
+   "metrics": {
+    "first-contentful-paint": "0.9 s",
+    "largest-contentful-paint": "3.5 s",
+    "total-blocking-time": "400 ms",
+    "cumulative-layout-shift": "0.001",
+    "speed-index": "1.1 s"
+   },
+   "url": "http://127.0.0.1:3100/notices",
+   "lighthouseVersion": "13.5.0"
+  },
+  "r10-notice/notice-detail.json": {
+   "scores": {
+    "performance": 86,
+    "accessibility": 100,
+    "best-practices": 96,
+    "seo": 100,
+    "agentic-browsing": 100
+   },
+   "metrics": {
+    "first-contentful-paint": "1.8 s",
+    "largest-contentful-paint": "3.7 s",
+    "total-blocking-time": "0 ms",
+    "cumulative-layout-shift": "0",
+    "speed-index": "4.0 s"
+   },
+   "url": "http://127.0.0.1:3100/notices/pys-2026-admission-circular",
+   "lighthouseVersion": "13.5.0"
+  },
+  "r4-final/course-detail.json": {
+   "scores": {
+    "performance": 58,
+    "accessibility": 95,
+    "best-practices": 100,
+    "seo": 100
+   },
+   "metrics": {
+    "first-contentful-paint": "1.2 s",
+    "largest-contentful-paint": "7.4 s",
+    "total-blocking-time": "750 ms",
+    "cumulative-layout-shift": "0",
+    "speed-index": "1.7 s"
+   },
+   "url": "http://127.0.0.1:3100/academics/courses/preparatory-year-for-specialization",
+   "lighthouseVersion": "13.5.0"
+  },
+  "r4-final/course-list.json": {
+   "scores": {
+    "performance": 69,
+    "accessibility": 98,
+    "best-practices": 100,
+    "seo": 100
+   },
+   "metrics": {
+    "first-contentful-paint": "1.2 s",
+    "largest-contentful-paint": "7.7 s",
+    "total-blocking-time": "270 ms",
+    "cumulative-layout-shift": "0",
+    "speed-index": "3.8 s"
+   },
+   "url": "http://127.0.0.1:3100/academics/courses",
+   "lighthouseVersion": "13.5.0"
+  },
+  "r4-final/home.json": {
+   "scores": {
+    "performance": 69,
+    "accessibility": 97
+   },
+   "metrics": {
+    "largest-contentful-paint": "5.0 s",
+    "total-blocking-time": "490 ms",
+    "cumulative-layout-shift": "0"
+   },
+   "url": "http://127.0.0.1:3100/",
+   "note": "round-4 final isolated run (production server, mobile profile)"
+  },
+  "r4-final/notice-board.json": {
+   "scores": {
+    "performance": 69,
+    "accessibility": 96,
+    "best-practices": 100,
+    "seo": 100
+   },
+   "metrics": {
+    "first-contentful-paint": "1.4 s",
+    "largest-contentful-paint": "7.8 s",
+    "total-blocking-time": "300 ms",
+    "cumulative-layout-shift": "0",
+    "speed-index": "2.4 s"
+   },
+   "url": "http://127.0.0.1:3100/notices",
+   "lighthouseVersion": "13.5.0"
+  },
+  "r4-identity/home.json": {
+   "scores": {
+    "performance": 72,
+    "accessibility": 97
+   },
+   "metrics": {
+    "first-contentful-paint": "2.5 s",
+    "largest-contentful-paint": "5.7 s",
+    "total-blocking-time": "120 ms",
+    "cumulative-layout-shift": "0",
+    "speed-index": "4.4 s"
+   },
+   "url": "http://127.0.0.1:3100/",
+   "lighthouseVersion": "13.5.0"
+  },
+  "r4g-fonts/course-detail.json": {
+   "scores": {
+    "performance": 74,
+    "accessibility": 95,
+    "best-practices": 100,
+    "seo": 100
+   },
+   "metrics": {
+    "first-contentful-paint": "2.3 s",
+    "largest-contentful-paint": "4.2 s",
+    "total-blocking-time": "380 ms",
+    "cumulative-layout-shift": "0",
+    "speed-index": "2.3 s"
+   },
+   "url": "http://127.0.0.1:3100/academics/courses/preparatory-year-for-specialization",
+   "lighthouseVersion": "13.5.0"
+  },
+  "r4g-fonts/course-list.json": {
+   "scores": {
+    "performance": 80,
+    "accessibility": 98,
+    "best-practices": 100,
+    "seo": 100
+   },
+   "metrics": {
+    "first-contentful-paint": "2.2 s",
+    "largest-contentful-paint": "4.1 s",
+    "total-blocking-time": "220 ms",
+    "cumulative-layout-shift": "0.001",
+    "speed-index": "2.2 s"
+   },
+   "url": "http://127.0.0.1:3100/academics/courses",
+   "lighthouseVersion": "13.5.0"
+  },
+  "r4g-fonts/home-run2.json": {
+   "scores": {
+    "performance": 63
+   },
+   "metrics": {
+    "first-contentful-paint": "2.9 s",
+    "largest-contentful-paint": "6.7 s",
+    "total-blocking-time": "370 ms",
+    "cumulative-layout-shift": "0",
+    "speed-index": "2.9 s"
+   },
+   "url": "http://127.0.0.1:3100/",
+   "lighthouseVersion": "13.5.0"
+  },
+  "r4g-fonts/home.json": {
+   "scores": {
+    "performance": 53,
+    "accessibility": 97,
+    "best-practices": 100,
+    "seo": 100
+   },
+   "metrics": {
+    "first-contentful-paint": "3.1 s",
+    "largest-contentful-paint": "6.3 s",
+    "total-blocking-time": "620 ms",
+    "cumulative-layout-shift": "0",
+    "speed-index": "5.2 s"
+   },
+   "url": "http://127.0.0.1:3100/",
+   "lighthouseVersion": "13.5.0"
+  },
+  "r4g-fonts/notice-board.json": {
+   "scores": {
+    "performance": 71,
+    "accessibility": 96,
+    "best-practices": 100,
+    "seo": 100
+   },
+   "metrics": {
+    "first-contentful-paint": "2.3 s",
+    "largest-contentful-paint": "5.8 s",
+    "total-blocking-time": "200 ms",
+    "cumulative-layout-shift": "0",
+    "speed-index": "4.1 s"
+   },
+   "url": "http://127.0.0.1:3100/notices",
+   "lighthouseVersion": "13.5.0"
+  },
+  "r9/receipt.json": {
+   "scores": {
+    "performance": 76,
+    "accessibility": 100,
+    "best-practices": 100,
+    "seo": 100
+   },
+   "metrics": {
+    "first-contentful-paint": "1.9 s",
+    "largest-contentful-paint": "4.2 s",
+    "total-blocking-time": "360 ms",
+    "cumulative-layout-shift": "0",
+    "speed-index": "1.9 s"
+   },
+   "url": "http://127.0.0.1:3100/support/receipt-lookup",
+   "lighthouseVersion": "13.5.0"
+  },
+  "r9/status.json": {
+   "scores": {
+    "performance": 74,
+    "accessibility": 100,
+    "best-practices": 100,
+    "seo": 100
+   },
+   "metrics": {
+    "first-contentful-paint": "1.0 s",
+    "largest-contentful-paint": "3.8 s",
+    "total-blocking-time": "590 ms",
+    "cumulative-layout-shift": "0",
+    "speed-index": "1.0 s"
+   },
+   "url": "http://127.0.0.1:3100/admissions/status",
+   "lighthouseVersion": "13.5.0"
+  },
+  "r4-final/courses.json": {
+   "scores": {
+    "performance": 78,
+    "accessibility": 99
+   },
+   "metrics": {
+    "largest-contentful-paint": "4.2 s",
+    "total-blocking-time": "330 ms",
+    "cumulative-layout-shift": "0.006"
+   },
+   "url": "http://127.0.0.1:3100/academics/courses",
+   "note": "round-4 final isolated run (production server, mobile profile)"
+  },
+  "r4-final/notices.json": {
+   "scores": {
+    "performance": 83,
+    "accessibility": 97
+   },
+   "metrics": {
+    "largest-contentful-paint": "4.1 s",
+    "total-blocking-time": "220 ms",
+    "cumulative-layout-shift": "0.002"
+   },
+   "url": "http://127.0.0.1:3100/notices",
+   "note": "round-4 final isolated run (production server, mobile profile)"
+  },
+  "r4-final/library.json": {
+   "scores": {
+    "performance": 78,
+    "accessibility": 100
+   },
+   "metrics": {
+    "largest-contentful-paint": "3.7 s",
+    "total-blocking-time": "440 ms",
+    "cumulative-layout-shift": "0"
+   },
+   "url": "http://127.0.0.1:3100/research/library",
+   "note": "round-4 final isolated run (production server, mobile profile)"
+  }
+ }
+}

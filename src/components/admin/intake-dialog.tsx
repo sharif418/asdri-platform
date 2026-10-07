@@ -184,7 +184,6 @@ export function IntakeDialog({
             <input
               value={values.sessionBn}
               onChange={(e) => set("sessionBn", e.target.value)}
-              dir="rtl"
               placeholder="২০২৬ শিক্ষাবর্ষ"
               className={inputClass}
             />

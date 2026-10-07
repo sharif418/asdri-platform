@@ -4,6 +4,7 @@ import { PenLine } from "lucide-react";
 import { db } from "@/lib/db";
 import { getSession, roleCan } from "@/lib/auth";
 import { PostForm } from "@/components/admin/post-form";
+import { RevisionHistory } from "@/components/admin/revision-history";
 
 export const metadata = { title: "পোস্ট সম্পাদনা" };
 
@@ -32,6 +33,12 @@ export default async function EditPostPage({ params }: { params: Promise<{ slug:
     }),
   ]);
   if (!post) notFound();
+
+  // Revision count doubles as the history panel's refresh version — it bumps
+  // with every save's router.refresh().
+  const revisionCount = await db.contentRevision.count({
+    where: { entity: "Post", entityId: post.id },
+  });
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -82,6 +89,7 @@ export default async function EditPostPage({ params }: { params: Promise<{ slug:
             : null,
         }}
       />
+      <RevisionHistory entity="Post" entityId={post.id} version={revisionCount} />
     </div>
   );
 }

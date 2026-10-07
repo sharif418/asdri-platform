@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { ArrowLeft, ArrowRight, CalendarDays, Download, FileText, Landmark, Pin } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download, Landmark } from "lucide-react";
 import type { Lang } from "@/lib/locale";
 import { langPath, alternatesFor } from "@/lib/locale";
 import { isFeatureEnabled } from "@/lib/settings";
@@ -10,17 +10,14 @@ import { getNoticeBySlug, getNoticeNeighbors } from "@/lib/content/notices";
 import { env } from "@/lib/env";
 import { pick } from "@/types";
 import { formatDate } from "@/lib/format";
-import { sanitizeRichText } from "@/lib/sanitize";
 import { ModuleUnavailable } from "@/components/shared/module-unavailable";
 import { PageHero } from "@/components/shared/page-hero";
 import { PrintButton } from "@/components/shared/print-button";
-import { PrintMasthead } from "@/components/shared/print-masthead";
+import { NoticePad } from "@/components/notices/notice-pad";
 import { brand } from "@/lib/brand";
 import { ArticleShare } from "@/components/media/article-share";
-import { categoryLabel, statusBadgeClass, statusLabel } from "@/lib/notice-labels";
-import { Badge } from "@/components/ui/badge";
+import { categoryLabel } from "@/lib/notice-labels";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 /**
  * Public notice detail page — every notice gets a real, shareable URL
@@ -73,7 +70,6 @@ export default async function NoticeDetailPage({ params }: NoticePageProps) {
   const [{ prev, next }, siteConfig] = await Promise.all([getNoticeNeighbors(notice.publishedAt), getSiteConfig()]);
   const bn = lang === "bn";
 
-  const bodyHtml = sanitizeRichText(pick(notice.body, lang));
   const excerptText = pick(notice.excerpt, lang).trim();
 
   // Structured data for search engines (article card + publisher).
@@ -134,73 +130,8 @@ export default async function NoticeDetailPage({ params }: NoticePageProps) {
             </div>
           </div>
 
-          {/* ————— The official pad ————— */}
-          {/* sr-only section headings keep the document outline sequential
-              (h1 hero → h2 pad → h2 neighbours → footer h3) for screen
-              readers and axe — the pad itself is untitled prose by design. */}
-          <h2 className="sr-only">{bn ? "বিজ্ঞপ্তির বিস্তারিত" : "Notice details"}</h2>
-          <article className="print-zone relative overflow-hidden rounded-2xl border border-gold/25 bg-card shadow-sm">
-            <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-gold-gradient" />
-
-            {/* print-only official masthead — the mono-emerald mark beside the institute name */}
-            <PrintMasthead
-              name={bn ? brand.nameBn : brand.nameEn}
-              title={`${bn ? "দাপ্তরিক বিজ্ঞপ্তি" : "Official Notice"} — ${categoryLabel(notice.category, lang)}`}
-            />
-
-            <div className="p-5 sm:p-8">
-              <div className="flex flex-wrap items-center gap-2 print:justify-center">
-                {notice.pinned ? (
-                  <Badge variant="outline" className="gap-1 border-gold/40 bg-gold/15 text-[11px] font-semibold text-[#7a5c15] dark:text-gold">
-                    <Pin aria-hidden className="h-3 w-3" />
-                    {bn ? "পিন করা" : "Pinned"}
-                  </Badge>
-                ) : null}
-                <Badge variant="outline" className={cn("text-[11px] font-semibold", statusBadgeClass(notice.status))}>
-                  {statusLabel(notice.status, lang)}
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className="border-primary/30 bg-primary/5 text-[11px] font-semibold text-primary dark:text-gold"
-                >
-                  <FileText aria-hidden className="mr-1 h-3 w-3" />
-                  {categoryLabel(notice.category, lang)}
-                </Badge>
-                <span className="ml-auto inline-flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums print:ml-0">
-                  <CalendarDays aria-hidden className="h-3.5 w-3.5 text-gold" />
-                  {bn ? "প্রকাশ: " : "Published: "}
-                  {formatDate(notice.publishedAt, lang)}
-                </span>
-              </div>
-
-              <div className="prose-islamic mt-5 text-[15px] leading-[1.9] sm:text-base">
-                {bodyHtml ? (
-                  // Stored rich HTML — written through the admin editor's strict
-                  // whitelist (sanitizeRichText on save) and re-sanitised here on
-                  // read, so only semantic tags can ever reach the DOM.
-                  <div dangerouslySetInnerHTML={{ __html: bodyHtml }} />
-                ) : (
-                  <p className="font-medium text-foreground">{excerptText}</p>
-                )}
-              </div>
-
-              {!notice.attachmentUrl ? (
-                <p className="mt-6 rounded-xl border border-dashed border-gold/30 bg-gold/5 px-4 py-3 text-xs text-muted-foreground print:hidden">
-                  {bn
-                    ? "এই বিজ্ঞপ্তির কোনো সংযুক্ত ফাইল নেই। বিস্তারিত জানতে অফিসে যোগাযোগ করুন।"
-                    : "No attachment for this notice. Contact the office for details."}
-                </p>
-              ) : null}
-            </div>
-
-            {/* print-only reference footer */}
-            <p className="hidden print:mt-4 print:flex print:justify-between print:text-xs print:text-black">
-              <span>Ref: {notice.slug}</span>
-              <span>
-                {bn ? "ইস্যু" : "Issued"}: {formatDate(notice.publishedAt, lang)}
-              </span>
-            </p>
-          </article>
+          {/* ————— The official pad (shared with the signed preview route) ————— */}
+          <NoticePad notice={notice} lang={lang} />
 
           {/* ————— Back to the board ————— */}
           <div className="mt-6 print:hidden">

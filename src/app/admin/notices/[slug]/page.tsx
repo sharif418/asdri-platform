@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { Megaphone } from "lucide-react";
 import { db } from "@/lib/db";
 import { NoticeForm } from "@/components/admin/notice-form";
+import { RevisionHistory } from "@/components/admin/revision-history";
 import { getSession, roleCan } from "@/lib/auth";
 
 export const metadata = { title: "নোটিশ সম্পাদনা" };
@@ -14,6 +15,12 @@ export default async function EditNoticePage({ params }: { params: Promise<{ slu
   const { slug } = await params;
   const notice = await db.notice.findUnique({ where: { slug } });
   if (!notice) notFound();
+
+  // Revision count doubles as the history panel's refresh version — it bumps
+  // with every save's router.refresh().
+  const revisionCount = await db.contentRevision.count({
+    where: { entity: "Notice", entityId: notice.id },
+  });
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -46,6 +53,7 @@ export default async function EditNoticePage({ params }: { params: Promise<{ slu
           isPublished: notice.isPublished,
         }}
       />
+      <RevisionHistory entity="Notice" entityId={notice.id} version={revisionCount} />
     </div>
   );
 }

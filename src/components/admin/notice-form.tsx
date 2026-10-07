@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { BilingualField, LanguageStatus } from "@/components/admin/ui/bilingual-field";
 import { RichTextEditor } from "@/components/admin/ui/rich-text-editor";
+import { PreviewLinkButton } from "@/components/admin/preview-link-button";
 import { sanitizeRichTextPreview } from "@/lib/sanitize";
 import { slugifyTitle } from "@/lib/slug";
 import { adminConfirm } from "@/components/admin/ui/confirm";
@@ -269,6 +270,14 @@ export function NoticeForm({ initial, mode }: { initial: NoticeFormValues; mode:
             <Eye aria-hidden className="h-4 w-4" />
             প্রকাশ করুন
           </Button>
+          {mode === "edit" && values.id && (
+            <div className="space-y-1">
+              <PreviewLinkButton entity="Notice" entityId={values.id} />
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                ড্রাফটসহ — প্রকাশের আগে যে কাউকে পড়ার সুযোগ দিতে শেয়ারযোগ্য লিংক (২৪ ঘণ্টা বৈধ)।
+              </p>
+            </div>
+          )}
           <Button onClick={() => setPreview((p) => !p)} variant="ghost" size="sm" className="w-full gap-1.5 text-muted-foreground">
             {preview ? <EyeOff aria-hidden className="h-3.5 w-3.5" /> : <Eye aria-hidden className="h-3.5 w-3.5" />}
             {preview ? "প্রিভিউ বন্ধ" : "প্রিভিউ দেখুন"}
