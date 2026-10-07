@@ -32,6 +32,15 @@ function csrfToken(): string {
   return document.cookie.match(/asr-csrf=([^;]+)/)?.[1] ?? "";
 }
 
+/** Time span as "১ জানুয়ারি → ৩১ ডিসেম্বর ২০২৬" — start → end, arrow in the
+ * text (not aria-hidden) so screen readers hear a separator instead of two
+ * concatenated dates (r4 F-M1). */
+function campaignPeriod(campaign: CampaignRowData): string {
+  const start = campaign.startsAt ? formatDate(campaign.startsAt, "bn") : "—";
+  const end = campaign.endsAt ? formatDate(campaign.endsAt, "bn") : "খোলা";
+  return `${start} → ${end}`;
+}
+
 /** Campaigns manager table — live progress, publish state, edit + guarded delete. */
 export function CampaignsTable({ campaigns, funds }: { campaigns: CampaignRowData[]; funds: CampaignFundOption[] }) {
   const router = useRouter();
@@ -122,6 +131,9 @@ export function CampaignsTable({ campaigns, funds }: { campaigns: CampaignRowDat
                   <p className="truncate text-[11px] text-muted-foreground" dir="ltr">
                     {campaign.titleEn || campaign.id.slice(-8)}
                   </p>
+                  {(campaign.startsAt || campaign.endsAt) && (
+                    <p className="text-[11px] text-muted-foreground lg:hidden">{campaignPeriod(campaign)}</p>
+                  )}
                 </td>
                 <td className="hidden px-4 py-3 text-[12.5px] md:table-cell">{campaign.fundNameBn}</td>
                 <td className="px-4 py-3">
@@ -140,11 +152,7 @@ export function CampaignsTable({ campaigns, funds }: { campaigns: CampaignRowDat
                 </td>
                 <td className="hidden px-4 py-3 text-[12px] text-muted-foreground lg:table-cell">
                   {campaign.startsAt || campaign.endsAt ? (
-                    <p>
-                      {campaign.startsAt ? formatDate(campaign.startsAt, "bn") : "—"}
-                      <span aria-hidden> → </span>
-                      {campaign.endsAt ? formatDate(campaign.endsAt, "bn") : "খোলা"}
-                    </p>
+                    <p className="whitespace-normal">{campaignPeriod(campaign)}</p>
                   ) : (
                     <span>—</span>
                   )}

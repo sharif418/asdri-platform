@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, Loader2, Plus, Save, Trash2, X } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toBnDigits as formatNumberBn } from "@/lib/format";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 import type { SemesterDraft, SubjectDraft } from "./types";
 
 /** Section 2 — the semester/subject tree (the syllabus table on the site). */
@@ -39,7 +40,20 @@ export function CurriculumSection({
     ]);
   }
 
-  function removeSemester(index: number) {
+  /** Display name of a semester row (optional title falls back to its number). */
+  function semesterName(sem: SemesterDraft, index: number): string {
+    return sem.titleBn.trim() || `সেমিস্টার ${formatNumberBn(index + 1)}`;
+  }
+
+  async function removeSemester(index: number) {
+    const sem = semesters[index];
+    if (!sem) return;
+    const confirmed = await adminConfirm({
+      title: `‘${semesterName(sem, index)}’ ও তার ${formatNumberBn(sem.subjects.length)}টি বিষয় মুছে ফেলা হবে — সংরক্ষণ করলে আর ফেরানো যাবে না।`,
+      description: "এটি এখনো শুধু খসড়ায় বদল — ‘কারিকুলাম সংরক্ষণ’ না চাপলে ডেটাবেস অপরিবর্তিত থাকে।",
+      confirmLabel: "মুছে ফেলুন",
+    });
+    if (!confirmed) return;
     setSemesters((list) => list.filter((_, i) => i !== index));
   }
 
@@ -83,7 +97,16 @@ export function CurriculumSection({
     );
   }
 
-  function removeSubject(semIndex: number, subIndex: number) {
+  async function removeSubject(semIndex: number, subIndex: number) {
+    const subject = semesters[semIndex]?.subjects[subIndex];
+    if (!subject) return;
+    const name = subject.titleBn.trim() || subject.code.trim() || "শিরোনামহীন বিষয়";
+    const confirmed = await adminConfirm({
+      title: `‘${name}’ বিষয়টি মুছে ফেলা হবে।`,
+      description: "সংরক্ষণ করলে আর ফেরানো যাবে না।",
+      confirmLabel: "মুছে ফেলুন",
+    });
+    if (!confirmed) return;
     setSemesters((list) =>
       list.map((sem, i) => (i === semIndex ? { ...sem, subjects: sem.subjects.filter((_, j) => j !== subIndex) } : sem)),
     );
@@ -166,9 +189,10 @@ export function CurriculumSection({
                 </button>
                 <button
                   type="button"
-                  onClick={() => removeSemester(semIndex)}
+                  onClick={() => void removeSemester(semIndex)}
+                  disabled={saving}
                   aria-label="সেমিস্টার মুছুন"
-                  className="rounded p-1 text-destructive/70 hover:bg-destructive/10"
+                  className="rounded p-1 text-destructive/70 hover:bg-destructive/10 disabled:opacity-40"
                 >
                   <Trash2 aria-hidden className="h-4 w-4" />
                 </button>
@@ -259,9 +283,10 @@ export function CurriculumSection({
                               </button>
                               <button
                                 type="button"
-                                onClick={() => removeSubject(semIndex, subIndex)}
+                                onClick={() => void removeSubject(semIndex, subIndex)}
+                                disabled={saving}
                                 aria-label="বিষয় মুছুন"
-                                className="rounded p-1 text-destructive/70 hover:bg-destructive/10"
+                                className="rounded p-1 text-destructive/70 hover:bg-destructive/10 disabled:opacity-40"
                               >
                                 <X aria-hidden className="h-3.5 w-3.5" />
                               </button>

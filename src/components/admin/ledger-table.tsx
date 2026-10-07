@@ -125,7 +125,7 @@ export function LedgerTable({ entries, funds }: { entries: LedgerRowData[]; fund
                 <td className="px-4 py-3">
                   <span className={ledgerDirectionChip(entry.direction)}>{ledgerDirectionLabel(entry.direction)}</span>
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-4 py-3 text-right tabular-nums">
                   <span className={`text-[13px] font-bold ${entry.direction === "INCOME" ? "text-primary" : "text-gold-foreground dark:text-gold"}`}>
                     {entry.direction === "INCOME" ? "+" : "−"}
                     {formatTaka(entry.amount, "bn")}

@@ -151,13 +151,21 @@ export function FatwaQuestionRow({
 
   return (
     <div className="border-b last:border-b-0">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-secondary/20"
-      >
-        {open ? <ChevronUp aria-hidden className="h-4 w-4 shrink-0 text-muted-foreground" /> : <ChevronDown aria-hidden className="h-4 w-4 shrink-0 text-muted-foreground" />}
+      {/* The expand control is its own short-named button ("বিস্তারিত: FAT-…")
+          while the row's data live in plain cells — the whole row used to be
+          one button whose accessible name was the entire concatenated row
+          (r4 O-M3). */}
+      <div className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-secondary/20">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-label={`বিস্তারিত: ${question.reference}`}
+          title={`বিস্তারিত: ${question.reference}`}
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+        >
+          {open ? <ChevronUp aria-hidden className="h-4 w-4" /> : <ChevronDown aria-hidden className="h-4 w-4" />}
+        </button>
         <span className="shrink-0 font-mono text-[11px] font-semibold text-muted-foreground" dir="ltr">
           {question.reference}
         </span>
@@ -174,7 +182,7 @@ export function FatwaQuestionRow({
             গোপনীয়
           </span>
         )}
-      </button>
+      </div>
 
       {open && (
         <div className="space-y-5 border-t bg-secondary/10 px-4 py-5 sm:px-6">
@@ -202,7 +210,7 @@ export function FatwaQuestionRow({
 
           <div>
             <p className="mb-1.5 text-sm font-semibold">উত্তর লিখুন (ফিকহ ও গবেষণা বোর্ড)</p>
-            <RichTextEditor value={answer} onChange={setAnswer} placeholder="প্রামাণ্য দলিলসহ উত্তর লিখুন…" minHeight={200} />
+            <RichTextEditor value={answer} onChange={setAnswer} label="ফতোয়ার উত্তর" placeholder="প্রামাণ্য দলিলসহ উত্তর লিখুন…" minHeight={200} />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">

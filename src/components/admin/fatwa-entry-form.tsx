@@ -154,9 +154,9 @@ export function FatwaEntryForm({
         <BilingualField label="উত্তর (ফতোয়া)" hint="প্রামাণ্য দলিলসহ গবেষণা বোর্ডের উত্তর — রিচ টেক্সট।">
           {(active) =>
             active === "bn" ? (
-              <RichTextEditor value={values.answerBn} onChange={(html) => set("answerBn", html)} placeholder="উত্তর লিখুন…" minHeight={220} />
+              <RichTextEditor value={values.answerBn} onChange={(html) => set("answerBn", html)} label="ফতোয়ার উত্তর" placeholder="উত্তর লিখুন…" minHeight={220} />
             ) : (
-              <RichTextEditor value={values.answerEn} onChange={(html) => set("answerEn", html)} placeholder="Write the answer…" minHeight={220} />
+              <RichTextEditor value={values.answerEn} onChange={(html) => set("answerEn", html)} label="Fatwa answer" placeholder="Write the answer…" minHeight={220} />
             )
           }
         </BilingualField>

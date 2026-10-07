@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireModule, unauthorized, forbidden } from "@/lib/auth";
 import { audit } from "@/lib/audit";
-import { slugify } from "@/lib/slug";
+import { buildUniqueSlug, slugify } from "@/lib/slug";
 import { personCreateSchema, sanitizePersonPayload } from "@/lib/validators/admin-content";
 
 export const dynamic = "force-dynamic";
@@ -32,10 +32,13 @@ export async function POST(request: NextRequest): Promise<Response> {
   }
 
   const data = sanitizePersonPayload(parsed.data);
-  const slug = data.slug || slugify(data.nameEn || data.nameBn);
-  if (await db.person.findUnique({ where: { slug } })) {
-    return NextResponse.json({ ok: false, error: "এই স্লাগ ইতিমধ্যেই ব্যবহৃত — অন্য একটি দিন।", fields: { slug: "স্লাগ ডুপ্লিকেট" } }, { status: 409 });
-  }
+  // Client slug wins when unique; otherwise (none sent / collision, e.g. a
+  // Bangla-only name that slugifies to "") a unique slug is generated.
+  const base = data.slug || slugify(data.nameEn || data.nameBn);
+  const slug = await buildUniqueSlug(base, async (candidate) => {
+    const existing = await db.person.findUnique({ where: { slug: candidate }, select: { id: true } });
+    return !!existing;
+  });
   if (data.teamId && !(await db.team.findUnique({ where: { id: data.teamId } }))) {
     return NextResponse.json({ ok: false, error: "নির্বাচিত দলটি খুঁজে পাওয়া যায়নি।", fields: { teamId: "দল নেই" } }, { status: 400 });
   }

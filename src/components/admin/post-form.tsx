@@ -14,6 +14,7 @@ import { sanitizeRichTextPreview } from "@/lib/sanitize";
 import { slugifyTitle } from "@/lib/slug";
 import { toBnDigits } from "@/lib/format";
 import { adminConfirm } from "@/components/admin/ui/confirm";
+import { GeneralError, fieldId, useFieldErrors } from "@/components/admin/ui/form-errors";
 
 export interface PostFormValues {
   id?: string;
@@ -40,6 +41,17 @@ export interface CategoryOption {
 export interface AuthorOption {
   id: string;
   nameBn: string;
+  /** খেতাব / পদবি — appended to the option label to disambiguate the
+   *  several same-named teachers (round 4 M14), e.g. "শায়খ আহমাদুল্লাহ (চেয়ারম্যান)". */
+  titleBn?: string | null;
+  /** Team name fallback when the person has no খেতাব. */
+  teamNameBn?: string | null;
+}
+
+/** Option label with the designation in parentheses when known (M14). */
+function authorOptionLabel(author: AuthorOption): string {
+  const tag = author.titleBn?.trim() || author.teamNameBn?.trim() || "";
+  return tag ? `${author.nameBn} (${tag})` : author.nameBn;
 }
 
 const KIND_LABELS = { ARTICLE: "আর্টিকল", CLARIFICATION: "সংশয় নিরসন", NEWS: "খবর / ইভেন্ট" } as const;
@@ -75,9 +87,11 @@ export function PostForm({
   const [newCatBn, setNewCatBn] = useState("");
   const [newCatEn, setNewCatEn] = useState("");
   const [creatingCat, setCreatingCat] = useState(false);
+  const fe = useFieldErrors();
 
+  // Server-side generation covers Bangla-only titles (slugify → "").
   const slug = useMemo(
-    () => values.slug ?? (slugifyTitle(values.titleEn || values.titleBn) || "post"),
+    () => values.slug ?? slugifyTitle(values.titleEn || values.titleBn),
     [values.slug, values.titleEn, values.titleBn],
   );
   const minutes = useMemo(() => estimateMinutes(values.bodyBn), [values.bodyBn]);
@@ -116,6 +130,7 @@ export function PostForm({
   async function onSave() {
     if (saving) return;
     setSaving(true);
+    fe.clear();
     try {
       const payload = {
         titleBn: values.titleBn,
@@ -130,7 +145,8 @@ export function PostForm({
         coverMediaId: values.cover?.id ?? null,
         isPublished: values.isPublished,
         ...(values.publishedAt ? { publishedAt: new Date(values.publishedAt).toISOString() } : {}),
-        ...(mode === "create" ? { slug } : {}),
+        // Only send a slug the API can accept (≥3 chars); empty → server generates.
+        ...(mode === "create" && slug.length >= 3 ? { slug } : {}),
       };
       const res = await fetch(mode === "create" ? "/api/admin/posts" : `/api/admin/posts/${values.id}`, {
         method: mode === "create" ? "POST" : "PATCH",
@@ -139,7 +155,8 @@ export function PostForm({
       });
       const json = (await res.json()) as { ok: boolean; error?: string; fields?: Record<string, string>; data?: { slug: string } };
       if (!res.ok || !json.ok) {
-        toast({ title: json.error ?? "সংরক্ষণ করা যায়নি", variant: "destructive" });
+        const summary = fe.setFromResponse(json) ?? "সংরক্ষণ করা যায়নি";
+        toast({ title: summary, variant: "destructive" });
         return;
       }
       toast({ title: mode === "create" ? "পোস্ট তৈরি হয়েছে" : "সংরক্ষিত হয়েছে" });
@@ -176,23 +193,34 @@ export function PostForm({
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="space-y-5">
+        <GeneralError message={fe.general} />
         <BilingualField label="শিরোনাম" required>
           {(active) =>
             active === "bn" ? (
-              <input
-                value={values.titleBn}
-                onChange={(e) => set("titleBn", e.target.value)}
-                placeholder="বাংলা শিরোনাম লিখুন"
-                required
-                className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
-              />
+              <>
+                <input
+                  id={fieldId("titleBn")}
+                  value={values.titleBn}
+                  onChange={(e) => set("titleBn", e.target.value)}
+                  placeholder="বাংলা শিরোনাম লিখুন"
+                  aria-invalid={fe.errors.titleBn ? true : undefined}
+                  required
+                  className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
+                />
+                <fe.ErrorText name="titleBn" />
+              </>
             ) : (
-              <input
-                value={values.titleEn}
-                onChange={(e) => set("titleEn", e.target.value)}
-                placeholder="English title"
-                className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] outline-none focus:border-primary/50"
-              />
+              <>
+                <input
+                  id={fieldId("titleEn")}
+                  value={values.titleEn}
+                  onChange={(e) => set("titleEn", e.target.value)}
+                  placeholder="English title"
+                  aria-invalid={fe.errors.titleEn ? true : undefined}
+                  className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] outline-none focus:border-primary/50"
+                />
+                <fe.ErrorText name="titleEn" />
+              </>
             )
           }
         </BilingualField>
@@ -222,9 +250,9 @@ export function PostForm({
         <BilingualField label="মূল লেখা">
           {(active) =>
             active === "bn" ? (
-              <RichTextEditor value={values.bodyBn} onChange={(html) => set("bodyBn", html)} placeholder="আর্টিকলের মূল অংশ…" />
+              <RichTextEditor value={values.bodyBn} onChange={(html) => set("bodyBn", html)} label="নিবন্ধের মূল অংশ" placeholder="আর্টিকলের মূল অংশ…" />
             ) : (
-              <RichTextEditor value={values.bodyEn} onChange={(html) => set("bodyEn", html)} placeholder="Full article body…" />
+              <RichTextEditor value={values.bodyEn} onChange={(html) => set("bodyEn", html)} label="Article body" placeholder="Full article body…" />
             )
           }
         </BilingualField>
@@ -232,8 +260,9 @@ export function PostForm({
 
       <aside className="space-y-4 rounded-2xl border bg-card p-5 shadow-sm xl:sticky xl:top-20 h-fit">
         <div>
-          <label className="text-sm font-semibold">ধরন</label>
+          <label htmlFor={fieldId("kind")} className="text-sm font-semibold">ধরন</label>
           <select
+            id={fieldId("kind")}
             value={values.kind}
             onChange={(e) => set("kind", e.target.value as PostFormValues["kind"])}
             className="mt-1.5 w-full rounded-lg border bg-background px-3 py-2 text-sm"
@@ -244,11 +273,12 @@ export function PostForm({
               </option>
             ))}
           </select>
+          <fe.ErrorText name="kind" />
         </div>
 
         <div>
           <div className="flex items-center justify-between">
-            <label className="text-sm font-semibold">ক্যাটাগরি</label>
+            <label htmlFor={fieldId("categoryId")} className="text-sm font-semibold">ক্যাটাগরি</label>
             <button
               type="button"
               onClick={() => setNewCatOpen((o) => !o)}
@@ -259,8 +289,10 @@ export function PostForm({
             </button>
           </div>
           <select
+            id={fieldId("categoryId")}
             value={values.categoryId}
             onChange={(e) => set("categoryId", e.target.value)}
+            aria-invalid={fe.errors.categoryId ? true : undefined}
             className="mt-1.5 w-full rounded-lg border bg-background px-3 py-2 text-sm"
           >
             <option value="">— ক্যাটাগরি নেই —</option>
@@ -270,6 +302,7 @@ export function PostForm({
               </option>
             ))}
           </select>
+          <fe.ErrorText name="categoryId" />
           {newCatOpen && (
             <div className="mt-2 space-y-1.5 rounded-lg border bg-background/60 p-2.5">
               <input
@@ -298,8 +331,9 @@ export function PostForm({
         </div>
 
         <div>
-          <label className="text-sm font-semibold">লেখক</label>
+          <label htmlFor={fieldId("authorId")} className="text-sm font-semibold">লেখক</label>
           <select
+            id={fieldId("authorId")}
             value={values.authorId}
             onChange={(e) => set("authorId", e.target.value)}
             className="mt-1.5 w-full rounded-lg border bg-background px-3 py-2 text-sm"
@@ -307,7 +341,7 @@ export function PostForm({
             <option value="">— লেখক নির্বাচন করুন —</option>
             {authors.map((author) => (
               <option key={author.id} value={author.id}>
-                {author.nameBn}
+                {authorOptionLabel(author)}
               </option>
             ))}
           </select>
@@ -322,8 +356,9 @@ export function PostForm({
         </div>
 
         <div>
-          <label className="text-sm font-semibold">প্রকাশের সময়</label>
+          <label htmlFor={fieldId("publishedAt")} className="text-sm font-semibold">প্রকাশের সময়</label>
           <input
+            id={fieldId("publishedAt")}
             type="datetime-local"
             value={values.publishedAt}
             onChange={(e) => set("publishedAt", e.target.value)}
@@ -345,7 +380,7 @@ export function PostForm({
             পড়ার সময় (আনুমানিক): {toBnDigits(minutes)} মিনিট — বাংলা লেখা অনুযায়ী স্বয়ংক্রিয়
           </p>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            স্লাগ: <code className="rounded bg-secondary px-1">{slug}</code>
+            স্লাগ: <code className="rounded bg-secondary px-1">{slug || "স্বয়ংক্রিয়"}</code>
           </p>
           <div className="mt-1">
             <LanguageStatus hasBn={values.titleBn.length > 2} hasEn={values.titleEn.length > 2} />

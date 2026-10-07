@@ -5,6 +5,7 @@ import type { LocalizedText } from "@/types";
 import type { Prisma, PrismaClient } from "@prisma/client";
 
 import { NOTICE_SEEDS, FATWA_CATEGORIES, FATWA_SEEDS, FUND_SEEDS, CAMPAIGN_SEEDS } from "./content-data";
+import { mdToHtml } from "./markdown";
 
 type Db = PrismaClient;
 
@@ -64,8 +65,8 @@ export async function seedContent(db: Db): Promise<void> {
       titleEn: article.title.en,
       excerptBn: article.excerpt.bn,
       excerptEn: article.excerpt.en,
-      bodyBn: article.contentBn,
-      bodyEn: article.contentEn ?? "",
+      bodyBn: mdToHtml(article.contentBn),
+      bodyEn: mdToHtml(article.contentEn ?? ""),
       readingMinutes: article.readMinutes,
       publishedAt: new Date(article.publishedAt),
       isPublished: true,
@@ -111,9 +112,12 @@ export async function seedContent(db: Db): Promise<void> {
   await db.video.deleteMany({});
   for (let i = 0; i < videos.length; i++) {
     const video = videos[i];
+    // Canonical form: the 11-char ID extracted from a watch URL (placeholder
+    // ASDRI0000xx IDs in the seed data — clearly fake, but valid form so
+    // edits/thumbnails/links work until real IDs are pasted in).
     const youtubeId = video.youtubeUrl.includes("watch?v=")
       ? video.youtubeUrl.split("watch?v=")[1]?.split("&")[0] ?? video.youtubeUrl
-      : video.youtubeUrl; // search-link fallback: store as-is, UI renders link
+      : video.youtubeUrl;
     await db.video.create({
       data: {
         titleBn: video.title.bn,

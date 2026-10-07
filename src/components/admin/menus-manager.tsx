@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/admin/ui/confirm-dialog";
@@ -276,10 +277,18 @@ export function MenusManager({ items, flags }: { items: MenuItemRow[]; flags: Fl
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   {busyId === parent.id ? <Loader2 aria-hidden className="h-4 w-4 animate-spin text-muted-foreground" /> : null}
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-[11px] font-bold",
+                      parent.isVisible ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {parent.isVisible ? "দেখা যাচ্ছে" : "লুকানো"}
+                  </span>
                   <Switch
                     checked={parent.isVisible}
                     onCheckedChange={(checked) => void toggleVisible(parent, checked)}
-                    aria-label={`${parent.labelBn} ${parent.isVisible ? "লুকান" : "দেখান"}`}
+                    aria-label={`${parent.labelBn} — ${parent.isVisible ? "দৃশ্যমান" : "লুকানো"}`}
                   />
                   <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10.5px] font-semibold text-muted-foreground">
                     {parent.isVisible ? <Eye aria-hidden className="h-3 w-3" /> : <EyeOff aria-hidden className="h-3 w-3" />}
@@ -334,10 +343,18 @@ export function MenusManager({ items, flags }: { items: MenuItemRow[]; flags: Fl
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         {busyId === child.id ? <Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin text-muted-foreground" /> : null}
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-0.5 text-[10.5px] font-bold",
+                            child.isVisible ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
+                          )}
+                        >
+                          {child.isVisible ? "দেখা যাচ্ছে" : "লুকানো"}
+                        </span>
                         <Switch
                           checked={child.isVisible}
                           onCheckedChange={(checked) => void toggleVisible(child, checked)}
-                          aria-label={`${child.labelBn} ${child.isVisible ? "লুকান" : "দেখান"}`}
+                          aria-label={`${child.labelBn} — ${child.isVisible ? "দৃশ্যমান" : "লুকানো"}`}
                         />
                         <Button type="button" variant="ghost" size="sm" aria-label="সম্পাদনা" onClick={() => openEdit(child)}>
                           <Pencil aria-hidden className="h-4 w-4" />

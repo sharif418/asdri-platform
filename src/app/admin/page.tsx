@@ -19,6 +19,7 @@ import { getSession, isStaff, roleCan } from "@/lib/auth";
 import { formatNumber, formatTaka } from "@/lib/format";
 import { toBnDigits } from "@/lib/format";
 import { formatDate } from "@/lib/format";
+import { auditActionLabelBn } from "@/lib/audit-labels";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "ড্যাশবোর্ড" };
@@ -86,7 +87,6 @@ export default async function AdminDashboardPage() {
     subscribers,
     recentAudit,
     latestNotices,
-    raisedTotal,
   ] = await Promise.all([
     db.notice.count({ where: { isPublished: true } }),
     db.course.count({ where: { isPublished: true } }),
@@ -103,8 +103,13 @@ export default async function AdminDashboardPage() {
       orderBy: { createdAt: "desc" },
       include: { actor: { select: { name: true } } },
     }),
-    db.notice.findMany({ take: 5, orderBy: { publishedAt: "desc" }, select: { slug: true, titleBn: true, category: true, publishedAt: true, status: true } }),
-    db.donation.aggregate({ where: { status: "COMPLETED" }, _sum: { amount: true } }),
+    // প্রকাশিত নোটিশই ড্যাশবোর্ডে — খসড়া আর ঢুকবে না (r4 M1)।
+    db.notice.findMany({
+      where: { isPublished: true },
+      take: 5,
+      orderBy: { publishedAt: "desc" },
+      select: { slug: true, titleBn: true, category: true, publishedAt: true, status: true },
+    }),
   ]);
 
   const cards: { icon: LucideIcon; value: string; label: string; caption: string; href?: string; accent?: "gold" | "emerald"; show: boolean }[] = [
@@ -117,7 +122,6 @@ export default async function AdminDashboardPage() {
     { icon: HandCoins, value: formatTaka(donationCompleted._sum.amount ?? 0, "bn"), label: "সম্পন্ন ডোনেশন (মোট)", caption: `${toBnDigits(donationPending)} টি পেন্ডিং লেনদেন`, href: "/admin/finance/donations", show: roleCan(role, "finance") },
     { icon: Inbox, value: toBnDigits(unreadMessages), label: "অপঠিত বার্তা", caption: "যোগাযোগ ফর্ম থেকে", href: "/admin/inbox/messages", accent: "gold", show: roleCan(role, "messages") && unreadMessages > 0 },
   ];
-  void raisedTotal;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -143,7 +147,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="mt-10 grid gap-6 lg:grid-cols-3">
-        <section className="rounded-2xl border bg-card p-5 shadow-sm lg:col-span-2">
+        <section className="min-w-0 rounded-2xl border bg-card p-5 shadow-sm lg:col-span-2">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-sm font-semibold">
               <Megaphone aria-hidden className="h-4 w-4 text-primary" />
@@ -180,7 +184,7 @@ export default async function AdminDashboardPage() {
           </ul>
         </section>
 
-        <section className="rounded-2xl border bg-card p-5 shadow-sm">
+        <section className="min-w-0 rounded-2xl border bg-card p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-sm font-semibold">
               <History aria-hidden className="h-4 w-4 text-primary" />
@@ -200,7 +204,9 @@ export default async function AdminDashboardPage() {
               <li key={log.id} className="flex items-start gap-2.5">
                 <BadgeCheck aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                 <div className="min-w-0">
-                  <p className="truncate text-[12.5px] font-medium">{log.action}</p>
+                  <p className="truncate text-[12.5px] font-medium" title={log.action}>
+                    {auditActionLabelBn(log.action)}
+                  </p>
                   <p className="text-[11px] text-muted-foreground">
                     {log.actor?.name ?? "সিস্টেম"} · {formatDate(log.createdAt, "bn")}
                   </p>

@@ -3,8 +3,9 @@ import { FileText, Plus, Search } from "lucide-react";
 import { db } from "@/lib/db";
 import { getSession, roleCan } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { formatNumber } from "@/lib/format";
+import { toBnDigits } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { AdminPager } from "@/components/admin/admin-pager";
 
 export const metadata = { title: "জার্নাল ও বই" };
 
@@ -18,6 +19,33 @@ const KIND_LABELS: Record<string, string> = {
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
+const PAGE_SIZE = 20;
+
+function buildQuery(base: Record<string, string | undefined>, page: number): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(base)) {
+    if (value) params.set(key, value);
+  }
+  params.set("page", String(page));
+  return `/admin/research/publications?${params.toString()}`;
+}
+
+/** Sample/placeholder identifiers from the seed ("2789-XXXX", "(sample)") — not real data. */
+const PLACEHOLDER_ID_RE = /xxxx|sample/i;
+
+/** Strip a redundant leading "ISSN "/"ISBN " the seed stored inside the value. */
+function cleanIdentifier(value: string): string {
+  return value.replace(/^\s*ISSN\s+/i, "").replace(/^\s*ISBN\s+/i, "").trim();
+}
+
+/** Real (non-sample) identifiers of a row, prefix-stripped — null when absent/placeholder. */
+function realIdentifiers(publication: { issn: string | null; isbn: string | null }): { issn: string | null; isbn: string | null } {
+  return {
+    issn: publication.issn && !PLACEHOLDER_ID_RE.test(publication.issn) ? cleanIdentifier(publication.issn) : null,
+    isbn: publication.isbn && !PLACEHOLDER_ID_RE.test(publication.isbn) ? cleanIdentifier(publication.isbn) : null,
+  };
+}
+
 /** Publications admin — journals, books, bulletins, papers list. */
 export default async function AdminPublicationsPage({ searchParams }: { searchParams: SearchParams }) {
   const session = await getSession();
@@ -25,11 +53,20 @@ export default async function AdminPublicationsPage({ searchParams }: { searchPa
 
   const sp = await searchParams;
   const q = (typeof sp.q === "string" ? sp.q : "").trim().slice(0, 120);
+  const requestedPage = Math.max(1, Number.parseInt(typeof sp.page === "string" ? sp.page : "1", 10) || 1);
+  const where = q ? { OR: [{ titleBn: { contains: q } }, { titleEn: { contains: q } }, { slug: { contains: q } }] } : undefined;
+
+  // Count first so an out-of-range ?page= is clamped instead of showing an
+  // empty page under a pager that claims records exist (r4 M7).
+  const total = await db.publication.count({ where });
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const page = Math.min(requestedPage, pageCount);
 
   const publications = await db.publication.findMany({
-    where: q ? { OR: [{ titleBn: { contains: q } }, { titleEn: { contains: q } }, { slug: { contains: q } }] } : undefined,
+    where,
     orderBy: [{ sortOrder: "asc" }, { year: "desc" }],
-    take: 200,
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
     select: {
       id: true,
       slug: true,
@@ -80,19 +117,29 @@ export default async function AdminPublicationsPage({ searchParams }: { searchPa
         </button>
       </form>
 
-      <div className="mt-4 overflow-x-auto overflow-y-clip rounded-2xl border bg-card shadow-sm">
+      <div className="mt-4 max-h-[70vh] overflow-x-auto overflow-y-auto rounded-2xl border bg-card shadow-sm">
         {publications.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <p className="font-heading text-lg font-bold">কোনো প্রকাশনা নেই</p>
-            <p className="mt-1 text-sm text-muted-foreground">প্রথম জার্নাল বা বইটি যোগ করুন।</p>
-            <Link
-              href="/admin/research/publications/new"
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-            >
-              <Plus aria-hidden className="h-4 w-4" />
-              প্রকাশনা যোগ করুন
-            </Link>
-          </div>
+          q ? (
+            <div className="px-6 py-16 text-center">
+              <p className="font-heading text-lg font-bold">কোনো ফলাফল পাওয়া যায়নি</p>
+              <p className="mt-1 text-sm text-muted-foreground">অনুসন্ধানের সাথে মিলে যায় এমন কিছু পাওয়া যায়নি।</p>
+              <Link href="/admin/research/publications" className="mt-4 inline-block text-sm font-semibold text-primary hover:underline">
+                ফিল্টার খুলে ফেলুন
+              </Link>
+            </div>
+          ) : (
+            <div className="px-6 py-16 text-center">
+              <p className="font-heading text-lg font-bold">কোনো প্রকাশনা নেই</p>
+              <p className="mt-1 text-sm text-muted-foreground">প্রথম জার্নাল বা বইটি যোগ করুন।</p>
+              <Link
+                href="/admin/research/publications/new"
+                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+              >
+                <Plus aria-hidden className="h-4 w-4" />
+                প্রকাশনা যোগ করুন
+              </Link>
+            </div>
+          )
         ) : (
           <table className="w-full text-sm">
             <thead>
@@ -107,7 +154,9 @@ export default async function AdminPublicationsPage({ searchParams }: { searchPa
               </tr>
             </thead>
             <tbody className="divide-y">
-              {publications.map((publication) => (
+              {publications.map((publication) => {
+                const ids = realIdentifiers(publication);
+                return (
                 <tr key={publication.id} className="transition-colors hover:bg-secondary/20">
                   <td className="max-w-md px-4 py-3">
                     <Link href={`/admin/research/publications/${publication.id}`} className="flex items-center gap-3">
@@ -136,13 +185,13 @@ export default async function AdminPublicationsPage({ searchParams }: { searchPa
                     </span>
                   </td>
                   <td className="hidden px-4 py-3 text-[12.5px] font-semibold md:table-cell" dir="ltr">
-                    {formatNumber(publication.year, "bn")}
+                    {toBnDigits(publication.year)}
                   </td>
                   <td className="hidden px-4 py-3 text-[11.5px] text-muted-foreground lg:table-cell" dir="ltr">
-                    {publication.issn ? <span className="font-mono">ISSN {publication.issn}</span> : null}
-                    {publication.issn && publication.isbn ? " · " : ""}
-                    {publication.isbn ? <span className="font-mono">ISBN {publication.isbn}</span> : null}
-                    {!publication.issn && !publication.isbn ? "—" : ""}
+                    {ids.issn ? <span className="font-mono">ISSN {ids.issn}</span> : null}
+                    {ids.issn && ids.isbn ? " · " : ""}
+                    {ids.isbn ? <span className="font-mono">ISBN {ids.isbn}</span> : null}
+                    {!ids.issn && !ids.isbn ? "—" : ""}
                   </td>
                   <td className="hidden max-w-40 truncate px-4 py-3 text-[11.5px] text-muted-foreground lg:table-cell" dir="ltr">
                     {publication.fileMedia?.filename ?? "—"}
@@ -158,11 +207,20 @@ export default async function AdminPublicationsPage({ searchParams }: { searchPa
                     </Link>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         )}
       </div>
+
+      <AdminPager
+        page={page}
+        pageCount={pageCount}
+        total={total}
+        unit="প্রকাশনা"
+        buildHref={(next) => buildQuery({ q: q || undefined }, next)}
+      />
     </div>
   );
 }

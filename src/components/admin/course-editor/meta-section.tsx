@@ -105,9 +105,9 @@ export function MetaSection({
           <BilingualField label="কোর্স পরিচিতি (সম্পূর্ণ)">
             {(active) =>
               active === "bn" ? (
-                <RichTextEditor value={meta.overviewBn} onChange={(v) => setMetaField("overviewBn", v)} />
+                <RichTextEditor value={meta.overviewBn} onChange={(v) => setMetaField("overviewBn", v)} label="কোর্স পরিচিতি" />
               ) : (
-                <RichTextEditor value={meta.overviewEn} onChange={(v) => setMetaField("overviewEn", v)} />
+                <RichTextEditor value={meta.overviewEn} onChange={(v) => setMetaField("overviewEn", v)} label="Course overview" />
               )
             }
           </BilingualField>
@@ -115,9 +115,9 @@ export function MetaSection({
           <BilingualField label="লক্ষ্য-উদ্দেশ্য" hint="বুলেট তালিকা হিসেবে লিখুন — ওয়েবসাইটে তালিকা আকারে দেখানো হবে।">
             {(active) =>
               active === "bn" ? (
-                <RichTextEditor value={meta.objectivesBn} onChange={(v) => setMetaField("objectivesBn", v)} minHeight={120} />
+                <RichTextEditor value={meta.objectivesBn} onChange={(v) => setMetaField("objectivesBn", v)} label="লক্ষ্য-উদ্দেশ্য" minHeight={120} />
               ) : (
-                <RichTextEditor value={meta.objectivesEn} onChange={(v) => setMetaField("objectivesEn", v)} minHeight={120} />
+                <RichTextEditor value={meta.objectivesEn} onChange={(v) => setMetaField("objectivesEn", v)} label="Objectives" minHeight={120} />
               )
             }
           </BilingualField>
@@ -125,9 +125,9 @@ export function MetaSection({
           <BilingualField label="ভর্তির যোগ্যতা">
             {(active) =>
               active === "bn" ? (
-                <RichTextEditor value={meta.eligibilityBn} onChange={(v) => setMetaField("eligibilityBn", v)} minHeight={120} />
+                <RichTextEditor value={meta.eligibilityBn} onChange={(v) => setMetaField("eligibilityBn", v)} label="ভর্তির যোগ্যতা" minHeight={120} />
               ) : (
-                <RichTextEditor value={meta.eligibilityEn} onChange={(v) => setMetaField("eligibilityEn", v)} minHeight={120} />
+                <RichTextEditor value={meta.eligibilityEn} onChange={(v) => setMetaField("eligibilityEn", v)} label="Eligibility" minHeight={120} />
               )
             }
           </BilingualField>
@@ -135,9 +135,9 @@ export function MetaSection({
           <BilingualField label="কোর্স সম্পন্নকারীদের ভবিষ্যৎ">
             {(active) =>
               active === "bn" ? (
-                <RichTextEditor value={meta.careerBn} onChange={(v) => setMetaField("careerBn", v)} minHeight={120} />
+                <RichTextEditor value={meta.careerBn} onChange={(v) => setMetaField("careerBn", v)} label="কোর্স সম্পন্নকারীদের ভবিষ্যৎ" minHeight={120} />
               ) : (
-                <RichTextEditor value={meta.careerEn} onChange={(v) => setMetaField("careerEn", v)} minHeight={120} />
+                <RichTextEditor value={meta.careerEn} onChange={(v) => setMetaField("careerEn", v)} label="Career prospects" minHeight={120} />
               )
             }
           </BilingualField>
@@ -193,13 +193,19 @@ export function MetaSection({
 
           <MediaPicker
             label="কভার ছবি"
-            current={null}
-            onSelect={(media) => setMetaField("coverMediaId", media?.id ?? null)}
+            current={meta.cover}
+            onSelect={(media) => {
+              setMetaField("coverMediaId", media?.id ?? null);
+              setMetaField("cover", media);
+            }}
           />
           {meta.coverMediaId && (
             <button
               type="button"
-              onClick={() => setMetaField("coverMediaId", null)}
+              onClick={() => {
+                setMetaField("coverMediaId", null);
+                setMetaField("cover", null);
+              }}
               className="text-[11.5px] font-semibold text-muted-foreground hover:text-destructive"
             >
               কভার সরান
@@ -219,7 +225,7 @@ export function MetaSection({
           <div className="flex items-center justify-between rounded-lg border px-3.5 py-2.5">
             <div>
               <p className="text-sm font-semibold">প্রকাশিত</p>
-              <p className="text-[11px] text-muted-foreground">বন্ধ থাকলে পেজ ৪০৪ দেখাবে</p>
+              <p className="text-[11px] text-muted-foreground">বন্ধ থাকলে ওয়েবসাইটে কোর্সটি দেখা যাবে না।</p>
             </div>
             <Switch checked={meta.isPublished} onCheckedChange={(v) => setMetaField("isPublished", v)} aria-label="প্রকাশিত" />
           </div>

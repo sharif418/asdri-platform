@@ -2,6 +2,7 @@
 
 import { Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 import type { SpecDraft, SdpDraft } from "./types";
 
 /** Section 3 — তাখাসসুস (specialization) list. */
@@ -16,6 +17,19 @@ export function SpecializationsSection({
   saving: boolean;
   onSave: () => void;
 }) {
+  async function removeSpec(index: number) {
+    const spec = specs[index];
+    if (!spec) return;
+    const name = spec.nameBn.trim() || spec.nameEn.trim() || "শিরোনামহীন বিভাগ";
+    const confirmed = await adminConfirm({
+      title: `‘${name}’ বিভাগটি মুছে ফেলা হবে।`,
+      description: "সংরক্ষণ করলে আর ফেরানো যাবে না।",
+      confirmLabel: "মুছে ফেলুন",
+    });
+    if (!confirmed) return;
+    setSpecs((list) => list.filter((_, j) => j !== index));
+  }
+
   return (
     <section className="rounded-2xl border bg-card p-6 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -59,9 +73,10 @@ export function SpecializationsSection({
             />
             <button
               type="button"
-              onClick={() => setSpecs((list) => list.filter((_, j) => j !== i))}
+              onClick={() => void removeSpec(i)}
+              disabled={saving}
               aria-label="মুছুন"
-              className="rounded p-1.5 text-destructive/70 hover:bg-destructive/10"
+              className="rounded p-1.5 text-destructive/70 hover:bg-destructive/10 disabled:opacity-40"
             >
               <Trash2 aria-hidden className="h-4 w-4" />
             </button>
@@ -85,6 +100,19 @@ export function SdpSection({
   saving: boolean;
   onSave: () => void;
 }) {
+  async function removeSdp(index: number) {
+    const program = sdp[index];
+    if (!program) return;
+    const name = program.titleBn.trim() || "শিরোনামহীন কার্যক্রম";
+    const confirmed = await adminConfirm({
+      title: `‘${name}’ কার্যক্রমটি মুছে ফেলা হবে।`,
+      description: "সংরক্ষণ করলে আর ফেরানো যাবে না।",
+      confirmLabel: "মুছে ফেলুন",
+    });
+    if (!confirmed) return;
+    setSdp((list) => list.filter((_, j) => j !== index));
+  }
+
   return (
     <section className="rounded-2xl border bg-card p-6 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -151,9 +179,10 @@ export function SdpSection({
               />
               <button
                 type="button"
-                onClick={() => setSdp((list) => list.filter((_, j) => j !== i))}
+                onClick={() => void removeSdp(i)}
+                disabled={saving}
                 aria-label="মুছুন"
-                className="rounded p-1.5 text-destructive/70 hover:bg-destructive/10"
+                className="rounded p-1.5 text-destructive/70 hover:bg-destructive/10 disabled:opacity-40"
               >
                 <Trash2 aria-hidden className="h-4 w-4" />
               </button>

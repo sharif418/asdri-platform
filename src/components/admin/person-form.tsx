@@ -13,6 +13,7 @@ import { MediaPicker, type PickedMedia } from "@/components/admin/ui/media-picke
 import { sanitizeRichTextPreview } from "@/lib/sanitize";
 import { slugifyTitle } from "@/lib/slug";
 import { adminConfirm } from "@/components/admin/ui/confirm";
+import { GeneralError, fieldId, useFieldErrors } from "@/components/admin/ui/form-errors";
 
 export interface PersonFormValues {
   id?: string;
@@ -45,9 +46,11 @@ export function PersonForm({ initial, teams, mode }: { initial: PersonFormValues
   const [values, setValues] = useState<PersonFormValues>(initial);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const fe = useFieldErrors();
 
+  // Server-side generation covers Bangla-only names (slugify → "").
   const slug = useMemo(
-    () => values.slug ?? (slugifyTitle(values.nameEn || values.nameBn) || "person"),
+    () => values.slug ?? slugifyTitle(values.nameEn || values.nameBn),
     [values.slug, values.nameEn, values.nameBn],
   );
 
@@ -58,6 +61,7 @@ export function PersonForm({ initial, teams, mode }: { initial: PersonFormValues
   async function onSave() {
     if (saving) return;
     setSaving(true);
+    fe.clear();
     try {
       const payload = {
         nameBn: values.nameBn,
@@ -75,7 +79,8 @@ export function PersonForm({ initial, teams, mode }: { initial: PersonFormValues
         isPublished: values.isPublished,
         isFeatured: values.isFeatured,
         sortOrder: values.sortOrder,
-        ...(mode === "create" ? { slug } : {}),
+        // Only send a slug the API can accept (≥3 chars); empty → server generates.
+        ...(mode === "create" && slug.length >= 3 ? { slug } : {}),
       };
       const res = await fetch(mode === "create" ? "/api/admin/people" : `/api/admin/people/${values.id}`, {
         method: mode === "create" ? "POST" : "PATCH",
@@ -87,7 +92,8 @@ export function PersonForm({ initial, teams, mode }: { initial: PersonFormValues
       });
       const json = (await res.json()) as { ok: boolean; error?: string; fields?: Record<string, string>; data?: { slug: string } };
       if (!res.ok || !json.ok) {
-        toast({ title: json.error ?? "সংরক্ষণ করা যায়নি", variant: "destructive" });
+        const summary = fe.setFromResponse(json) ?? "সংরক্ষণ করা যায়নি";
+        toast({ title: summary, variant: "destructive" });
         return;
       }
       toast({ title: mode === "create" ? "প্রোফাইল তৈরি হয়েছে" : "সংরক্ষিত হয়েছে" });
@@ -127,23 +133,34 @@ export function PersonForm({ initial, teams, mode }: { initial: PersonFormValues
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="space-y-5">
+        <GeneralError message={fe.general} />
         <BilingualField label="নাম" required hint="বাংলা নাম বাধ্যতামূলক; ইংরেজি খালি রাখলে বাংলাটিই দুই ভাষায় দেখানো হবে।">
           {(active) =>
             active === "bn" ? (
-              <input
-                value={values.nameBn}
-                onChange={(e) => set("nameBn", e.target.value)}
-                placeholder="বাংলা নাম"
-                required
-                className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
-              />
+              <>
+                <input
+                  id={fieldId("nameBn")}
+                  value={values.nameBn}
+                  onChange={(e) => set("nameBn", e.target.value)}
+                  placeholder="বাংলা নাম"
+                  aria-invalid={fe.errors.nameBn ? true : undefined}
+                  required
+                  className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
+                />
+                <fe.ErrorText name="nameBn" />
+              </>
             ) : (
-              <input
-                value={values.nameEn}
-                onChange={(e) => set("nameEn", e.target.value)}
-                placeholder="English name"
-                className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] outline-none focus:border-primary/50"
-              />
+              <>
+                <input
+                  id={fieldId("nameEn")}
+                  value={values.nameEn}
+                  onChange={(e) => set("nameEn", e.target.value)}
+                  placeholder="English name"
+                  aria-invalid={fe.errors.nameEn ? true : undefined}
+                  className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] outline-none focus:border-primary/50"
+                />
+                <fe.ErrorText name="nameEn" />
+              </>
             )
           }
         </BilingualField>
@@ -211,9 +228,9 @@ export function PersonForm({ initial, teams, mode }: { initial: PersonFormValues
         <BilingualField label="জীবনবৃত্তান্ত">
           {(active) =>
             active === "bn" ? (
-              <RichTextEditor value={values.bioBn} onChange={(html) => set("bioBn", html)} placeholder="শিক্ষা ও অভিজ্ঞতা…" minHeight={160} />
+              <RichTextEditor value={values.bioBn} onChange={(html) => set("bioBn", html)} label="জীবনবৃত্তান্ত" placeholder="শিক্ষা ও অভিজ্ঞতা…" minHeight={160} />
             ) : (
-              <RichTextEditor value={values.bioEn} onChange={(html) => set("bioEn", html)} placeholder="Education & experience…" minHeight={160} />
+              <RichTextEditor value={values.bioEn} onChange={(html) => set("bioEn", html)} label="Biography" placeholder="Education & experience…" minHeight={160} />
             )
           }
         </BilingualField>
@@ -221,10 +238,12 @@ export function PersonForm({ initial, teams, mode }: { initial: PersonFormValues
 
       <aside className="space-y-4 rounded-2xl border bg-card p-5 shadow-sm xl:sticky xl:top-20 h-fit">
         <div>
-          <label className="text-sm font-semibold">দল</label>
+          <label htmlFor={fieldId("teamId")} className="text-sm font-semibold">দল</label>
           <select
+            id={fieldId("teamId")}
             value={values.teamId}
             onChange={(e) => set("teamId", e.target.value)}
+            aria-invalid={fe.errors.teamId ? true : undefined}
             className="mt-1.5 w-full rounded-lg border bg-background px-3 py-2 text-sm"
           >
             <option value="">— দল নির্বাচন করুন —</option>
@@ -234,6 +253,7 @@ export function PersonForm({ initial, teams, mode }: { initial: PersonFormValues
               </option>
             ))}
           </select>
+          <fe.ErrorText name="teamId" />
         </div>
 
         <div>
@@ -261,20 +281,23 @@ export function PersonForm({ initial, teams, mode }: { initial: PersonFormValues
         </div>
 
         <div>
-          <label className="text-sm font-semibold">ক্রম (sort order)</label>
+          <label htmlFor={fieldId("sortOrder")} className="text-sm font-semibold">ক্রম (sort order)</label>
           <input
+            id={fieldId("sortOrder")}
             type="number"
             min={0}
             max={999}
             value={values.sortOrder}
             onChange={(e) => set("sortOrder", Number(e.target.value) || 0)}
+            aria-invalid={fe.errors.sortOrder ? true : undefined}
             className="mt-1.5 w-full rounded-lg border bg-background px-3 py-2 text-sm"
           />
+          <fe.ErrorText name="sortOrder" />
         </div>
 
         <div className="border-t pt-4">
           <p className="text-[11px] text-muted-foreground">
-            স্লাগ: <code className="rounded bg-secondary px-1">{slug}</code>
+            স্লাগ: <code className="rounded bg-secondary px-1">{slug || "স্বয়ংক্রিয়"}</code>
           </p>
           <div className="mt-1">
             <LanguageStatus hasBn={values.nameBn.length > 2} hasEn={values.nameEn.length > 2} />

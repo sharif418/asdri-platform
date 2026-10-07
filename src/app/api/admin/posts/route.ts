@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireModule, unauthorized, forbidden } from "@/lib/auth";
 import { audit } from "@/lib/audit";
-import { slugify } from "@/lib/slug";
+import { buildUniqueSlug, slugify } from "@/lib/slug";
 import { postCreateSchema, sanitizePostPayload } from "@/lib/validators/admin-content";
 
 export const dynamic = "force-dynamic";
@@ -38,10 +38,13 @@ export async function POST(request: NextRequest): Promise<Response> {
   }
 
   const data = sanitizePostPayload(parsed.data);
-  const slug = data.slug || slugify(data.titleEn || data.titleBn);
-  if (await db.post.findUnique({ where: { slug } })) {
-    return NextResponse.json({ ok: false, error: "এই স্লাগ ইতিমধ্যেই ব্যবহৃত — অন্য একটি দিন।", fields: { slug: "স্লাগ ডুপ্লিকেট" } }, { status: 409 });
-  }
+  // Client slug wins when unique; otherwise (none sent / collision, e.g. a
+  // Bangla-only title that slugifies to "") a unique slug is generated.
+  const base = data.slug || slugify(data.titleEn || data.titleBn);
+  const slug = await buildUniqueSlug(base, async (candidate) => {
+    const existing = await db.post.findUnique({ where: { slug: candidate }, select: { id: true } });
+    return !!existing;
+  });
   if (data.categoryId && !(await db.postCategory.findUnique({ where: { id: data.categoryId } }))) {
     return NextResponse.json({ ok: false, error: "নির্বাচিত ক্যাটাগরিটি খুঁজে পাওয়া যায়নি।", fields: { categoryId: "ক্যাটাগরি নেই" } }, { status: 400 });
   }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireModule, unauthorized, forbidden } from "@/lib/auth";
 import { audit } from "@/lib/audit";
-import { slugify } from "@/lib/slug";
+import { buildUniqueSlug, slugify } from "@/lib/slug";
 import { researchProjectCreateSchema, sanitizeResearchPayload } from "@/lib/validators/admin-research";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +33,10 @@ export async function POST(request: NextRequest): Promise<Response> {
 
   const data = sanitizeResearchPayload(parsed.data);
 
-  const slug = await uniqueSlug(data.titleEn || data.titleBn);
+  const slug = await buildUniqueSlug(slugify(data.titleEn || data.titleBn), async (candidate) => {
+    const existing = await db.researchProject.findUnique({ where: { slug: candidate }, select: { id: true } });
+    return !!existing;
+  });
   const project = await db.researchProject.create({
     data: {
       slug,
@@ -61,16 +64,4 @@ export async function POST(request: NextRequest): Promise<Response> {
   );
 
   return NextResponse.json({ ok: true, data: { slug: project.slug, id: project.id } }, { status: 201 });
-}
-
-/** Ensure a unique research project slug (-2, -3… suffixes). */
-async function uniqueSlug(source: string): Promise<string> {
-  const base = slugify(source) || "research-project";
-  let candidate = base;
-  for (let attempt = 2; attempt <= 25; attempt++) {
-    const existing = await db.researchProject.findUnique({ where: { slug: candidate }, select: { id: true } });
-    if (!existing) return candidate;
-    candidate = `${base}-${attempt}`;
-  }
-  return `${base}-${Date.now()}`;
 }

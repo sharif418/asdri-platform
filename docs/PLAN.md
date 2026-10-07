@@ -180,3 +180,46 @@ their predecessor; the sandbox working tree always reflects the newest branch.
 output, test run, screenshot). Anything not run is Partial. `docs/GAPS.md` collects every open
 question and client-side step; `docs/HUMAN_STEPS.md` names every secret/account only the client
 can create.
+
+---
+
+## 8. Round 4 — the people who will use this, and the face it shows them
+
+Brief: `docs/PROMPT-round-4.md` (base `deploy/staging-r7` = round-7 tip + the office's brand
+commit `4ef38ce`). Six workstreams, in the brief's own order, as a stack of branches —
+each ends in a PR, none self-merged:
+
+| # | Branch | Workstream |
+|---|--------|------------|
+| 1 | `fix/r4-admin-audit` | Monday-morning admin audit (lists, forms, destructive actions, empty/error states, phone width, Bangla, keyboard, screen reader) + fixes + the audit record in PROGRESS |
+| 2 | `feat/r4-identity` | The brand carried the whole way through: clear-space + size rules in `src/lib/brand.ts`, the mark as watermark/ornament, OG image, print headers, email/receipt/exam-call letter, loading state, better brand files (monochrome + PNG email variant). The header designed as a whole (utility bar, 8 sections × 2 languages at every width, parent-click semantics, sticky/scrolled states, keyboard + SR). The inner-page band (`PageHero`) as the signature calligraphy surface of the site |
+| 3 | `feat/r4-roles-portals` | Role & permission model for the institute: permission-based `roleCan` (role → permission set, enforced in the data layer), scoped relations (guardian↔student, teacher↔course), invitation/onboarding + password/verification story, portals per responsibility (student, guardian, teacher, finance, librarian, donor, alumni), audit, and the matrix tests (guardian cannot see another family's child; accountant cannot edit a curriculum) |
+| 4 | `feat/r4-library` | The library as a real module: `LibraryItem` data model with bibliographic metadata (authors, publishers, categories, series/issues), librarian admin (catalogue, upload/replace PDFs, public/member visibility), public catalogue searchable/filterable in both languages, record page with citation, in-browser reader with page navigation + in-document search, journals organised by issue |
+| 5 | `chore/r4-finish` | Open items from review: mobile perf levers, content revision history + preview, the last `dir="rtl"` on a Bangla field, `uuid` dependency, `.qa/` 48k-line Lighthouse JSON diet, `upload/` client docs; the finish-what-is-half-built walkthrough; docs close-out |
+
+### Roles & portals — the model (decided where the brief is silent, recorded in GAPS)
+
+- **Permissions, not role names, are the unit of access.** `UserRole` stays a single column
+  (migration-free for existing rows) but `roleCan(role, permission)` consults a
+  `ROLE_PERMISSIONS` map; portals are granted `permission[]`, so a new role is a data change.
+  Roles added: `TEACHER`, `STUDENT`, `GUARDIAN`, `LIBRARIAN`, `DONOR`, `ALUMNI`
+  (APPLICANT stays; FINANCE/FATWA/ADMISSIONS/EDITOR/ADMIN stay).
+- **Scoping is a relation, not a role.** `GuardianLink (guardianId, studentUserId | applicationId,
+  relation)`, `TeacherAssignment (teacherPersonId?, userId?, courseId?)` — the data-layer guard
+  checks the relation before the row is read or written. `STUDENT`/`GUARDIAN`/`TEACHER`/`DONOR`/
+  `ALUMNI` land in their own portal (`/portal`), staff land in `/admin` — one login door,
+  routed by role.
+- **Invitation, not self-signup, for office-controlled roles.** `Invitation` model (role, email,
+  optional scope, single-use token, expiry); officers invite from the admin; the invitee sets a
+  password at `/accept-invite`; public self-registration stays for applicants/donors.
+- **Portals are Bangla-first products**: one job list per role on the portal home, nothing the
+  role cannot touch, tested as an authorization matrix in the suite.
+
+### Library — the model
+
+`LibraryItem` (BOOK/JOURNAL_ISSUE/PAPER/DIGITAL_FILE), `LibraryCreator` (authors/editors),
+`LibraryPublisher`, `LibraryCategory` (tree), `LibraryFile` (PDF media + page count), issue
+metadata (volume/number/year) for journals, `LibraryCheckout` + `LibraryReading` for
+borrow/read tracking, `visibility` PUBLIC/MEMBERS, flag-gated module, in-DB search
+(tsvector, both languages) with filters (type/category/author/year), citation generator
+reused from the journals page. The librarian admin is a full module under `/admin/library`.

@@ -12,6 +12,7 @@ import { RichTextEditor } from "@/components/admin/ui/rich-text-editor";
 import { sanitizeRichTextPreview } from "@/lib/sanitize";
 import { slugifyTitle } from "@/lib/slug";
 import { adminConfirm } from "@/components/admin/ui/confirm";
+import { GeneralError, fieldId, useFieldErrors } from "@/components/admin/ui/form-errors";
 
 export interface NoticeFormValues {
   id?: string;
@@ -38,11 +39,14 @@ export function NoticeForm({ initial, mode }: { initial: NoticeFormValues; mode:
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [preview, setPreview] = useState(false);
+  const fe = useFieldErrors();
 
-  const slug = useMemo(
-    () => values.slug ?? (slugifyTitle(values.titleEn || values.titleBn) || "notice"),
-    [values.slug, values.titleEn, values.titleBn],
-  );
+  // Server-side generation covers Bangla-only titles (slugify → "").
+  const slug = useMemo(() => values.slug ?? slugifyTitle(values.titleEn || values.titleBn), [
+    values.slug,
+    values.titleEn,
+    values.titleBn,
+  ]);
 
   function set<K extends keyof NoticeFormValues>(key: K, value: NoticeFormValues[K]) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -51,13 +55,15 @@ export function NoticeForm({ initial, mode }: { initial: NoticeFormValues; mode:
   async function onSave(publish?: boolean) {
     if (saving) return;
     setSaving(true);
+    fe.clear();
     try {
       const payload = {
         ...values,
         ...(publish !== undefined ? { isPublished: publish } : {}),
         bodyBn: sanitizeRichTextPreview(values.bodyBn),
         bodyEn: sanitizeRichTextPreview(values.bodyEn),
-        slug: mode === "create" ? slug : undefined,
+        // Only send a slug the API can accept (≥3 chars); empty → server generates.
+        slug: mode === "create" && slug.length >= 3 ? slug : undefined,
       };
       const res = await fetch(mode === "create" ? "/api/admin/notices" : `/api/admin/notices/${values.id}`, {
         method: mode === "create" ? "POST" : "PATCH",
@@ -69,7 +75,8 @@ export function NoticeForm({ initial, mode }: { initial: NoticeFormValues; mode:
       });
       const json = (await res.json()) as { ok: boolean; error?: string; fields?: Record<string, string>; data?: { slug: string } };
       if (!res.ok || !json.ok) {
-        toast({ title: json.error ?? "সংরক্ষণ করা যায়নি", variant: "destructive" });
+        const summary = fe.setFromResponse(json) ?? "সংরক্ষণ করা যায়নি";
+        toast({ title: summary, variant: "destructive" });
         return;
       }
       toast({ title: mode === "create" ? "নোটিশ তৈরি হয়েছে" : "সংরক্ষিত হয়েছে" });
@@ -108,24 +115,35 @@ export function NoticeForm({ initial, mode }: { initial: NoticeFormValues; mode:
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="space-y-5">
+        <GeneralError message={fe.general} />
         <BilingualField label="শিরোনাম" required hint="বাংলা শিরোনাম বাধ্যতামূলক; ইংরেজি খালি রাখলে বাংলাটিই দুই ভাষায় দেখানো হবে।">
           {(active) => (
             <>
               {active === "bn" ? (
-                <input
-                  value={values.titleBn}
-                  onChange={(e) => set("titleBn", e.target.value)}
-                  placeholder="বাংলা শিরোনাম লিখুন"
-                  className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
-                  required
-                />
+                <>
+                  <input
+                    id={fieldId("titleBn")}
+                    value={values.titleBn}
+                    onChange={(e) => set("titleBn", e.target.value)}
+                    placeholder="বাংলা শিরোনাম লিখুন"
+                    aria-invalid={fe.errors.titleBn ? true : undefined}
+                    className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
+                    required
+                  />
+                  <fe.ErrorText name="titleBn" />
+                </>
               ) : (
-                <input
-                  value={values.titleEn}
-                  onChange={(e) => set("titleEn", e.target.value)}
-                  placeholder="English title"
-                  className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] outline-none focus:border-primary/50"
-                />
+                <>
+                  <input
+                    id={fieldId("titleEn")}
+                    value={values.titleEn}
+                    onChange={(e) => set("titleEn", e.target.value)}
+                    placeholder="English title"
+                    aria-invalid={fe.errors.titleEn ? true : undefined}
+                    className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] outline-none focus:border-primary/50"
+                  />
+                  <fe.ErrorText name="titleEn" />
+                </>
               )}
             </>
           )}
@@ -159,10 +177,11 @@ export function NoticeForm({ initial, mode }: { initial: NoticeFormValues; mode:
               <RichTextEditor
                 value={values.bodyBn}
                 onChange={(html) => set("bodyBn", html)}
+                label="বিস্তারিত বিজ্ঞপ্তি"
                 placeholder="বিস্তারিত বিজ্ঞপ্তি…"
               />
             ) : (
-              <RichTextEditor value={values.bodyEn} onChange={(html) => set("bodyEn", html)} placeholder="Full notice body…" />
+              <RichTextEditor value={values.bodyEn} onChange={(html) => set("bodyEn", html)} label="Full notice body" placeholder="Full notice body…" />
             )
           }
         </BilingualField>
@@ -181,8 +200,9 @@ export function NoticeForm({ initial, mode }: { initial: NoticeFormValues; mode:
 
       <aside className="space-y-4 rounded-2xl border bg-card p-5 shadow-sm xl:sticky xl:top-20 h-fit">
         <div>
-          <label className="text-sm font-semibold">ক্যাটাগরি</label>
+          <label htmlFor={fieldId("category")} className="text-sm font-semibold">ক্যাটাগরি</label>
           <select
+            id={fieldId("category")}
             value={values.category}
             onChange={(e) => set("category", e.target.value as NoticeFormValues["category"])}
             className="mt-1.5 w-full rounded-lg border bg-background px-3 py-2 text-sm"
@@ -193,11 +213,13 @@ export function NoticeForm({ initial, mode }: { initial: NoticeFormValues; mode:
               </option>
             ))}
           </select>
+          <fe.ErrorText name="category" />
         </div>
 
         <div>
-          <label className="text-sm font-semibold">অবস্থা</label>
+          <label htmlFor={fieldId("status")} className="text-sm font-semibold">অবস্থা</label>
           <select
+            id={fieldId("status")}
             value={values.status}
             onChange={(e) => set("status", e.target.value as NoticeFormValues["status"])}
             className="mt-1.5 w-full rounded-lg border bg-background px-3 py-2 text-sm"
@@ -231,7 +253,7 @@ export function NoticeForm({ initial, mode }: { initial: NoticeFormValues; mode:
 
         <div className="border-t pt-4">
           <p className="text-[11px] text-muted-foreground">
-            স্লাগ: <code className="rounded bg-secondary px-1">{slug}</code>
+            স্লাগ: <code className="rounded bg-secondary px-1">{slug || "স্বয়ংক্রিয়"}</code>
           </p>
           <div className="mt-1">
             <LanguageStatus hasBn={values.titleBn.length > 2} hasEn={values.titleEn.length > 2} />

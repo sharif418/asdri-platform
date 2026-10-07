@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { BilingualField, LanguageStatus } from "@/components/admin/ui/bilingual-field";
 import { youtubeThumbUrl } from "@/lib/youtube";
 import { adminConfirm } from "@/components/admin/ui/confirm";
+import { GeneralError, fieldId, useFieldErrors } from "@/components/admin/ui/form-errors";
 
 export interface VideoFormValues {
   id?: string;
@@ -45,6 +46,7 @@ export function VideoForm({
   const [newPlaylist, setNewPlaylist] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const fe = useFieldErrors();
 
   function set<K extends keyof VideoFormValues>(key: K, value: VideoFormValues[K]) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -55,6 +57,7 @@ export function VideoForm({
   async function onSave() {
     if (saving) return;
     setSaving(true);
+    fe.clear();
     try {
       const res = await fetch(mode === "create" ? "/api/admin/videos" : `/api/admin/videos/${values.id}`, {
         method: mode === "create" ? "POST" : "PATCH",
@@ -72,7 +75,10 @@ export function VideoForm({
       });
       const json = (await res.json()) as { ok: boolean; error?: string; fields?: Record<string, string>; data?: { id: string } };
       if (!res.ok || !json.ok) {
-        toast({ title: json.error ?? "সংরক্ষণ করা যায়নি", variant: "destructive" });
+        // The videos API answers with a specific message (bad link/ID) — keep
+        // it in the toast AND under the offending field via the shared hook.
+        const summary = fe.setFromResponse(json) ?? "সংরক্ষণ করা যায়নি";
+        toast({ title: summary, variant: "destructive" });
         return;
       }
       toast({ title: mode === "create" ? "ভিডিও যোগ হয়েছে" : "সংরক্ষিত হয়েছে" });
@@ -109,23 +115,34 @@ export function VideoForm({
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="space-y-5">
+        <GeneralError message={fe.general} />
         <BilingualField label="শিরোনাম" required>
           {(active) =>
             active === "bn" ? (
-              <input
-                value={values.titleBn}
-                onChange={(e) => set("titleBn", e.target.value)}
-                placeholder="ভিডিওর বাংলা শিরোনাম"
-                required
-                className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
-              />
+              <>
+                <input
+                  id={fieldId("titleBn")}
+                  value={values.titleBn}
+                  onChange={(e) => set("titleBn", e.target.value)}
+                  placeholder="ভিডিওর বাংলা শিরোনাম"
+                  aria-invalid={fe.errors.titleBn ? true : undefined}
+                  required
+                  className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
+                />
+                <fe.ErrorText name="titleBn" />
+              </>
             ) : (
-              <input
-                value={values.titleEn}
-                onChange={(e) => set("titleEn", e.target.value)}
-                placeholder="Video title"
-                className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] outline-none focus:border-primary/50"
-              />
+              <>
+                <input
+                  id={fieldId("titleEn")}
+                  value={values.titleEn}
+                  onChange={(e) => set("titleEn", e.target.value)}
+                  placeholder="Video title"
+                  aria-invalid={fe.errors.titleEn ? true : undefined}
+                  className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] outline-none focus:border-primary/50"
+                />
+                <fe.ErrorText name="titleEn" />
+              </>
             )
           }
         </BilingualField>
@@ -153,17 +170,20 @@ export function VideoForm({
         </BilingualField>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-semibold">
+          <label htmlFor={fieldId("youtubeUrl")} className="text-sm font-semibold">
             ইউটিউব লিংক বা ভিডিও আইডি <span className="text-destructive">*</span>
           </label>
           <input
+            id={fieldId("youtubeUrl")}
             value={values.youtubeUrl}
             onChange={(e) => set("youtubeUrl", e.target.value)}
             placeholder="https://www.youtube.com/watch?v=… অথবা dQw4w9WgXcQ"
             dir="ltr"
+            aria-invalid={fe.errors.youtubeUrl ? true : undefined}
             required
             className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-sm outline-none focus:border-primary/50"
           />
+          <fe.ErrorText name="youtubeUrl" />
           <p className="text-[11.5px] text-muted-foreground">
             লিংক বা আইডি — সার্ভার ১১ অক্ষরের আইডি বের করে সংরক্ষণ করে (থাম্বনেইল ও এম্বেড স্বয়ংক্রিয়)।
           </p>
@@ -179,10 +199,12 @@ export function VideoForm({
 
       <aside className="space-y-4 rounded-2xl border bg-card p-5 shadow-sm xl:sticky xl:top-20 h-fit">
         <div>
-          <label className="text-sm font-semibold">প্লেলিস্ট</label>
+          <label htmlFor={fieldId("playlistKey")} className="text-sm font-semibold">প্লেলিস্ট</label>
           <select
+            id={fieldId("playlistKey")}
             value={listOptions.includes(values.playlistKey) ? values.playlistKey : ""}
             onChange={(e) => set("playlistKey", e.target.value)}
+            aria-invalid={fe.errors.playlistKey ? true : undefined}
             className="mt-1.5 w-full rounded-lg border bg-background px-3 py-2 text-sm"
           >
             <option value="">— প্লেলিস্ট নির্বাচন করুন —</option>
@@ -192,6 +214,7 @@ export function VideoForm({
               </option>
             ))}
           </select>
+          <fe.ErrorText name="playlistKey" />
           <div className="mt-2 flex gap-1.5">
             <input
               value={newPlaylist}
@@ -218,15 +241,18 @@ export function VideoForm({
         </div>
 
         <div>
-          <label className="text-sm font-semibold">ক্রম</label>
+          <label htmlFor={fieldId("sortOrder")} className="text-sm font-semibold">ক্রম</label>
           <input
+            id={fieldId("sortOrder")}
             type="number"
             min={0}
             max={999}
             value={values.sortOrder}
             onChange={(e) => set("sortOrder", Number(e.target.value) || 0)}
+            aria-invalid={fe.errors.sortOrder ? true : undefined}
             className="mt-1.5 w-full rounded-lg border bg-background px-3 py-2 text-sm"
           />
+          <fe.ErrorText name="sortOrder" />
         </div>
 
         <div className="flex items-center justify-between rounded-lg border px-3.5 py-2.5">

@@ -13,7 +13,11 @@ export default async function NewPostPage() {
 
   const [categories, authors] = await Promise.all([
     db.postCategory.findMany({ orderBy: { sortOrder: "asc" }, select: { id: true, nameBn: true } }),
-    db.person.findMany({ orderBy: [{ teamId: "asc" }, { sortOrder: "asc" }], select: { id: true, nameBn: true } }),
+    // খেতাব/দল সহ — একই নামের একাধিক শিক্ষক আলাদা করতে অপশন লেবেলে পদবি যোগ হয় (r4 M14)।
+    db.person.findMany({
+      orderBy: [{ teamId: "asc" }, { sortOrder: "asc" }],
+      select: { id: true, nameBn: true, titleBn: true, team: { select: { nameBn: true } } },
+    }),
   ]);
 
   return (
@@ -33,7 +37,12 @@ export default async function NewPostPage() {
       <PostForm
         mode="create"
         categories={categories}
-        authors={authors}
+        authors={authors.map((person) => ({
+          id: person.id,
+          nameBn: person.nameBn,
+          titleBn: person.titleBn,
+          teamNameBn: person.team?.nameBn ?? null,
+        }))}
         initial={{
           titleBn: "",
           titleEn: "",

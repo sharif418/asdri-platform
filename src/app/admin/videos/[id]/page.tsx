@@ -34,7 +34,11 @@ export default async function EditVideoPage({ params }: { params: Promise<{ id: 
         {video.titleBn}
       </h1>
       <p className="mt-1 mb-6 text-sm text-muted-foreground">
-        ভিডিও আইডি <code className="rounded bg-secondary px-1" dir="ltr">{video.youtubeId}</code> — পরিবর্তনগুলো অডিট লগে সংরক্ষিত হয়।
+        ভিডিও আইডি{" "}
+        <code className="inline-block max-w-full break-all rounded bg-secondary px-1 align-bottom" dir="ltr">
+          {video.youtubeId}
+        </code>{" "}
+        — পরিবর্তনগুলো অডিট লগে সংরক্ষিত হয়।
       </p>
       <VideoForm
         mode="edit"

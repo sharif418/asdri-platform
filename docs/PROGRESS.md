@@ -1,4 +1,86 @@
-# PROGRESS — honest status, round 3 (the round that closed the gap between sandbox and institute)
+# PROGRESS — honest status, round 4 (the people who will use it, and the face it shows)
+
+Single source of truth. **Done** = feature works AND was verified **this round** with a named
+command, test, or browser action. **Partial** = built but not verified end-to-end or knowingly
+incomplete. Round-3 sections live below under "Round 3 archive".
+
+Proof environment (rebuilt this round, same as round 3): PostgreSQL 16.2 @ 127.0.0.1:5433
+(asdri_dev seeded + asdri_test), bun 1.3.14, Next.js 16.1.3. Baseline re-verified before any
+work: `bun test` → 291 pass / 0 fail; `bun run build` → success; production server boot +
+route smoke (/, /en, /notices, /academics/courses 200, /admin 307, sitemap/robots 200);
+site opened in both languages at 1920px and 390px with zero console errors.
+
+## Workstream 1 — the Monday-morning admin audit (PR: fix/r4-admin-audit → deploy/staging-r7)
+
+The brief ordered a full officer's pass before anything new went in. Three audit passes
+covered every admin route at 1440×900 and 390×844 (a11y snapshots = the screen-reader view,
+form submits valid + invalid, destructive create→delete cycles, keyboard Tab passes, console
+errors, scrollWidth measurements), plus code reading with file:line root causes:
+
+- `.qa/r4-audit/findings-cms.md` — dashboard, notices, blog, media, gallery, videos, people,
+  courses + editor, page-content, research: **2 Critical · 5 High · 18 Medium · 9 Low**
+- `.qa/r4-audit/findings-ops.md` — admissions (intakes/applications/detail + live status
+  transition), fatwa, inbox, users, audit log, settings: **2 High · 5 Medium · 3 Low**
+- `.qa/r4-audit/findings-fin.md` — funds, campaigns, donations, ledger, outbox:
+  **1 High · 4 Medium · 2 Low**
+
+**Every Critical and High finding is fixed and browser-verified** (evidence screenshots
+`.qa/r4-audit/fix-1a-*.png`, `fix-1b-*.png`, 30+ files; each fix verified live at 390 and/or
+1440 in a fresh browser session):
+
+- **C1 phones had no admin navigation** → mobile drawer (`admin-mobile-nav.tsx`, Sheet +
+  the same `ADMIN_NAV` tree, role/flag filtered, closes on navigate). Verified: drawer →
+  notices navigates and closes at 390.
+- **C2 Bangla-only titles could never create a second record** (constant fallback slugs
+  collided) → generic server-side `buildUniqueSlug` on every create route + forms stop
+  sending constant fallbacks + `tests/unit/slug-generation.test.ts`. Verified: two
+  Bangla-only notices created back-to-back (n-muya6c80/n-muya6fkz), then cleaned up.
+- **H1 videos module 3,430px sideways** → min-w-0/break-all + seed now stores real watch
+  URLs + `scripts/fixtures/fix-video-urls.ts` (run; idempotent) + placeholder badge.
+  Verified: scrollWidth exactly 390.
+- **H2 API field errors were thrown away** → shared `useFieldErrors` + inline `role="alert"`
+  Bangla errors under fields on all five forms + focus-first-invalid. Verified live.
+- **H3/O-M2 raw English audit codes** → `src/lib/audit-labels.ts` (complete action + entity
+  maps, +tests) used by dashboard + audit page + entity filter. Verified: dashboard reads
+  "নোটিশ তৈরি / নোটিশ মুছে ফেলা".
+- **H4 dashboard 520px wide at 390** → grid sections min-w-0. Verified: 390 exact.
+- **H5 course editor destroyed semesters on a stray tap** → `adminConfirm` on
+  semester/subject/specialization/SDP row deletes, disabled while saving.
+- **O-H1 sticky theads covered the top row's links** → scroll-margin + solid backgrounds;
+  the first fix attempt's `top: 3.5rem` re-broke hit-testing and was caught + reverted by
+  the second verification pass (documented in R4-1b worklog) — sticky stays `top: 0`.
+- **O-H2/F-H1 inverted switch semantics** (flags/menus/faqs read "বন্ধ করুন [checked]" for
+  enabled modules) → state-based labels ("…— বর্তমান অবস্থা: চালু") + visible status words.
+  Verified in the a11y tree on all three surfaces.
+- **O-M1 mixed-script dates** ("৭/১০/২০২৬, ২:৪২:৩৫ PM") → `formatDateTimeBn` (Bangla
+  periods রাত/ভোর/সকাল/দুপুর/বিকাল/সন্ধ্যা) + consistent `formatDate` in lists.
+
+Medium/Low batch (all fixed + verified, same evidence folder): RTE link popover replaces
+`window.prompt` + placeholder CSS + named editor + Heading2/3 icons + 44px toolbar targets
+(M2/M3/L2); label associations on every unlinked form control (M4); author dropdown
+disambiguation (M14); year without thousands grouping (M15); dialog close "বন্ধ করুন" (M17);
+course cover finally shows in the editor (M5); publish caption de-jargoned (L4);
+blog/publications pagination + no-match empty states + draft chips + sticky theads + dead
+queries (M7/M8/M6/M1/L1/L3); campaigns start→end dates with arrow (F-M1); funds state chip +
+action button (F-M2); donations `aria-current` tabs + right-aligned amounts (F-L1/F-L2);
+fatwa row short a11y name (O-M3); users role hints (O-M4); inbox disabled-state hint (O-L2);
+downloads fileless warning (M16); **11 seeded blog bodies converted from literal Markdown to
+HTML** (seed converter + `scripts/fixtures/convert-post-markdown.ts` run; DB verified;
+`tests/unit/markdown-seed.test.ts`).
+
+Gates on the branch: `bunx tsc --noEmit` clean · `bun run lint` clean · `bun test`
+**319 pass / 0 fail / 1897 expects** (291 → 319: +slug-generation, +audit-labels,
++markdown-seed suites).
+
+Known-honest notes: O-H1's fix is a mitigation — a row half-scrolled under any sticky header
+is inherently partially covered; programmatic scroll targeting and hit-testing are fixed and
+verified. M16 is a warning, not publish-gating (data decision recorded in GAPS). Native
+date inputs keep their English spinners (M17 remainder) — a Bangla date picker is a component
+build recorded as follow-up. The dev DB's QA artifacts (test campaigns, extra users) were
+cleaned during the audit.
+
+
+# Round 3 archive — PROGRESS, round 3 (the round that closed the gap between sandbox and institute)
 
 Single source of truth. **Done** = feature works AND was verified **this round** with a named
 command, test, or browser action. **Partial** = built but not verified end-to-end or knowingly

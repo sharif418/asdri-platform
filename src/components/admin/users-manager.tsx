@@ -6,6 +6,7 @@ import { Copy, KeyRound, Loader2, Plus, Trash2, UserPlus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { formatNumber } from "@/lib/format";
+import { formatDateTimeBn } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { adminConfirm } from "@/components/admin/ui/confirm";
 
@@ -29,6 +30,15 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const STAFF_ROLES = ["ADMIN", "EDITOR", "ADMISSIONS", "FINANCE", "FATWA"] as const;
+
+/** One-line responsibility hints under the role select (r4 O-M4). */
+const ROLE_HINTS: Record<(typeof STAFF_ROLES)[number], string> = {
+  ADMIN: "সব মডিউল ও সেটিংস নিয়ন্ত্রণ করেন",
+  EDITOR: "কনটেন্ট, নোটিশ, ব্লগ, কোর্স, মিডিয়া",
+  ADMISSIONS: "ইনটেক, আবেদন ও ভর্তি প্রক্রিয়া",
+  FINANCE: "ফান্ড, ক্যাম্পেইন, অনুদান ও লেজার",
+  FATWA: "ফতোয়া প্রশ্ন ও উত্তর প্রকাশ",
+};
 
 function csrfToken(): string {
   return document.cookie.match(/asr-csrf=([^;]+)/)?.[1] ?? "";
@@ -194,18 +204,24 @@ export function UsersManager({ users }: { users: UserRow[] }) {
             aria-label="নতুন ইউজারের ইমেইল"
             className="min-w-52 flex-1 rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:border-primary/50"
           />
-          <select
-            value={newRole}
-            onChange={(e) => setNewRole(e.target.value as (typeof STAFF_ROLES)[number])}
-            aria-label="নতুন ইউজারের রোল"
-            className="rounded-lg border bg-background px-3 py-2 text-sm"
-          >
-            {STAFF_ROLES.map((role) => (
-              <option key={role} value={role}>
-                {ROLE_LABELS[role]}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-col gap-1">
+            <select
+              value={newRole}
+              onChange={(e) => setNewRole(e.target.value as (typeof STAFF_ROLES)[number])}
+              aria-label="নতুন ইউজারের রোল"
+              aria-describedby="new-user-role-hint"
+              className="rounded-lg border bg-background px-3 py-2 text-sm"
+            >
+              {STAFF_ROLES.map((role) => (
+                <option key={role} value={role}>
+                  {ROLE_LABELS[role]}
+                </option>
+              ))}
+            </select>
+            <p id="new-user-role-hint" className="text-[11px] text-muted-foreground">
+              {ROLE_HINTS[newRole]}
+            </p>
+          </div>
           <button
             type="button"
             onClick={() => void createUser()}
@@ -257,7 +273,7 @@ export function UsersManager({ users }: { users: UserRow[] }) {
                 </td>
                 <td className="hidden px-4 py-3 md:table-cell">
                   <span className="text-[12px] text-muted-foreground">
-                    {row.lastLoginAt ? new Date(row.lastLoginAt).toLocaleString("bn-BD") : "কখনো নয়"}
+                    {row.lastLoginAt ? formatDateTimeBn(row.lastLoginAt) : "কখনো নয়"}
                   </span>
                 </td>
                 <td className="px-4 py-3">

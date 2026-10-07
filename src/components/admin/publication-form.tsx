@@ -61,7 +61,8 @@ export function PublicationForm({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const slug = mode === "create" ? slugifyTitle(values.titleEn) || slugifyTitle(values.titleBn) || "publication" : values.id ?? "";
+  // Display-only; Bangla-only titles get their slug generated server-side.
+  const slug = mode === "create" ? slugifyTitle(values.titleEn) || slugifyTitle(values.titleBn) : values.id ?? "";
 
   function set<K extends keyof PublicationFormValues>(key: K, value: PublicationFormValues[K]) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -190,8 +191,9 @@ export function PublicationForm({
 
       <aside className="space-y-4 rounded-2xl border bg-card p-5 shadow-sm xl:sticky xl:top-20 h-fit">
         <div>
-          <label className="text-sm font-semibold">ধরন</label>
+          <label htmlFor="publication-kind" className="text-sm font-semibold">ধরন</label>
           <select
+            id="publication-kind"
             value={values.kind}
             onChange={(e) => set("kind", e.target.value as PublicationFormValues["kind"])}
             className="mt-1.5 w-full rounded-lg border bg-background px-3 py-2 text-sm"
@@ -205,8 +207,9 @@ export function PublicationForm({
         </div>
 
         <div>
-          <label className="text-sm font-semibold">প্রকাশের সাল</label>
+          <label htmlFor="publication-year" className="text-sm font-semibold">প্রকাশের সাল</label>
           <input
+            id="publication-year"
             type="number"
             min={1950}
             max={2100}
@@ -219,8 +222,9 @@ export function PublicationForm({
 
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-sm font-semibold">ISSN</label>
+            <label htmlFor="publication-issn" className="text-sm font-semibold">ISSN</label>
             <input
+              id="publication-issn"
               value={values.issn}
               onChange={(e) => set("issn", e.target.value)}
               dir="ltr"
@@ -229,8 +233,9 @@ export function PublicationForm({
             />
           </div>
           <div>
-            <label className="text-sm font-semibold">ISBN</label>
+            <label htmlFor="publication-isbn" className="text-sm font-semibold">ISBN</label>
             <input
+              id="publication-isbn"
               value={values.isbn}
               onChange={(e) => set("isbn", e.target.value)}
               dir="ltr"
@@ -256,8 +261,9 @@ export function PublicationForm({
         </div>
 
         <div>
-          <label className="text-sm font-semibold">ক্রম</label>
+          <label htmlFor="publication-sort-order" className="text-sm font-semibold">ক্রম</label>
           <input
+            id="publication-sort-order"
             type="number"
             min={0}
             max={999}
@@ -278,7 +284,7 @@ export function PublicationForm({
 
         <div className="border-t pt-4">
           <p className="text-[11px] text-muted-foreground" dir="ltr">
-            {mode === "create" ? "স্লাগ স্বয়ংক্রিয়" : ""} {slug && mode === "create" ? <code className="rounded bg-secondary px-1">{slug}</code> : ""}
+            {slug && mode === "create" ? <code className="rounded bg-secondary px-1">{slug}</code> : "স্লাগ: স্বয়ংক্রিয়"}
           </p>
           <div className="mt-1">
             <LanguageStatus hasBn={values.titleBn.length > 2} hasEn={values.titleEn.length > 2} />

@@ -35,7 +35,7 @@ import { cn } from "@/lib/utils";
 import { useFeatureFlags } from "@/components/providers/site-config-provider";
 import type { UserRole } from "@prisma/client";
 
-interface AdminNavItem {
+export interface AdminNavItem {
   href: string;
   label: string;
   icon: LucideIcon;

@@ -1,5 +1,7 @@
 /* Shared draft types for the course editor module (mirror the API payloads). */
 
+import type { PickedMedia } from "@/components/admin/ui/media-picker";
+
 export interface SubjectDraft {
   code: string;
   titleBn: string;
@@ -60,6 +62,8 @@ export interface CourseMetaDraft {
   courseTypeEn: string;
   seats: number | null;
   coverMediaId: string | null;
+  /** The resolved cover media row — preview-only, never sent to the API (r4 M5). */
+  cover: PickedMedia | null;
   isFeatured: boolean;
   isPublished: boolean;
   sortOrder: number;

@@ -11,6 +11,7 @@ import { BilingualField, LanguageStatus } from "@/components/admin/ui/bilingual-
 import { MediaPicker, type PickedMedia } from "@/components/admin/ui/media-picker";
 import { slugifyTitle } from "@/lib/slug";
 import { adminConfirm } from "@/components/admin/ui/confirm";
+import { GeneralError, fieldId, useFieldErrors } from "@/components/admin/ui/form-errors";
 
 export interface AlbumFormValues {
   id?: string;
@@ -34,9 +35,11 @@ export function AlbumForm({ initial, mode }: { initial: AlbumFormValues; mode: "
   const [values, setValues] = useState<AlbumFormValues>(initial);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const fe = useFieldErrors();
 
+  // Server-side generation covers Bangla-only titles (slugify → "").
   const slug = useMemo(
-    () => values.slug ?? (slugifyTitle(values.titleEn || values.titleBn) || "album"),
+    () => values.slug ?? slugifyTitle(values.titleEn || values.titleBn),
     [values.slug, values.titleEn, values.titleBn],
   );
 
@@ -47,6 +50,7 @@ export function AlbumForm({ initial, mode }: { initial: AlbumFormValues; mode: "
   async function onSave() {
     if (saving) return;
     setSaving(true);
+    fe.clear();
     try {
       const payload = {
         titleBn: values.titleBn,
@@ -56,7 +60,8 @@ export function AlbumForm({ initial, mode }: { initial: AlbumFormValues; mode: "
         isPublished: values.isPublished,
         sortOrder: values.sortOrder,
         coverMediaId: values.cover?.id ?? null,
-        ...(mode === "create" ? { slug } : {}),
+        // Only send a slug the API can accept (≥3 chars); empty → server generates.
+        ...(mode === "create" && slug.length >= 3 ? { slug } : {}),
       };
       const res = await fetch(mode === "create" ? "/api/admin/albums" : `/api/admin/albums/${values.id}`, {
         method: mode === "create" ? "POST" : "PATCH",
@@ -65,7 +70,8 @@ export function AlbumForm({ initial, mode }: { initial: AlbumFormValues; mode: "
       });
       const json = (await res.json()) as { ok: boolean; error?: string; fields?: Record<string, string>; data?: { slug: string } };
       if (!res.ok || !json.ok) {
-        toast({ title: json.error ?? "সংরক্ষণ করা যায়নি", variant: "destructive" });
+        const summary = fe.setFromResponse(json) ?? "সংরক্ষণ করা যায়নি";
+        toast({ title: summary, variant: "destructive" });
         return;
       }
       toast({ title: mode === "create" ? "অ্যালবাম তৈরি হয়েছে" : "সংরক্ষিত হয়েছে" });
@@ -103,23 +109,34 @@ export function AlbumForm({ initial, mode }: { initial: AlbumFormValues; mode: "
     <div className="rounded-2xl border bg-card p-5 shadow-sm">
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="space-y-5">
+          <GeneralError message={fe.general} />
           <BilingualField label="অ্যালবামের শিরোনাম" required>
             {(active) =>
               active === "bn" ? (
-                <input
-                  value={values.titleBn}
-                  onChange={(e) => set("titleBn", e.target.value)}
-                  placeholder="বাংলা শিরোনাম"
-                  required
-                  className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
-                />
+                <>
+                  <input
+                    id={fieldId("titleBn")}
+                    value={values.titleBn}
+                    onChange={(e) => set("titleBn", e.target.value)}
+                    placeholder="বাংলা শিরোনাম"
+                    aria-invalid={fe.errors.titleBn ? true : undefined}
+                    required
+                    className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
+                  />
+                  <fe.ErrorText name="titleBn" />
+                </>
               ) : (
-                <input
-                  value={values.titleEn}
-                  onChange={(e) => set("titleEn", e.target.value)}
-                  placeholder="Album title"
-                  className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] outline-none focus:border-primary/50"
-                />
+                <>
+                  <input
+                    id={fieldId("titleEn")}
+                    value={values.titleEn}
+                    onChange={(e) => set("titleEn", e.target.value)}
+                    placeholder="Album title"
+                    aria-invalid={fe.errors.titleEn ? true : undefined}
+                    className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] outline-none focus:border-primary/50"
+                  />
+                  <fe.ErrorText name="titleEn" />
+                </>
               )
             }
           </BilingualField>
@@ -165,20 +182,23 @@ export function AlbumForm({ initial, mode }: { initial: AlbumFormValues; mode: "
           </div>
 
           <div>
-            <label className="text-sm font-semibold">ক্রম</label>
+            <label htmlFor={fieldId("sortOrder")} className="text-sm font-semibold">ক্রম</label>
             <input
+              id={fieldId("sortOrder")}
               type="number"
               min={0}
               max={999}
               value={values.sortOrder}
               onChange={(e) => set("sortOrder", Number(e.target.value) || 0)}
+              aria-invalid={fe.errors.sortOrder ? true : undefined}
               className="mt-1.5 w-full rounded-lg border bg-background px-3 py-2 text-sm"
             />
+            <fe.ErrorText name="sortOrder" />
           </div>
 
           <div className="border-t pt-4">
             <p className="text-[11px] text-muted-foreground">
-              স্লাগ: <code className="rounded bg-secondary px-1">{slug}</code>
+              স্লাগ: <code className="rounded bg-secondary px-1">{slug || "স্বয়ংক্রিয়"}</code>
             </p>
             <div className="mt-1">
               <LanguageStatus hasBn={values.titleBn.length > 2} hasEn={values.titleEn.length > 2} />

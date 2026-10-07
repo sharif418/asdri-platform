@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getSession, roleCan } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { formatNumber } from "@/lib/format";
+import { auditActionLabelBn, auditEntityLabelBn } from "@/lib/audit-labels";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "অডিট লগ" };
@@ -79,7 +80,7 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: S
           <option value="">সব এনটিটি</option>
           {entities.map((row) => (
             <option key={row.entity} value={row.entity}>
-              {row.entity}
+              {auditEntityLabelBn(row.entity)}
             </option>
           ))}
         </select>
@@ -125,12 +126,18 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: S
                         <span className="hidden w-32 shrink-0 truncate text-[12.5px] font-medium md:block">
                           {row.actor?.name ?? "সিস্টেম"}
                         </span>
-                        <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary" dir="ltr">
-                          {row.action}
+                        <span
+                          className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary"
+                          title={row.action}
+                        >
+                          {auditActionLabelBn(row.action)}
                         </span>
-                        <span className="hidden shrink-0 text-[12px] text-muted-foreground lg:block" dir="ltr">
-                          {row.entity}
-                          {row.entityId ? ` · ${row.entityId.slice(-8)}` : ""}
+                        <span
+                          className="hidden shrink-0 text-[12px] text-muted-foreground lg:block"
+                          title={row.entity}
+                        >
+                          {auditEntityLabelBn(row.entity)}
+                          {row.entityId ? <span dir="ltr"> · {row.entityId.slice(-8)}</span> : ""}
                         </span>
                         <span className="hidden shrink-0 text-[11.5px] text-muted-foreground xl:block" dir="ltr">
                           {row.ip ?? "—"}
