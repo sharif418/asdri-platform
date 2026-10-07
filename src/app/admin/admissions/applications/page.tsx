@@ -11,7 +11,7 @@ import {
   applicationStatusLabel,
 } from "@/lib/admission-labels";
 import { cn } from "@/lib/utils";
-import { formatNumber, toBnDigits } from "@/lib/format";
+import { formatDate, formatNumber, toBnDigits } from "@/lib/format";
 import type { ApplicationStatus } from "@prisma/client";
 
 export const metadata = { title: "আবেদনসমূহ" };
@@ -157,7 +157,7 @@ export default async function AdminApplicationsPage({ searchParams }: { searchPa
           <option value="">সব ইনটেক</option>
           {intakes.map((intake) => (
             <option key={intake.id} value={intake.id}>
-              {intake.course.code} · {intake.year} {intake.sessionBn ? `· ${intake.sessionBn}` : ""}
+              {`${intake.course.code} · ${intake.year}${intake.sessionBn ? ` · ${intake.sessionBn}` : ""}`.trim()}
             </option>
           ))}
         </select>
@@ -192,7 +192,10 @@ export default async function AdminApplicationsPage({ searchParams }: { searchPa
                 return (
                   <tr key={row.id} className="transition-colors hover:bg-secondary/20">
                     <td className="max-w-xs px-4 py-3">
-                      <Link href={`/admin/admissions/applications/${row.id}`} className="block truncate font-medium hover:text-primary">
+                      <Link
+                        href={`/admin/admissions/applications/${row.id}`}
+                        className="block truncate py-1.5 font-medium hover:text-primary"
+                      >
                         {row.fullNameBn}
                       </Link>
                       <p className="text-[11px] text-muted-foreground" dir="ltr">
@@ -214,7 +217,7 @@ export default async function AdminApplicationsPage({ searchParams }: { searchPa
                       {row.phone}
                     </td>
                     <td className="hidden px-4 py-3 text-[12px] text-muted-foreground lg:table-cell">
-                      {new Date(row.submittedAt).toLocaleDateString("bn-BD")}
+                      {formatDate(row.submittedAt, "bn")}
                     </td>
                     <td className="px-4 py-3">
                       <span className={applicationStatusChip(row.status)}>{applicationStatusLabel(row.status)}</span>
