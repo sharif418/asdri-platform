@@ -76,7 +76,15 @@ export async function POST(request: NextRequest): Promise<Response> {
       phone: true,
       fullNameBn: true,
       fullNameEn: true,
-      intake: { select: { year: true, course: { select: { code: true, titleBn: true, titleEn: true } } } },
+      intake: {
+        select: {
+          year: true,
+          examDate: true,
+          examTimeBn: true,
+          examVenueBn: true,
+          course: { select: { code: true, titleBn: true, titleEn: true } },
+        },
+      },
       events: {
         where: { status: { not: "DRAFT" } },
         orderBy: { createdAt: "asc" },
@@ -103,6 +111,11 @@ export async function POST(request: NextRequest): Promise<Response> {
       titleEn: application.intake.course.titleEn,
     },
     intakeYear: application.intake.year,
+    exam: {
+      date: application.intake.examDate?.toISOString() ?? null,
+      timeBn: application.intake.examTimeBn,
+      venueBn: application.intake.examVenueBn,
+    },
     events: application.events.map((e) => ({ status: e.status, at: e.createdAt })),
   });
 }

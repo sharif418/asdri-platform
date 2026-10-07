@@ -52,6 +52,8 @@ export default async function ApplyPage({ params }: { params: Promise<{ lang: La
     seatsTotal: intake.seatsTotal,
     closesAt: intake.closesAt?.toISOString() ?? null,
     examDate: intake.examDate?.toISOString() ?? null,
+    examTimeBn: intake.examTimeBn,
+    examVenueBn: intake.examVenueBn,
   }));
 
   // Declaration copy is office-editable (/admin/content/admission); the

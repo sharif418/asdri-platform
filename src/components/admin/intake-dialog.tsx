@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { normalizeDigitsInput } from "@/lib/format";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Loader2, Save } from "lucide-react";
+import { CalendarDays, Clock, Loader2, MapPin, Save } from "lucide-react";
 import type { IntakeStatus } from "@prisma/client";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,8 @@ export interface IntakeFormValues {
   opensAt: string;
   closesAt: string;
   examDate: string;
+  examTimeBn: string;
+  examVenueBn: string;
   status: IntakeStatus;
   isPublished: boolean;
 }
@@ -91,6 +93,8 @@ export function IntakeDialog({
               opensAt: toIsoOrNull(values.opensAt),
               closesAt: toIsoOrNull(values.closesAt),
               examDate: toIsoOrNull(values.examDate),
+              examTimeBn: values.examTimeBn.trim(),
+              examVenueBn: values.examVenueBn.trim(),
               seatsTotal: seats !== null && Number.isFinite(seats) ? seats : null,
               isPublished: values.isPublished,
               status: values.status,
@@ -101,6 +105,8 @@ export function IntakeDialog({
               opensAt: toIsoOrNull(values.opensAt),
               closesAt: toIsoOrNull(values.closesAt),
               examDate: toIsoOrNull(values.examDate),
+              examTimeBn: values.examTimeBn.trim(),
+              examVenueBn: values.examVenueBn.trim(),
               seatsTotal: seats !== null && Number.isFinite(seats) ? seats : null,
               isPublished: values.isPublished,
               status: values.status,
@@ -245,6 +251,35 @@ export function IntakeDialog({
             </label>
             <input type="date" value={values.examDate} onChange={(e) => set("examDate", e.target.value)} dir="ltr" className={inputClass} />
           </div>
+          <div>
+            <label className="flex items-center gap-1.5 text-sm font-semibold">
+              <Clock aria-hidden className="h-3.5 w-3.5 text-gold" />
+              পরীক্ষার সময়
+            </label>
+            <input
+              value={values.examTimeBn}
+              onChange={(e) => set("examTimeBn", e.target.value)}
+              placeholder="যেমন: সকাল ১০:০০"
+              maxLength={60}
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className="flex items-center gap-1.5 text-sm font-semibold">
+              <MapPin aria-hidden className="h-3.5 w-3.5 text-gold" />
+              পরীক্ষার স্থান
+            </label>
+            <input
+              value={values.examVenueBn}
+              onChange={(e) => set("examVenueBn", e.target.value)}
+              placeholder="যেমন: মূল ক্যাম্পাস, কক্ষ ২০১"
+              maxLength={160}
+              className={inputClass}
+            />
+          </div>
+          <p className="text-[11px] leading-relaxed text-muted-foreground sm:col-span-2 -mt-1">
+            সময় ও স্থান সংরক্ষণ করলে এই ইনটেকের সব প্রবেশপত্রে আগে থেকেই ছাপা হবে এবং আবেদনকারীর অবস্থা-পাতায় দেখা যাবে।
+          </p>
           <div className="flex items-center justify-between rounded-lg border px-3.5 py-2.5 sm:col-span-2">
             <div>
               <p className="text-sm font-semibold">প্রকাশিত</p>
@@ -276,6 +311,8 @@ export function intakeFormInitial(intake: {
   opensAt: Date | string | null;
   closesAt: Date | string | null;
   examDate: Date | string | null;
+  examTimeBn?: string;
+  examVenueBn?: string;
   status: IntakeStatus;
   isPublished: boolean;
 }): IntakeFormValues {
@@ -290,6 +327,8 @@ export function intakeFormInitial(intake: {
     opensAt: toInputDate(iso(intake.opensAt)),
     closesAt: toInputDate(iso(intake.closesAt)),
     examDate: toInputDate(iso(intake.examDate)),
+    examTimeBn: intake.examTimeBn ?? "",
+    examVenueBn: intake.examVenueBn ?? "",
     status: intake.status,
     isPublished: intake.isPublished,
   };

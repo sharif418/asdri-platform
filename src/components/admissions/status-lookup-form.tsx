@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { AlertTriangle, BadgeCheck, Compass, Loader2, Search } from "lucide-react";
+import { AlertTriangle, BadgeCheck, CalendarDays, Compass, Loader2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,7 @@ interface LookupResult {
   applicantName: string;
   course: { code: string; titleBn: string; titleEn: string };
   intakeYear: number;
+  exam: { date: string | null; timeBn: string; venueBn: string };
   events: { status: ApplicationStatus; at: string }[];
 }
 
@@ -219,6 +220,49 @@ export function StatusLookupForm({ lang }: StatusLookupFormProps) {
               lang={lang}
               events={result.events.map((e) => ({ status: e.status, at: e.at }))}
             />
+
+            {/* persisted exam schedule (round 5) — date/time/venue set by the
+                office on the intake; hidden entirely while unscheduled */}
+            {result.exam.date &&
+            ["SHORTLISTED", "EXAM_SCHEDULED", "EXAM_TAKEN", "INTERVIEW"].includes(result.status) ? (
+              <div className="mt-4 overflow-hidden rounded-xl border border-gold/40 bg-gold/[0.06]">
+                <p className="flex items-center gap-2 border-b border-gold/30 bg-gold/10 px-4 py-2 text-[12px] font-bold tracking-wide text-gold-foreground dark:text-gold">
+                  <CalendarDays aria-hidden className="h-4 w-4" />
+                  {bn ? "লিখিত পরীক্ষার সময়সূচি" : "Written exam schedule"}
+                </p>
+                <dl className="grid gap-x-6 gap-y-2.5 px-4 py-3 text-[13px] sm:grid-cols-2">
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {bn ? "তারিখ" : "Date"}
+                    </dt>
+                    <dd className="font-semibold">
+                      {new Date(result.exam.date).toLocaleDateString(bn ? "bn-BD" : "en-GB", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </dd>
+                  </div>
+                  {result.exam.timeBn ? (
+                    <div>
+                      <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        {bn ? "সময়" : "Time"}
+                      </dt>
+                      <dd className="font-semibold">{result.exam.timeBn}</dd>
+                    </div>
+                  ) : null}
+                  {result.exam.venueBn ? (
+                    <div className="sm:col-span-2">
+                      <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        {bn ? "স্থান" : "Venue"}
+                      </dt>
+                      <dd className="font-semibold">{result.exam.venueBn}</dd>
+                    </div>
+                  ) : null}
+                </dl>
+              </div>
+            ) : null}
 
             {STATUS_GUIDANCE[result.status].bn ? (
               <p className="mt-5 flex items-start gap-2.5 rounded-xl bg-primary/[0.06] p-4 text-[13px] leading-relaxed text-foreground/90">

@@ -14,6 +14,8 @@ const intakeSchema = z.object({
   opensAt: z.string().datetime().nullable().optional(),
   closesAt: z.string().datetime().nullable().optional(),
   examDate: z.string().datetime().nullable().optional(),
+  examTimeBn: z.string().trim().max(60).default(""),
+  examVenueBn: z.string().trim().max(160).default(""),
   seatsTotal: z.number().int().min(0).max(10000).nullable().optional(),
   isPublished: z.boolean().default(false),
   status: z.enum(["UPCOMING", "OPEN", "CLOSED", "PROCESSING"]).default("UPCOMING"),
