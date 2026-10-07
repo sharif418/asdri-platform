@@ -6,7 +6,6 @@ import { pick } from "@/types";
 import type { Language } from "@/types";
 import { langPath } from "@/lib/locale";
 import { SectionHeading } from "./section-heading";
-import { StarMotif } from "./ornaments";
 import { cn } from "@/lib/utils";
 
 export interface PageHeroMeta {
@@ -22,6 +21,8 @@ export interface PageHeroProps {
   lang: Language;
   breadcrumb: { label: LocalizedText | string; href?: string }[];
   arabicEcho?: string;
+  /** Explicit section key for the calligraphic piece (defaults to the first breadcrumb's href). */
+  section?: string;
   /** Optional live meta pill rendered after the description (e.g. content counts). */
   meta?: PageHeroMeta;
   /** Optional slot rendered after the heading block — stays inside the max-w-3xl column. */
@@ -30,8 +31,40 @@ export interface PageHeroProps {
 }
 
 /**
- * Sub-page hero banner: deep emerald ground, lattice pattern, gold rules,
- * breadcrumb trail, and an optional Arabic calligraphic echo.
+ * The calligraphic piece of each section — one short word, set large in
+ * Amiri, cropped by the band's edge the way the great Islamic collections
+ * let a single word carry a wall. Derived per section so every inner page
+ * of the site shares one system; the word is ornament, never information.
+ */
+const SECTION_CALLIGRAPHY: Record<string, string> = {
+  "/about": "الدَّعْوَة",
+  "/academics": "الْعِلْم",
+  "/admissions": "الْبِدَايَة",
+  "/research": "الْبَحْث",
+  "/media": "الْبَلَاغ",
+  "/notices": "الْإِعْلَان",
+  "/support": "الْإِحْسَان",
+  "/contact": "التَّوَاصُل",
+};
+
+function calligraphyFor(breadcrumb: PageHeroProps["breadcrumb"], section?: string): string | null {
+  if (section) return SECTION_CALLIGRAPHY[section] ?? null;
+  const first = breadcrumb[0]?.href;
+  if (!first) return null;
+  const clean = first.replace(/^\/(bn|en)/, "").replace(/\/$/, "") || "/";
+  return SECTION_CALLIGRAPHY[clean] ?? null;
+}
+
+/**
+ * The inner-page band — the signature surface of the site.
+ *
+ * Deep emerald ground built from layered light (a radial lift behind the
+ * title, a vignette at the edges), a fine lattice at lower opacity, and an
+ * inset gold hairline frame with corner emphasis: the illuminated-manuscript
+ * border, drawn in CSS, costing nothing to load. The section's calligraphic
+ * word sits at the right edge, cropped like a folio margin; the verse is
+ * typeset in gold above the title with a small ornament. On phones the word
+ * recedes behind the text and legibility wins.
  */
 export function PageHero({
   eyebrow,
@@ -40,11 +73,13 @@ export function PageHero({
   lang,
   breadcrumb,
   arabicEcho,
+  section,
   meta,
   children,
   className,
 }: PageHeroProps) {
   const resolve = (text: LocalizedText | string) => (typeof text === "string" ? text : pick(text, lang));
+  const calligraphy = calligraphyFor(breadcrumb, section);
 
   return (
     <section
@@ -53,17 +88,45 @@ export function PageHero({
         className,
       )}
     >
-      <div aria-hidden className="pattern-lattice-light absolute inset-0" />
+      {/* Ground: layered light over the emerald */}
       <div
         aria-hidden
-        className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40"
+        className="absolute inset-0 bg-[radial-gradient(120%_140%_at_18%_0%,rgba(20,84,58,0.9)_0%,rgba(15,81,50,0)_55%)]"
       />
+      <div aria-hidden className="pattern-lattice-light absolute inset-0 opacity-70" />
       <div
         aria-hidden
-        className="absolute -top-24 right-0 hidden opacity-[0.07] lg:block"
-      >
-        <StarMotif className="h-96 w-96 text-gold" />
+        className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/45"
+      />
+
+      {/* The illuminated frame: an inset hairline with corner emphasis */}
+      <div aria-hidden className="pointer-events-none absolute inset-2.5 rounded-sm border border-gold/15 sm:inset-3" />
+      <div aria-hidden className="pointer-events-none absolute inset-2.5 sm:inset-3">
+        <span className="absolute -left-px -top-px h-4 w-4 border-l-2 border-t-2 border-gold/45" />
+        <span className="absolute -right-px -top-px h-4 w-4 border-r-2 border-t-2 border-gold/45" />
+        <span className="absolute -bottom-px -left-px h-4 w-4 border-b-2 border-l-2 border-gold/45" />
+        <span className="absolute -bottom-px -right-px h-4 w-4 border-b-2 border-r-2 border-gold/45" />
       </div>
+
+      {/* The section's calligraphic word, cropped at the folio's edge */}
+      {calligraphy ? (
+        <p
+          aria-hidden
+          dir="rtl"
+          className="font-arabic pointer-events-none absolute -right-3 top-1/2 hidden -translate-y-1/2 select-none text-[110px] leading-none text-gold/[0.13] sm:block sm:text-[150px] lg:text-[190px] print:hidden"
+        >
+          {calligraphy}
+        </p>
+      ) : null}
+      {calligraphy ? (
+        <p
+          aria-hidden
+          dir="rtl"
+          className="font-arabic pointer-events-none absolute -right-2 top-3 select-none text-[64px] leading-none text-gold/[0.08] sm:hidden print:hidden"
+        >
+          {calligraphy}
+        </p>
+      ) : null}
 
       <div className="container-site relative py-14 sm:py-20">
         <nav aria-label="Breadcrumb">
@@ -96,8 +159,10 @@ export function PageHero({
 
         <div className="mt-8 max-w-3xl">
           {arabicEcho ? (
-            <p dir="rtl" lang="ar" className="font-arabic mb-4 text-xl text-gold/90 sm:text-2xl">
-              {arabicEcho}
+            <p dir="rtl" lang="ar" className="font-arabic mb-5 flex items-center gap-3 text-xl text-gold/90 sm:text-2xl">
+              <span aria-hidden className="inline-block h-1.5 w-1.5 rotate-45 bg-gold/70" />
+              <span>{arabicEcho}</span>
+              <span aria-hidden className="inline-block h-1.5 w-1.5 rotate-45 bg-gold/70" />
             </p>
           ) : null}
           <SectionHeading
