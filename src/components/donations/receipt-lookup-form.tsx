@@ -19,6 +19,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CopyButton } from "@/components/shared/copy-button";
+import { PrintMasthead } from "@/components/shared/print-masthead";
+import { brand } from "@/lib/brand";
 import { formatAmount, type CurrencyCode } from "@/components/donations/donation-types";
 import { formatDate } from "@/lib/format";
 import type { Lang } from "@/lib/locale";
@@ -269,6 +271,11 @@ export function ReceiptLookupForm({ lang }: ReceiptLookupFormProps) {
         {result ? (
           <article aria-live="polite" className="overflow-hidden rounded-2xl border bg-card shadow-sm">
             <div className="print-zone bg-card p-6 sm:p-8">
+              {/* print-only official masthead — the branded head of the receipt pad */}
+              <PrintMasthead
+                name={bn ? brand.nameBn : brand.nameEn}
+                title={bn ? "অনুদানের রিসিপ্ট" : "Donation Receipt"}
+              />
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-dashed border-gold/40 pb-5">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-mono text-[12px] font-bold text-primary">{result.trackingCode}</span>

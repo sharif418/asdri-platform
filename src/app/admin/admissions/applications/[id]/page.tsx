@@ -15,6 +15,7 @@ import {
 import { db } from "@/lib/db";
 import { getSession, roleCan } from "@/lib/auth";
 import { ApplicationOfficerPanel } from "@/components/admin/application-officer-panel";
+import { ExamLetterDialog } from "@/components/admin/exam-letter-dialog";
 import {
   APP_DOC_TYPE_LABELS,
   GENDER_LABELS,
@@ -309,6 +310,12 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
             )}
           </section>
 
+          {/* Exam-call letter (admit card) — the officer fills date/time/venue,
+              the A4 pad opens in a new tab and prints with the brand. */}
+          <ExamLetterDialog
+            applicationId={application.id}
+            defaultDate={application.intake.examDate ? formatDate(application.intake.examDate, "bn") : ""}
+          />
           <ApplicationOfficerPanel applicationId={application.id} currentStatus={application.status} />
         </div>
       </div>

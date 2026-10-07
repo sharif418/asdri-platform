@@ -11,6 +11,8 @@ import { categoryLabel, statusBadgeClass, statusLabel } from "@/lib/notice-label
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PrintButton } from "@/components/shared/print-button";
+import { PrintMasthead } from "@/components/shared/print-masthead";
+import { brand } from "@/lib/brand";
 import {
   Dialog,
   DialogContent,
@@ -78,15 +80,11 @@ export function NoticeDialogView({ notice, lang, open, onOpenChange }: NoticeDia
         <div aria-hidden className="absolute inset-x-0 top-0 h-1 bg-gold-gradient" />
 
         <div className="print-zone">
-          {/* print-only official masthead */}
-          <header className="hidden print:mb-5 print:block print:border-b-2 print:border-black print:pb-3 print:text-center">
-            <p className="font-heading text-lg font-bold">
-              {lang === "bn" ? "আস-সুন্নাহ দাওয়াহ অ্যান্ড রিসার্চ ইনস্টিটিউট" : "As-Sunnah Dawah & Research Institute"}
-            </p>
-            <p className="mt-1 text-sm">
-              {lang === "bn" ? "দাপ্তরিক বিজ্ঞপ্তি" : "Official Notice"} — {categoryLabel(notice.category, lang)}
-            </p>
-          </header>
+          {/* print-only official masthead — the mono-emerald mark beside the institute name */}
+          <PrintMasthead
+            name={lang === "bn" ? brand.nameBn : brand.nameEn}
+            title={`${lang === "bn" ? "দাপ্তরিক বিজ্ঞপ্তি" : "Official Notice"} — ${categoryLabel(notice.category, lang)}`}
+          />
 
           <DialogHeader className="space-y-3">
             <div className="flex flex-wrap items-center gap-2 print:justify-center">

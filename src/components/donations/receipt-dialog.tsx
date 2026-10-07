@@ -14,8 +14,11 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/format";
 import { langPath } from "@/lib/locale";
+import { brand } from "@/lib/brand";
 import { formatAmount, type ReceiptData } from "./donation-types";
 import { CopyButton } from "@/components/shared/copy-button";
+import { PrintButton } from "@/components/shared/print-button";
+import { PrintMasthead } from "@/components/shared/print-masthead";
 import type { FundType, Language } from "@/types";
 
 interface ReceiptDialogProps {
@@ -43,8 +46,13 @@ export function ReceiptDialog({ receipt, lang, fundLabels, onClose }: ReceiptDia
     <Dialog open={open} onOpenChange={(next) => (!next ? onClose() : undefined)}>
       <DialogContent className="scrollbar-thin max-h-[90vh] overflow-y-auto sm:max-w-lg">
         {receipt ? (
-          <>
-            <DialogHeader className="items-center text-center">
+          <div className="print-zone">
+            {/* print-only official masthead — the branded head of the receipt pad */}
+            <PrintMasthead
+              name={lang === "bn" ? brand.nameBn : brand.nameEn}
+              title={bn ? "অনুদানের রিসিপ্ট" : "Donation Receipt"}
+            />
+            <DialogHeader className="items-center text-center print:hidden">
               <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-600/10">
                 <CheckCircle2 aria-hidden className="h-8 w-8 text-emerald-600" />
               </span>
@@ -132,7 +140,7 @@ export function ReceiptDialog({ receipt, lang, fundLabels, onClose }: ReceiptDia
             {receipt.checkoutUrl ? (
               <Link
                 href={langPath(lang, receipt.checkoutUrl)}
-                className="flex items-center justify-center gap-2 rounded-lg bg-gold-gradient px-4 py-3 text-[14px] font-bold text-gold-foreground shadow-md shadow-gold/20 transition-opacity hover:opacity-95"
+                className="flex items-center justify-center gap-2 rounded-lg bg-gold-gradient px-4 py-3 text-[14px] font-bold text-gold-foreground shadow-md shadow-gold/20 transition-opacity hover:opacity-95 print:hidden"
               >
                 <CreditCard aria-hidden className="h-4 w-4" />
                 {bn ? "স্যান্ডবক্সে পেমেন্ট সম্পন্ন করুন" : "Complete payment (sandbox)"}
@@ -169,7 +177,7 @@ export function ReceiptDialog({ receipt, lang, fundLabels, onClose }: ReceiptDia
               </ul>
             </div>
 
-            <p className="flex items-start gap-2 rounded-lg bg-primary/[0.06] p-3 text-[12px] leading-relaxed text-muted-foreground">
+            <p className="flex items-start gap-2 rounded-lg bg-primary/[0.06] p-3 text-[12px] leading-relaxed text-muted-foreground print:hidden">
               <MailCheck aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               <span>
                 {bn
@@ -189,12 +197,18 @@ export function ReceiptDialog({ receipt, lang, fundLabels, onClose }: ReceiptDia
               </span>
             </p>
 
-            <DialogFooter className="sm:justify-center">
+            <DialogFooter className="sm:justify-center print:hidden">
+              <PrintButton
+                bodyClass="printing-receipt"
+                label={bn ? "রিসিপ্ট প্রিন্ট করুন" : "Print receipt"}
+                variant="outline"
+                className="gap-2 border-gold/40 font-semibold hover:bg-gold-soft"
+              />
               <Button type="button" onClick={onClose} className="bg-primary font-semibold hover:bg-primary/90">
                 {bn ? "ঠিক আছে" : "Done"}
               </Button>
             </DialogFooter>
-          </>
+          </div>
         ) : null}
       </DialogContent>
     </Dialog>

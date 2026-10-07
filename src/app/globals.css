@@ -348,11 +348,12 @@
   animation: focus-pulse 1.6s ease-in-out 3;
 }
 
-/* ————— Print: isolate the expanded fatwa / open notice / receipt as an official pad ————— */
+/* ————— Print: isolate the expanded fatwa / open notice / receipt / exam letter as an official pad ————— */
 @media print {
   body.printing-fatwa *,
   body.printing-notice *,
-  body.printing-receipt * {
+  body.printing-receipt *,
+  body.printing-exam-letter * {
     visibility: hidden !important;
   }
   body.printing-fatwa .print-zone,
@@ -360,12 +361,15 @@
   body.printing-notice .print-zone,
   body.printing-notice .print-zone *,
   body.printing-receipt .print-zone,
-  body.printing-receipt .print-zone * {
+  body.printing-receipt .print-zone *,
+  body.printing-exam-letter .print-zone,
+  body.printing-exam-letter .print-zone * {
     visibility: visible !important;
   }
   body.printing-fatwa .print-zone,
   body.printing-notice .print-zone,
-  body.printing-receipt .print-zone {
+  body.printing-receipt .print-zone,
+  body.printing-exam-letter .print-zone {
     position: absolute !important;
     left: 0;
     top: 0;
@@ -377,8 +381,18 @@
   }
   body.printing-fatwa,
   body.printing-notice,
-  body.printing-receipt {
+  body.printing-receipt,
+  body.printing-exam-letter {
     background: #fff !important;
+  }
+  /* The sitewide print block below hides every <header> (site chrome), which
+     would also swallow the pads' print-only masthead <header> — the official
+     pads re-enable the masthead inside their print zone. */
+  body.printing-fatwa .print-zone header,
+  body.printing-notice .print-zone header,
+  body.printing-receipt .print-zone header,
+  body.printing-exam-letter .print-zone header {
+    display: block !important;
   }
   /* The printed receipt keeps its gold receipt box + amounts readable on
      white paper; only the decorative shadows are dropped. */
@@ -389,6 +403,11 @@
   }
   body.printing-receipt a[href]::after {
     content: "" !important;
+  }
+  /* The exam-call letter is a standalone A4 document: no card chrome, no
+     rounded corners — just the pad's own typography within the @page margins. */
+  body.printing-exam-letter .print-zone {
+    border-radius: 0 !important;
   }
 }
 

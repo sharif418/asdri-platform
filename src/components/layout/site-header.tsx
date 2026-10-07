@@ -3,32 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  HeartHandshake,
-  Languages,
-  LogIn,
-  Mail,
-  MapPin,
-  Menu,
-  Phone,
-  Search,
-  UserPlus,
-} from "lucide-react";
+import { HeartHandshake, Languages, Mail, MapPin, Phone, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { LogoLockup } from "@/components/shared/logo";
+import { LogoLockup, LogoTextLockup } from "@/components/shared/logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { CommandPalette, SearchTrigger } from "@/components/search/command-palette";
+import { CommandPalette } from "@/components/search/command-palette";
+import { AccountChip } from "@/components/layout/header/account-chip";
+import { NavDisclosure, type NavSectionView } from "@/components/layout/header/nav-disclosure";
+import { NavDrawer } from "@/components/layout/header/nav-drawer";
 import { useLanguage } from "@/components/providers/language-provider";
 import { useSiteConfig, useSiteMenu, useModuleEnabled } from "@/components/providers/site-config-provider";
 import { navigation } from "@/content/site";
@@ -36,16 +18,10 @@ import { langPath } from "@/lib/locale";
 import type { DictionaryKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
-interface NavSection {
-  label: string;
-  href: string;
-  children: { label: string; href: string }[];
-}
-
 /** Resolve the nav sections: DB menus (office-edited) with the static seed
  *  navigation as fallback. Labels resolve per language; the flag filtering
  *  already happened server-side in the (site) layout. */
-function useNavSections(): NavSection[] {
+export function useNavSections(): NavSectionView[] {
   const { t, lang } = useLanguage();
   const menu = useSiteMenu();
 
@@ -83,8 +59,13 @@ function displayPath(pathname: string): string {
   return pathname;
 }
 
+/**
+ * The utility bar: the institute's everyday contact, the language switch and
+ * the theme. It scrolls away with the page — only the main bar sticks, so
+ * reading space is never taxed by chrome the reader has already passed.
+ */
 function TopUtilityBar() {
-  const { lang, t, toggle } = useLanguage();
+  const { lang, toggle } = useLanguage();
   const siteConfig = useSiteConfig();
   return (
     <div className="bg-emerald-deep text-ivory/90">
@@ -92,7 +73,7 @@ function TopUtilityBar() {
         <div className="flex min-w-0 items-center gap-4">
           <a
             href={siteConfig.phoneHref}
-            className="hidden items-center gap-1.5 transition-colors hover:text-gold sm:inline-flex"
+            className="hidden items-center gap-1.5 transition-colors hover:text-gold min-[420px]:inline-flex"
           >
             <Phone aria-hidden className="h-3.5 w-3.5 text-gold" />
             <span dir="ltr">
@@ -101,12 +82,12 @@ function TopUtilityBar() {
           </a>
           <a
             href={`mailto:${siteConfig.email}`}
-            className="hidden items-center gap-1.5 transition-colors hover:text-gold md:inline-flex"
+            className="hidden items-center gap-1.5 transition-colors hover:text-gold lg:inline-flex"
           >
             <Mail aria-hidden className="h-3.5 w-3.5 text-gold" />
             <span className="truncate">{siteConfig.email}</span>
           </a>
-          <span className="inline-flex items-center gap-1.5 sm:hidden">
+          <span className="inline-flex items-center gap-1.5 min-[420px]:hidden">
             <MapPin aria-hidden className="h-3.5 w-3.5 text-gold" />
             <span className="truncate">{lang === "bn" ? "সাঁতারকুল, বাড্ডা, ঢাকা" : "Satarkul, Badda, Dhaka"}</span>
           </span>
@@ -117,7 +98,7 @@ function TopUtilityBar() {
           <button
             type="button"
             onClick={toggle}
-            className="inline-flex items-center gap-1 rounded-full border border-ivory/25 px-2.5 py-0.5 font-medium tracking-wide transition-colors hover:border-gold hover:text-gold"
+            className="inline-flex min-h-8 items-center gap-1 rounded-full border border-ivory/25 px-2.5 font-medium tracking-wide transition-colors hover:border-gold hover:text-gold"
             aria-label={lang === "bn" ? "EN | বাং — switch to English" : "EN | বাং — বাংলায় দেখুন"}
           >
             <Languages aria-hidden className="h-3.5 w-3.5" />
@@ -125,224 +106,25 @@ function TopUtilityBar() {
             <span aria-hidden className="opacity-40">|</span>
             <span className={cn("text-[11px]", lang === "en" ? "opacity-60" : "font-bold text-gold")}>বাং</span>
           </button>
-          <span aria-hidden className="hidden h-4 w-px bg-ivory/20 sm:block" />
-          <Link
-            href={langPath(lang, "/login")}
-            className="hidden items-center gap-1 transition-colors hover:text-gold sm:inline-flex"
-          >
-            <LogIn aria-hidden className="h-3.5 w-3.5" />
-            {t("action.login")}
-          </Link>
-          <Link
-            href={langPath(lang, "/register")}
-            className="hidden items-center gap-1 transition-colors hover:text-gold sm:inline-flex"
-          >
-            <UserPlus aria-hidden className="h-3.5 w-3.5" />
-            {t("action.register")}
-          </Link>
         </div>
       </div>
     </div>
   );
 }
 
-/** Persistent gold rule under the active desktop nav item. */
-function ActiveNavUnderline() {
-  return (
-    <span
-      aria-hidden
-      className="bg-gold-gradient pointer-events-none absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full"
-    />
-  );
-}
-
-/** Desktop mega-menu trigger + panel. */
-function DesktopNavItem({ section, alignRight = false }: { section: NavSection; alignRight?: boolean }) {
-  const { lang } = useLanguage();
-  const pathname = displayPath(usePathname());
-  const base = section.href;
-  const active = pathname === base || pathname.startsWith(`${base}/`);
-
-  return (
-    <NavigationMenuItem>
-      <div className="relative">
-        <NavigationMenuLink
-          asChild
-          className={cn(navigationMenuTriggerStyle(), "bg-transparent px-2.5 py-2 text-[13px] font-medium 2xl:px-3 2xl:text-[14px]")}
-          data-active={active}
-        >
-          <Link href={langPath(lang, base)}>
-            <span className={cn(active ? "text-primary font-semibold" : "link-sweep")}>{section.label}</span>
-          </Link>
-        </NavigationMenuLink>
-        {active ? <ActiveNavUnderline /> : null}
-        {section.children.length > 0 ? (
-          <>
-            <NavigationMenuTrigger
-              className="absolute left-0 top-0 h-full w-full bg-transparent p-0 opacity-0 [&>svg]:hidden"
-              aria-hidden
-              tabIndex={-1}
-            >
-              <span className="sr-only">{section.label} menu</span>
-            </NavigationMenuTrigger>
-            <NavigationMenuContent className={cn("mt-1.5 rounded-xl border border-border/80 shadow-lg", alignRight && "left-auto right-0")}>
-              <ul className="grid w-[260px] gap-1 p-2">
-                {section.children.map((child) => (
-                  <li key={child.href}>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href={langPath(lang, child.href)}
-                        className="block rounded-md px-3 py-2 text-sm transition-colors hover:bg-secondary hover:text-primary"
-                      >
-                        {child.label}
-                      </Link>
-                    </NavigationMenuLink>
-                  </li>
-                ))}
-              </ul>
-            </NavigationMenuContent>
-          </>
-        ) : null}
-      </div>
-    </NavigationMenuItem>
-  );
-}
-
-/** Mobile drawer navigation with accordions (includes its own trigger). */
-function MobileNav({ onSearchClick }: { onSearchClick: () => void }) {
-  const { t, lang, toggle } = useLanguage();
-  const siteConfig = useSiteConfig();
-  const navSections = useNavSections();
-  const pathname = displayPath(usePathname());
-  const [open, setOpen] = useState(false);
-
-  return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <button
-          type="button"
-          aria-label={t("a11y.openMenu")}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-md border text-foreground transition-colors hover:bg-secondary xl:hidden"
-        >
-          <Menu aria-hidden className="h-5 w-5" />
-        </button>
-      </SheetTrigger>
-      <SheetContent
-        side="right"
-        className="flex w-[320px] flex-col gap-0 overflow-y-auto p-0 sm:w-[360px]"
-      >
-        <div className="border-b bg-emerald-deep px-5 py-4">
-          <SheetTitle className="text-left">
-            <LogoLockup tone="on-dark" className="h-11" />
-          </SheetTitle>
-        </div>
-        <nav aria-label={t("a11y.mobileNav")} className="flex-1 px-4 py-4">
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              onSearchClick();
-            }}
-            className="mb-3 flex w-full items-center gap-2.5 rounded-lg border border-gold/40 bg-gold-soft/30 px-3.5 py-2.5 text-[14px] font-medium text-foreground transition-colors hover:border-gold"
-          >
-            <Search aria-hidden className="h-4 w-4 text-primary" />
-            {t("search.placeholder")}
-          </button>
-          <Link
-            href={langPath(lang, "/")}
-            onClick={() => setOpen(false)}
-            className={cn(
-              "block rounded-md px-3 py-2.5 text-[15px] font-medium hover:bg-secondary",
-              pathname === "/" && "bg-secondary text-primary",
-            )}
-          >
-            {t("nav.home")}
-          </Link>
-          <Accordion type="multiple" className="mt-1">
-            {navSections.map((section) => {
-              const active = pathname === section.href || pathname.startsWith(`${section.href}/`);
-              return (
-                <AccordionItem key={section.href} value={section.href} className="border-b-0">
-                  <div className="flex items-center justify-between">
-                    <Link
-                      href={langPath(lang, section.href)}
-                      onClick={() => setOpen(false)}
-                      className={cn(
-                        "flex-1 py-2.5 text-[15px] font-medium hover:text-primary",
-                        active && "text-primary",
-                      )}
-                    >
-                      {section.label}
-                    </Link>
-                    {section.children.length > 0 ? (
-                      <AccordionTrigger className="w-9 justify-end py-2.5 pr-1 [&>svg]:h-4 [&>svg]:w-4" />
-                    ) : null}
-                  </div>
-                  {section.children.length > 0 ? (
-                    <AccordionContent className="pb-2">
-                      <div className="grid gap-0.5 border-l-2 border-gold/40 pl-3">
-                        {section.children.map((child) => (
-                          <Link
-                            key={child.href}
-                            href={langPath(lang, child.href)}
-                            onClick={() => setOpen(false)}
-                            className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-primary"
-                          >
-                            {child.label}
-                          </Link>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  ) : null}
-                </AccordionItem>
-              );
-            })}
-          </Accordion>
-
-          <div className="mt-6 grid gap-2">
-            <Button asChild variant="outline" className="justify-start">
-              <Link href={langPath(lang, "/login")} onClick={() => setOpen(false)}>
-                <LogIn aria-hidden className="h-4 w-4" />
-                {t("action.login")}
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="justify-start">
-              <Link href={langPath(lang, "/register")} onClick={() => setOpen(false)}>
-                <UserPlus aria-hidden className="h-4 w-4" />
-                {t("action.register")}
-              </Link>
-            </Button>
-            <Button
-              variant="ghost"
-              className="justify-start text-muted-foreground"
-              onClick={() => {
-                toggle();
-                setOpen(false);
-              }}
-            >
-              <Languages aria-hidden className="h-4 w-4" />
-              {lang === "bn" ? "Switch to English" : "বাংলায় দেখুন"}
-            </Button>
-          </div>
-        </nav>
-        <div className="border-t bg-parchment px-5 py-4 text-xs text-muted-foreground dark:bg-secondary/40">
-          <p className="flex items-center gap-1.5">
-            <Phone aria-hidden className="h-3.5 w-3.5 text-gold" />
-            <span dir="ltr">{siteConfig.phone}</span>
-          </p>
-          <p className="mt-1 flex items-center gap-1.5">
-            <MapPin aria-hidden className="h-3.5 w-3.5 text-gold" />
-            {lang === "bn" ? siteConfig.addressBn : siteConfig.addressEn}
-          </p>
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
-}
-/** Sticky site header: utility bar + logo + mega menu + search + donate CTA. */
+/**
+ * The site header, designed as one piece:
+ *
+ *   utility bar (scrolls away) → contact + theme + language
+ *   main bar (sticky)          → brand | navigation | search + account + donate
+ *   drawer (below xl)          → the whole nav for phones and laptops
+ *
+ * Brand sizing follows the rules in src/lib/brand.ts: the full calligraphic
+ * lockup only where it renders at or above its legible height (xl+ here);
+ * tighter bars carry the official mark beside the institute's typeset name.
+ */
 export function SiteHeader() {
   const { t, lang } = useLanguage();
-  const siteConfig = useSiteConfig();
   const navSections = useNavSections();
   const donationsEnabled = useModuleEnabled("donations");
   const [scrolled, setScrolled] = useState(false);
@@ -357,73 +139,103 @@ export function SiteHeader() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 w-full">
-      <TopUtilityBar />
-      <div
-        className={cn(
-          "border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85 transition-shadow",
-          scrolled ? "border-border shadow-md shadow-emerald-950/5" : "border-transparent",
-        )}
+    <>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground"
       >
-        <div className="container-site flex h-16 items-center justify-between gap-4 lg:h-[72px]">
-          <Link href={langPath(lang, "/")} aria-label={siteConfig.nameEn} className="shrink-0">
-            <LogoLockup priority className="h-10 sm:h-11 lg:h-14" />
-          </Link>
-
-          <nav aria-label={t("a11y.mainNav")} className="hidden xl:block">
-            <NavigationMenu viewport={false}>
-              <NavigationMenuList className="gap-0.5">
-                <NavigationMenuItem>
-                  <div className="relative">
-                    <NavigationMenuLink
-                      asChild
-                      className={cn(navigationMenuTriggerStyle(), "bg-transparent px-2.5 py-2 text-[13px] font-medium 2xl:px-3 2xl:text-[14px]")}
-                    >
-                      <Link href={langPath(lang, "/")}>
-                        <span className={cn(pathname === "/" ? "text-primary font-semibold" : "link-sweep")}>
-                          {t("nav.home")}
-                        </span>
-                      </Link>
-                    </NavigationMenuLink>
-                    {pathname === "/" ? <ActiveNavUnderline /> : null}
-                  </div>
-                </NavigationMenuItem>
-                {navSections.map((section, index) => (
-                  <DesktopNavItem key={section.href} section={section} alignRight={index >= navSections.length - 2} />
-                ))}
-              </NavigationMenuList>
-            </NavigationMenu>
-          </nav>
-
-          <div className="flex items-center gap-2.5">
-            <SearchTrigger onClick={() => setSearchOpen(true)} className="hidden 2xl:inline-flex" />
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={() => setSearchOpen(true)}
-              aria-label={t("search.placeholder")}
-              className="hidden h-10 w-10 rounded-full lg:inline-flex 2xl:hidden"
+        {lang === "bn" ? "মূল কনটেন্টে যান" : "Skip to content"}
+      </a>
+      <header className="w-full">
+        <TopUtilityBar />
+        <div
+          className={cn(
+            "sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85",
+            "transition-[box-shadow,border-color] duration-200",
+            scrolled ? "border-border shadow-md shadow-emerald-950/5" : "border-transparent",
+          )}
+        >
+          <div
+            className={cn(
+              "container-site flex items-center justify-between gap-3 transition-[height] duration-200 lg:gap-4",
+              scrolled ? "h-14 lg:h-16" : "h-16 lg:h-[76px]",
+            )}
+          >
+            {/* Brand: the full calligraphic lockup only where it renders wide
+                enough to stay legible (2xl+); tighter bars carry the official
+                mark beside the institute's typeset name */}
+            <Link
+              href={langPath(lang, "/")}
+              aria-label={lang === "bn" ? "আস-সুন্নাহ দাওয়াহ অ্যান্ড রিসার্চ ইনস্টিটিউট — হোম" : "As-Sunnah Dawah & Research Institute — home"}
+              className="shrink-0"
             >
-              <Search aria-hidden className="h-4 w-4 text-primary" />
-            </Button>
-            {donationsEnabled ? (
+              <LogoLockup priority className="hidden h-12 2xl:block" />
+              <LogoTextLockup lang={lang} priority className="2xl:hidden" markClassName={scrolled ? "h-8" : "h-9"} />
+            </Link>
+
+            {/* Desktop navigation (xl+): parent click navigates; chevron opens the panel.
+                Condensed at xl (1280–1535) — English labels are a third longer than
+                Bangla and must fit beside the brand without ever squeezing it. */}
+            <nav aria-label={t("a11y.mainNav")} className="hidden xl:block">
+              <ul className="flex items-center gap-0 2xl:gap-0.5">
+                <li className="relative">
+                  <Link
+                    href={langPath(lang, "/")}
+                    aria-current={pathname === "/" ? "page" : undefined}
+                    className={cn(
+                      "link-sweep block whitespace-nowrap rounded-md px-2 py-2 text-[12.5px] font-medium transition-colors hover:text-primary 2xl:px-3 2xl:text-[14px]",
+                      pathname === "/" && "font-semibold text-primary",
+                    )}
+                  >
+                    {t("nav.home")}
+                  </Link>
+                  {pathname === "/" ? (
+                    <span aria-hidden className="bg-gold-gradient absolute inset-x-3 bottom-0 h-0.5 rounded-full" />
+                  ) : null}
+                </li>
+                {navSections.map((section, index) => (
+                  <li key={section.href}>
+                    <NavDisclosure
+                      section={section}
+                      active={pathname === section.href || pathname.startsWith(`${section.href}/`)}
+                      align={index >= navSections.length - 2 ? "right" : "left"}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            {/* Actions: search, account, donate */}
+            <div className="flex shrink-0 items-center gap-1.5 lg:gap-2 2xl:gap-2.5">
               <Button
-                asChild
-                size="sm"
-                className="hidden bg-gold-gradient text-[13px] font-semibold text-gold-foreground shadow-sm hover:opacity-95 sm:inline-flex"
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setSearchOpen(true)}
+                aria-label={t("search.placeholder")}
+                className="hidden h-10 w-10 rounded-full lg:inline-flex"
               >
-                <Link href={langPath(lang, "/support")}>
-                  <HeartHandshake aria-hidden className="h-4 w-4" />
-                  {t("action.donate")}
-                </Link>
+                <Search aria-hidden className="h-4 w-4 text-primary" />
               </Button>
-            ) : null}
-            <MobileNav onSearchClick={() => setSearchOpen(true)} />
+              <AccountChip />
+              {donationsEnabled ? (
+                <Button
+                  asChild
+                  size="sm"
+                  className="hidden bg-gold-gradient text-[13px] font-semibold text-gold-foreground shadow-sm hover:opacity-95 sm:inline-flex"
+                >
+                  <Link href={langPath(lang, "/support")}>
+                    <HeartHandshake aria-hidden className="h-4 w-4" />
+                    {t("action.donate")}
+                  </Link>
+                </Button>
+              ) : null}
+              <NavDrawer sections={navSections} onSearchClick={() => setSearchOpen(true)} />
+            </div>
           </div>
         </div>
-      </div>
+      </header>
       <CommandPalette open={searchOpen} onOpenChange={setSearchOpen} />
-    </header>
+    </>
   );
 }
