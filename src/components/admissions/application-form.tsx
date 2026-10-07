@@ -18,6 +18,8 @@ export interface IntakeOption {
   seatsTotal: number | null;
   closesAt: string | null;
   examDate: string | null;
+  examTimeBn?: string;
+  examVenueBn?: string;
 }
 
 interface EducationRow {
@@ -245,6 +247,8 @@ export function ApplicationForm({
           <p className="mt-3 rounded-lg bg-gold/10 px-3.5 py-2 text-[12.5px] font-medium text-gold-foreground dark:text-gold">
             {bn ? "প্রাথমিক নির্ধারিত পরীক্ষার তারিখ" : "Provisional exam date"}:{" "}
             {new Date(selectedIntake.examDate).toLocaleDateString(bn ? "bn-BD" : "en-GB")}
+            {selectedIntake.examTimeBn ? ` — ${selectedIntake.examTimeBn}` : ""}
+            {selectedIntake.examVenueBn ? ` (${selectedIntake.examVenueBn})` : ""}
           </p>
         )}
       </section>

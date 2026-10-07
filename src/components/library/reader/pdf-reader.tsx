@@ -13,7 +13,9 @@ import {
   type PdfSearchMatch,
 } from "@/components/library/reader/reader-search";
 import {
-  pdfPageText,
+  pdfPageSearchIndex,
+  searchSquash,
+  swapPreBaseSigns,
   renderPdfPage,
   usePdfDocument,
 } from "@/components/library/reader/use-pdf";
@@ -145,26 +147,42 @@ export function PdfReader({
       setMatches([]);
       if (!trimmed || !doc) return;
       setSearching(true);
-      const needle = trimmed.toLowerCase();
+      const needle = searchSquash(trimmed);
+      // Chromium-printed Bangla PDFs store text in visual order (ে/ি before
+      // their consonant). haystackSwapped is the visual→logical
+      // reconstruction, so the plain (logical) needle is searched against
+      // BOTH forms; dedupe keeps one hit per position.
       const found: PdfSearchMatch[] = [];
       for (
         let pageNumber = 1;
         pageNumber <= doc.numPages && found.length < MAX_MATCHES;
         pageNumber++
       ) {
-        const text = await pdfPageText(doc, pageNumber);
-        const lower = text.toLowerCase();
-        let index = lower.indexOf(needle);
-        while (index !== -1 && found.length < MAX_MATCHES) {
-          found.push({
-            page: pageNumber,
-            snippet: text
-              .slice(Math.max(0, index - 42), index + needle.length + 64)
-              .replace(/\s+/g, " ")
-              .trim(),
-          });
-          index = lower.indexOf(needle, index + needle.length);
-        }
+        const index = await pdfPageSearchIndex(doc, pageNumber);
+        const seen = new Set<number>();
+        const collect = (haystack: string, visual: boolean) => {
+          let at = haystack.indexOf(needle);
+          while (at !== -1 && found.length < MAX_MATCHES) {
+            if (!seen.has(at)) {
+              seen.add(at);
+              const from = index.map[at] ?? 0;
+              const through = index.map[at + needle.length - 1] ?? from;
+              const raw = index.text
+                .slice(Math.max(0, from - 42), through + 1 + 64)
+                .replace(/\s+/g, " ")
+                .trim();
+              // a hit on the swapped form means the text is visual-order
+              // (Chromium PDF) — reconstruct logical order for the snippet
+              found.push({
+                page: pageNumber,
+                snippet: visual ? swapPreBaseSigns(raw) : raw,
+              });
+            }
+            at = haystack.indexOf(needle, at + needle.length);
+          }
+        };
+        collect(index.haystack, false);
+        collect(index.haystackSwapped, true);
       }
       setMatches(found);
       setSearching(false);

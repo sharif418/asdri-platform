@@ -314,7 +314,10 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
               the A4 pad opens in a new tab and prints with the brand. */}
           <ExamLetterDialog
             applicationId={application.id}
+            intakeId={application.intake.id}
             defaultDate={application.intake.examDate ? formatDate(application.intake.examDate, "bn") : ""}
+            defaultTime={application.intake.examTimeBn}
+            defaultVenue={application.intake.examVenueBn}
           />
           <ApplicationOfficerPanel applicationId={application.id} currentStatus={application.status} />
         </div>

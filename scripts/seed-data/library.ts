@@ -1,4 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { publications } from "@/content/research";
 
 type Db = PrismaClient;
@@ -225,7 +227,9 @@ export async function seedLibrary(db: Db): Promise<void> {
     (await db.libraryCategory.findMany({ select: { id: true, slug: true } })).map((c) => [c.slug, c.id]),
   );
 
-  // items (upsert by slug) + creator links (rebuilt per run)
+  // items (upsert by slug) + creator links (rebuilt per run).
+  // mediaId/coverMediaId are NEVER part of the update half: a re-run must
+  // not detach a PDF/cover a librarian attached through the admin.
   const items = await buildItems(db);
   for (const seed of items) {
     const data = {
@@ -249,9 +253,10 @@ export async function seedLibrary(db: Db): Promise<void> {
       visibility: "PUBLIC" as const,
       isPublished: true,
     };
+    const { mediaId: _seedFile, ...updateData } = data;
     await db.libraryItem.upsert({
       where: { slug: seed.slug },
-      update: data,
+      update: updateData,
       create: { slug: seed.slug, ...data },
     });
     const item = await db.libraryItem.findUnique({ where: { slug: seed.slug }, select: { id: true } });
@@ -265,12 +270,58 @@ export async function seedLibrary(db: Db): Promise<void> {
     }
   }
 
+  await seedDemoFile(db);
+
   const counts = {
     items: await db.libraryItem.count(),
+    withFile: await db.libraryItem.count({ where: { mediaId: { not: null } } }),
     journals: await db.libraryItem.count({ where: { type: "JOURNAL_ISSUE" } }),
     books: await db.libraryItem.count({ where: { type: "BOOK" } }),
     papers: await db.libraryItem.count({ where: { type: "PAPER" } }),
     categories: await db.libraryCategory.count(),
   };
-  console.log(`  ✓ library: ${counts.items} items (${counts.books} বই, ${counts.journals} জার্নাল সংখ্যা, ${counts.papers} পেপার), ${counts.categories} categories`);
+  console.log(
+    `  ✓ library: ${counts.items} items (${counts.books} বই, ${counts.journals} জার্নাল সংখ্যা, ${counts.papers} পেপার), ${counts.categories} categories, ${counts.withFile} with a readable PDF`,
+  );
+}
+
+/**
+ * Attach the demo reading file (a 6-page Bangla book PDF printed from the
+ * institute's own Hind Siliguri/Amiri subsets) to the tawhid-primer item —
+ * only while that item has NO file, so the office can replace it through
+ * the admin and a re-seed never clobbers the real thing.
+ */
+async function seedDemoFile(db: Db): Promise<void> {
+  const slug = "tawhid-primer";
+  const existingItem = await db.libraryItem.findUnique({ where: { slug }, select: { id: true, mediaId: true } });
+  if (!existingItem || existingItem.mediaId) return;
+
+  let media = await db.media.findFirst({
+    where: { filename: "tawhid-primer.pdf", kind: "DOCUMENT" },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!media) {
+    try {
+      const { uploadDocument } = await import("@/lib/storage/upload");
+      const buf = await readFile(path.join(process.cwd(), "scripts", "seed-data", "assets", "tawhid-primer.pdf"));
+      const uploaded = await uploadDocument("tawhid-primer.pdf", buf);
+      media = await db.media.create({
+        data: {
+          key: uploaded.key,
+          filename: uploaded.filename,
+          mime: uploaded.mime,
+          size: uploaded.size,
+          kind: "DOCUMENT",
+          uploadedById: null,
+        },
+      });
+    } catch {
+      console.log("  ⚠ library: demo PDF could not be stored — item stays without a file");
+      return;
+    }
+  }
+  await db.libraryItem.update({
+    where: { slug },
+    data: { mediaId: media.id, filePages: 6 },
+  });
 }

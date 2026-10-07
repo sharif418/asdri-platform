@@ -1,4 +1,5 @@
-import { GraduationCap, Clock } from "lucide-react";
+import { GraduationCap } from "lucide-react";
+import { CalendarDays, Clock, MapPin } from "lucide-react";
 import { StatusTrack, statusLabel } from "@/components/admissions/status-track";
 import type { Lang } from "@/lib/locale";
 import type { Application, ApplicationEvent, Intake } from "@prisma/client";
@@ -51,18 +52,63 @@ export function ApplicationStatusCard({ application, lang }: { application: AppR
         showNotes
       />
 
-      {/* exam schedule when shortlisted */}
+      {/* exam schedule when shortlisted — date, time and venue the office
+          persisted on the intake (round 5); time/venue may still be blank
+          while the office has not set them */}
       {application.intake.examDate &&
         ["SHORTLISTED", "EXAM_SCHEDULED", "EXAM_TAKEN", "INTERVIEW"].includes(application.status) && (
-          <div className="mt-4 flex items-center gap-2.5 rounded-lg bg-gold/10 px-3.5 py-2.5 text-[12.5px] font-medium">
-            <Clock aria-hidden className="h-4 w-4 text-gold" />
-            {bn ? "লিখিত পরীক্ষা:" : "Written exam:"}{" "}
-            {new Date(application.intake.examDate).toLocaleDateString(bn ? "bn-BD" : "en-GB", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
+          <div className="mt-4 overflow-hidden rounded-xl border border-gold/40 bg-gold/[0.06]">
+            <p className="flex items-center gap-2 border-b border-gold/30 bg-gold/10 px-4 py-2 text-[12px] font-bold tracking-wide text-gold-foreground dark:text-gold">
+              <CalendarDays aria-hidden className="h-4 w-4" />
+              {bn ? "লিখিত পরীক্ষার সময়সূচি" : "Written exam schedule"}
+            </p>
+            <dl className="grid gap-x-6 gap-y-2.5 px-4 py-3 text-[13px] sm:grid-cols-2">
+              <div className="flex items-start gap-2.5">
+                <CalendarDays aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+                <div>
+                  <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    {bn ? "তারিখ" : "Date"}
+                  </dt>
+                  <dd className="font-semibold">
+                    {new Date(application.intake.examDate).toLocaleDateString(bn ? "bn-BD" : "en-GB", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </dd>
+                </div>
+              </div>
+              {application.intake.examTimeBn ? (
+                <div className="flex items-start gap-2.5">
+                  <Clock aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {bn ? "সময়" : "Time"}
+                    </dt>
+                    <dd className="font-semibold">{application.intake.examTimeBn}</dd>
+                  </div>
+                </div>
+              ) : null}
+              {application.intake.examVenueBn ? (
+                <div className="flex items-start gap-2.5 sm:col-span-2">
+                  <MapPin aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {bn ? "স্থান" : "Venue"}
+                    </dt>
+                    <dd className="font-semibold">{application.intake.examVenueBn}</dd>
+                  </div>
+                </div>
+              ) : null}
+            </dl>
+            {!application.intake.examTimeBn && !application.intake.examVenueBn ? (
+              <p className="border-t border-gold/25 px-4 py-2 text-[11.5px] text-muted-foreground">
+                {bn
+                  ? "সময় ও স্থান নির্ধারণ হলে এখানে ও প্রবেশপত্রে দেখা যাবে — নোটিশ বোর্ডেও চোখ রাখুন।"
+                  : "Time and venue will appear here once the office announces them."}
+              </p>
+            ) : null}
           </div>
         )}
     </article>

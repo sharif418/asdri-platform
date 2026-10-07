@@ -26,6 +26,8 @@ export interface IntakeRowData {
   opensAt: string | null;
   closesAt: string | null;
   examDate: string | null;
+  examTimeBn?: string;
+  examVenueBn?: string;
   status: IntakeStatus;
   isPublished: boolean;
 }
@@ -132,6 +134,8 @@ export function IntakesTable({ intakes, courses }: { intakes: IntakeRowData[]; c
               opensAt: "",
               closesAt: "",
               examDate: "",
+              examTimeBn: "",
+              examVenueBn: "",
               status: "UPCOMING",
               isPublished: true,
             }}
@@ -239,6 +243,8 @@ export function IntakesTable({ intakes, courses }: { intakes: IntakeRowData[]; c
                           opensAt: intake.opensAt,
                           closesAt: intake.closesAt,
                           examDate: intake.examDate,
+                          examTimeBn: intake.examTimeBn,
+                          examVenueBn: intake.examVenueBn,
                           status: intake.status,
                           isPublished: intake.isPublished,
                         })}

@@ -42,6 +42,8 @@ export default async function AdminIntakesPage() {
     opensAt: intake.opensAt?.toISOString() ?? null,
     closesAt: intake.closesAt?.toISOString() ?? null,
     examDate: intake.examDate?.toISOString() ?? null,
+    examTimeBn: intake.examTimeBn,
+    examVenueBn: intake.examVenueBn,
     status: intake.status,
     isPublished: intake.isPublished,
   }));
@@ -83,6 +85,8 @@ export default async function AdminIntakesPage() {
             opensAt: "",
             closesAt: "",
             examDate: "",
+            examTimeBn: "",
+            examVenueBn: "",
             status: "UPCOMING",
             isPublished: true,
           }}

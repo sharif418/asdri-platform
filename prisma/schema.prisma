@@ -635,6 +635,8 @@ model Intake {
   opensAt     DateTime?
   closesAt    DateTime?
   examDate    DateTime?
+  examTimeBn  String   @default("") // "সকাল ১০:০০" — prefills exam-call letters + status card
+  examVenueBn String   @default("") // "মূল ক্যাম্পাস, কক্ষ ২০১"
   seatsTotal  Int?
   isPublished Boolean  @default(false)
   status      IntakeStatus @default(UPCOMING)

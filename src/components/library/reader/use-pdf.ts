@@ -123,3 +123,95 @@ export async function pdfPageText(
     .replace(/\s+/g, " ")
     .trim();
 }
+
+/* ————— complex-script search canonicalization —————
+ * Chromium-printed PDFs (the office's main pipeline for Bangla documents)
+ * extract Bengali in VISUAL order: pre-base vowel signs (ি ে ৈ) arrive
+ * before their consonant ("দেন" → "েদ ন"), conjunct ligatures without a
+ * ToUnicode mapping surface as NUL, and glyph clusters come back as
+ * separate items that plain joining pads with spaces — so a logical-order
+ * query never matches. Search therefore runs over a whitespace-squashed
+ * haystack against BOTH the plain query and a visual-order variant of it,
+ * with an index map carrying match positions back into the display text
+ * for snippets. Latin and Arabic text are unaffected (the swap only
+ * touches Bengali codepoints).
+ */
+
+/** Pre-base Bengali vowel signs — they render LEFT of their consonant. */
+const PRE_BASE_SIGNS = new Set(["\u09bf", "\u09c7", "\u09c8"]);
+
+function isBengaliConsonant(ch: string): boolean {
+  const c = ch.codePointAt(0);
+  if (c === undefined) return false;
+  return (
+    (c >= 0x0995 && c <= 0x09b9) || // ক … হ
+    (c >= 0x09dc && c <= 0x09df) || // ড় ঢ় য়
+    c === 0x09ce || // ৎ
+    (c >= 0x09f0 && c <= 0x09f1) // ৰ ৱ
+  );
+}
+
+/**
+ * Swap every pre-base vowel sign with the Bengali consonant immediately
+ * after it — the inverse of the shaping rule. Applied to a query, it
+ * produces the visual-order spelling a Chromium PDF actually contains;
+ * applied to already-visual text it reconstructs logical order. The result
+ * has the SAME length (a permutation), so index maps stay valid.
+ */
+export function swapPreBaseSigns(input: string): string {
+  const chars = [...input];
+  for (let i = 0; i + 1 < chars.length; i++) {
+    if (PRE_BASE_SIGNS.has(chars[i]) && isBengaliConsonant(chars[i + 1])) {
+      const swap = chars[i];
+      chars[i] = chars[i + 1];
+      chars[i + 1] = swap;
+      i++; // the swapped-in sign cannot pair with the next consonant
+    }
+  }
+  return chars.join("");
+}
+
+/** Whitespace/NUL-squashed, lowercased — the normalized search form. */
+export function searchSquash(input: string): string {
+  return input
+    .toLowerCase()
+    .replace(/[\s\u0000]+/g, "");
+}
+
+export interface PageSearchIndex {
+  /** Display text (NULs stripped) — snippets are cut from this. */
+  text: string;
+  /** searchSquash(text) — matches logical-order queries. */
+  haystack: string;
+  /** swapPreBaseSigns(haystack) — matches visual-order (Chromium) text. */
+  haystackSwapped: string;
+  /** haystack[i] / haystackSwapped[i] → index into text. */
+  map: number[];
+}
+
+/** Build the dual-form search index for one page. */
+export async function pdfPageSearchIndex(
+  doc: PDFDocumentProxy,
+  pageNumber: number,
+): Promise<PageSearchIndex> {
+  const page = await doc.getPage(pageNumber);
+  const content = await page.getTextContent();
+  const text = content.items
+    .filter((item): item is TextItem => "str" in item)
+    .map((item) => item.str)
+    .join(" ")
+    .replace(/[\u0000\s]+/g, " ")
+    .trim();
+
+  const lowered = text.toLowerCase();
+  const hayStackChars: string[] = [];
+  const map: number[] = [];
+  for (let i = 0; i < lowered.length; i++) {
+    const ch = lowered[i];
+    if (ch === " ") continue;
+    hayStackChars.push(ch);
+    map.push(i);
+  }
+  const haystack = hayStackChars.join("");
+  return { text, haystack, haystackSwapped: swapPreBaseSigns(haystack), map };
+}
