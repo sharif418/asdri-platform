@@ -43,24 +43,27 @@ export default async function AdminNoticesPage({ searchParams }: { searchParams:
   const q = (typeof sp.q === "string" ? sp.q : "").trim().slice(0, 120);
   const category = typeof sp.category === "string" && sp.category in CATEGORY_LABELS ? sp.category : undefined;
 
-  const page = Math.max(1, Number.parseInt(typeof sp.page === "string" ? sp.page : "1", 10) || 1);
+  const requestedPage = Math.max(1, Number.parseInt(typeof sp.page === "string" ? sp.page : "1", 10) || 1);
 
   const where = {
     ...(category ? { category: category as keyof typeof CATEGORY_LABELS as never } : {}),
     ...(q ? { OR: [{ titleBn: { contains: q } }, { titleEn: { contains: q } }] } : {}),
   };
 
-  const [total, notices] = await Promise.all([
-    db.notice.count({ where }),
-    db.notice.findMany({
-      where,
-      orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-      select: { id: true, slug: true, titleBn: true, titleEn: true, category: true, status: true, pinned: true, isPublished: true, publishedAt: true, attachment: { select: { filename: true } } },
-    }),
-  ]);
+  // Count first so an out-of-range ?page= is clamped instead of showing an
+  // empty page under a pager that claims records exist.
+  const total = await db.notice.count({ where });
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const page = Math.min(requestedPage, pageCount);
+
+  const notices = await db.notice.findMany({
+    where,
+    orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
+    select: { id: true, slug: true, titleBn: true, titleEn: true, category: true, status: true, pinned: true, isPublished: true, publishedAt: true, attachment: { select: { filename: true } } },
+  });
+  const hasFilter = Boolean(q || category);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -106,16 +109,26 @@ export default async function AdminNoticesPage({ searchParams }: { searchParams:
         </button>
       </form>
 
-      <div className="mt-4 overflow-x-auto overflow-y-clip rounded-2xl border bg-card shadow-sm">
+      <div className="mt-4 max-h-[70vh] overflow-x-auto overflow-y-auto rounded-2xl border bg-card shadow-sm">
         {notices.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <p className="font-heading text-lg font-bold">এখনো কোনো নোটিশ নেই</p>
-            <p className="mt-1 text-sm text-muted-foreground">প্রথম নোটিশটি তৈরি করুন — এটি সাথে সাথেই ওয়েবসাইটে দেখা যাবে।</p>
-            <Link href="/admin/notices/new" className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
-              <Plus aria-hidden className="h-4 w-4" />
-              নোটিশ তৈরি করুন
-            </Link>
-          </div>
+          hasFilter ? (
+            <div className="px-6 py-16 text-center">
+              <p className="font-heading text-lg font-bold">কোনো ফলাফল পাওয়া যায়নি</p>
+              <p className="mt-1 text-sm text-muted-foreground">অনুসন্ধানের সাথে মিলে যায় এমন কিছু পাওয়া যায়নি।</p>
+              <Link href="/admin/notices" className="mt-4 inline-block text-sm font-semibold text-primary hover:underline">
+                ফিল্টার খুলে ফেলুন
+              </Link>
+            </div>
+          ) : (
+            <div className="px-6 py-16 text-center">
+              <p className="font-heading text-lg font-bold">এখনো কোনো নোটিশ নেই</p>
+              <p className="mt-1 text-sm text-muted-foreground">প্রথম নোটিশটি তৈরি করুন — এটি সাথে সাথেই ওয়েবসাইটে দেখা যাবে।</p>
+              <Link href="/admin/notices/new" className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
+                <Plus aria-hidden className="h-4 w-4" />
+                নোটিশ তৈরি করুন
+              </Link>
+            </div>
+          )
         ) : (
           <table className="w-full text-sm">
             <thead>
@@ -134,6 +147,11 @@ export default async function AdminNoticesPage({ searchParams }: { searchParams:
                     <Link href={`/admin/notices/${notice.slug}`} className="flex items-center gap-2 font-medium hover:text-primary">
                       {notice.pinned ? <Pin aria-hidden className="h-3.5 w-3.5 shrink-0 text-gold" /> : null}
                       <span className="truncate">{notice.titleBn}</span>
+                      {!notice.isPublished && (
+                        <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[9.5px] font-bold text-muted-foreground">
+                          খসড়া
+                        </span>
+                      )}
                     </Link>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">{formatDate(notice.publishedAt, "bn")}</p>
                   </td>

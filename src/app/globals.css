@@ -494,14 +494,22 @@ html:not([data-lang="en"]) .prose-islamic p {
   border-radius: 4px;
 }
 
-/* Admin data tables: the header row stays pinned under the sticky topbar
-   while the officer scrolls a 20–25 row page. Wrappers use overflow-clip
-   (not overflow-hidden) so the table is not trapped in a non-scrolling
-   scrollport. Background is the same secondary-over-card tint the thead
-   already wears, but opaque — rows must not bleed through the pinned row. */
+/* Admin data tables: the header row pins to the top of the nearest
+   scrollport while the officer scrolls a long list. Since round 3 the
+   wrappers scroll horizontally (overflow-x-auto) — that makes the WRAPPER,
+   not the page, the sticky's scroll container (overflow-y: clip on the
+   wrapper does not hand vertical sticky back to the page), so an offset
+   here displaces the header over the first data row instead of pinning it
+   (the round-4 O-H1 hit-test block). top:0 keeps the header flush with the
+   scrollport: no displacement anywhere — a plain card glues the header to
+   its top edge while the card is in view, and on list cards that scroll
+   vertically inside the card (notices/blog/publications: max-h +
+   overflow-y-auto) the thead genuinely pins while rows scroll under it.
+   Background is an opaque secondary-over-card tint — rows must not bleed
+   through the pinned row. */
 #admin-main table thead th {
   position: sticky;
-  top: 3.5rem; /* h-14 sticky admin topbar (mobile + desktop variants) */
+  top: 0;
   z-index: 10;
   background-color: color-mix(in oklab, var(--secondary) 30%, var(--card));
   /* keep the visual divider when the row is pinned mid-viewport */

@@ -87,7 +87,6 @@ export default async function AdminDashboardPage() {
     subscribers,
     recentAudit,
     latestNotices,
-    raisedTotal,
   ] = await Promise.all([
     db.notice.count({ where: { isPublished: true } }),
     db.course.count({ where: { isPublished: true } }),
@@ -104,8 +103,13 @@ export default async function AdminDashboardPage() {
       orderBy: { createdAt: "desc" },
       include: { actor: { select: { name: true } } },
     }),
-    db.notice.findMany({ take: 5, orderBy: { publishedAt: "desc" }, select: { slug: true, titleBn: true, category: true, publishedAt: true, status: true } }),
-    db.donation.aggregate({ where: { status: "COMPLETED" }, _sum: { amount: true } }),
+    // প্রকাশিত নোটিশই ড্যাশবোর্ডে — খসড়া আর ঢুকবে না (r4 M1)।
+    db.notice.findMany({
+      where: { isPublished: true },
+      take: 5,
+      orderBy: { publishedAt: "desc" },
+      select: { slug: true, titleBn: true, category: true, publishedAt: true, status: true },
+    }),
   ]);
 
   const cards: { icon: LucideIcon; value: string; label: string; caption: string; href?: string; accent?: "gold" | "emerald"; show: boolean }[] = [
@@ -118,7 +122,6 @@ export default async function AdminDashboardPage() {
     { icon: HandCoins, value: formatTaka(donationCompleted._sum.amount ?? 0, "bn"), label: "সম্পন্ন ডোনেশন (মোট)", caption: `${toBnDigits(donationPending)} টি পেন্ডিং লেনদেন`, href: "/admin/finance/donations", show: roleCan(role, "finance") },
     { icon: Inbox, value: toBnDigits(unreadMessages), label: "অপঠিত বার্তা", caption: "যোগাযোগ ফর্ম থেকে", href: "/admin/inbox/messages", accent: "gold", show: roleCan(role, "messages") && unreadMessages > 0 },
   ];
-  void raisedTotal;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

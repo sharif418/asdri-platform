@@ -26,8 +26,6 @@ export default async function AdminVideosPage({ searchParams }: { searchParams: 
 
   const playlists = [...new Set(videos.map((video) => video.playlistKey))];
   const grouped = playlists.map((key) => ({ key, videos: videos.filter((video) => video.playlistKey === key) }));
-  const ungroupedCount = videos.filter((video) => !video.playlistKey).length;
-  void ungroupedCount;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
