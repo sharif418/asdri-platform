@@ -609,3 +609,106 @@ diet, and JS code-splitting are real work, not this PR's.
 Seeded content only (7 courses, 8 notices, 2 campaigns, …) plus whatever the 205-test
 suite provisions into `asdri_test`; `asdri_dev` carries the seed plus this round's browser
 QA artifacts. A pristine DB is `prisma migrate reset` + `bun scripts/seed.ts`.
+
+---
+
+# Round 5 — day-one reality + exam schedule (PR: fix/r5-day-one-reality → chore/r4-finish)
+
+Context: the sandbox was rebuilt from scratch after a reset (re-clone @ `4e63bdc`, pgserver
+re-init, both DBs re-migrated + re-seeded); every baseline gate was re-verified first —
+`tsc` clean, `lint` clean, `bun test` **353 pass / 0 fail / 2328 expects** (exactly the
+round-4 close numbers), all key routes 200 in dev, admin + guardian + teacher logins
+exercised through the real forms.
+
+## R5-1 — fresh-seed day-one reality (the seed lied)
+
+A freshly seeded install showed an empty admissions module and an empty guardian portal
+while the seed printed "portal demo: … guardian (seeded application)" — no `Intake`, no
+`Application` and no `GuardianLink` rows existed at all, and no library item carried a
+PDF, so the round-4 flagship (the in-browser reader) had nothing to demonstrate.
+
+- `scripts/seed-data/admissions.ts`: 4 intakes (PYS + ATT **OPEN/published** for 2026,
+  CCIS UPCOMING, DIPLOM 2025 CLOSED) and 3 applications with varied statuses (SUBMITTED —
+  claimed by the new `applicant.demo` account, UNDER_REVIEW, EXAM_SCHEDULED), each with
+  education rows and a full event chain; idempotent by trackingNo so a re-run never
+  resets an officer's review. `seedPortalDemo` now links the guardian to the first
+  seeded application using the application's own relation, and its console line is
+  honest about what happened.
+- Library seed office-safety bug fixed on the way: the upsert's update half carried
+  `mediaId/coverMediaId` — a re-seed **detached a librarian's attached PDF**. Now the
+  update half never touches them, and `seedDemoFile` attaches the committed 6-page
+  Bangla demo book (`scripts/seed-data/assets/tawhid-primer.pdf`, printed from the
+  institute's own Hind Siliguri/Amiri subsets via Chromium) to `tawhid-primer` only
+  while it has no file.
+- Verified live: apply form lists the two OPEN intakes; admin applications table has 3
+  rows with statuses; guardian portal shows the child card (মুহাম্মাদ আব্দুল্লাহ, পিতা,
+  ASDRI-2026-000101); the reader renders the 6-page PDF; seed re-run is a no-op
+  (0 new applications, no duplicate events/media). Seed counts line now includes
+  `intakes` + `applications`.
+- Note: the documented QA logins (guardian/teacher.demo / qa-password-123) are a QA
+  convenience, not seed state — the seed gives demo accounts random passwords by design
+  (rotate via invitation); this round set the known QA password on both demo accounts
+  for browser work, recorded in the sandbox worklog.
+
+## R5-1b — Bangla-capable in-reader search
+
+pdf.js extraction of Chromium-printed Bangla PDFs is visual-order (ি ে ৈ before their
+consonant), item-split (intra-word spaces) and NUL-laced (ToUnicode-less conjuncts), so
+the previous plain `indexOf` matched nothing in the platform's own document pipeline.
+
+- `use-pdf.ts`: `swapPreBaseSigns` (visual→logical reconstruction), `searchSquash`
+  (whitespace/NUL collapse + case fold), `pdfPageSearchIndex` (dual haystack + index
+  map into the display text); `pdf-reader.tsx` searches the plain logical needle
+  against BOTH the raw and reconstructed haystack and renders visual-order snippets
+  reconstructed to logical order.
+- Verified live against the seeded demo PDF: "তাওহীদের" → **11 matches** with readable
+  snippets (0 before). `tests/unit/pdf-search.test.ts` pins both helpers with shapes
+  measured from the real Chromium extraction. Known limitation (GAPS): conjunct
+  ligatures without ToUnicode maps (দ্ব…) are lost by the producer and stay
+  unsearchable.
+
+## R5-2 — exam schedule persists per intake (GAPS round-4 priority 3)
+
+The officer re-typed তারিখ/সময়/স্থান into every exam-call letter print; two officers
+could print different venues for the same exam, and the applicant never saw the schedule
+until the letter was in their hands.
+
+- Schema: `Intake.examTimeBn` + `Intake.examVenueBn` (free Bangla text beside the
+  structured `examDate`) — migration `20261008160000_r5_exam_schedule` written by hand
+  (migrate dev refuses non-interactive) and deployed to both DBs.
+- Admin intake dialog: পরীক্ষার সময় / পরীক্ষার স্থান inputs (Clock/MapPin icons) with
+  the save hint; POST + PATCH routes accept, trim and cap them (60/160 chars, Bangla
+  field messages).
+- ExamLetterDialog: prefills time/venue from the intake + an "ইনটেকে সংরক্ষণ করুন"
+  switch that PATCHes the schedule back before printing — entered once, every future
+  letter carries it (the date stays a structured field, edited in the intake form; the
+  dialog's date hint says so).
+- Public: `/admissions/status` + the applicant's account status card render a
+  gold-framed সময়সূচি block (weekday date, time, venue) once the office has set them,
+  with a "will appear once announced" note while empty; the apply form's provisional
+  exam line carries time/venue too. The lookup API returns `exam {date,timeBn,venueBn}`
+  (second-factor protected as before).
+- `tests/integration/exam-schedule.test.ts` (6 tests): ADMISSIONS persists trimmed
+  values, empties clear, >60 chars → 400, EDITOR 403, lookup returns the schedule for
+  the right pair, wrong second factor never reveals it.
+- Verified live: intake edit save → DB row; letter dialog prefilled (screenshot
+  `qa-r5/exam-letter-prefilled.png`); status lookup shows the full block at 1440 and
+  390 (`qa-r5/status-lookup-*.png`).
+
+## R5-3 — portal keepsake detail (styling pass)
+
+- Guardian child card: gold-ring avatar initial, relation badge + mono course-code chip,
+  dense one-glance 7-step progress rail (the applicant's StatusTrack language;
+  REJECTED/WAITLISTED fall back to the plain meta grid), gold Hash/GraduationCap/
+  CalendarDays meta rows, mono tracking number, notice-board hint line, gold hover.
+- Teacher course card: gold spine gradient (the public course-card motif), mono code
+  chip, semester/subject stat row with Layers/ListChecks icons, syllabus CTA with
+  hover-sliding arrow.
+- Verified live at 1440 + 390 (no horizontal overflow; rail/avatar/spine/CTA asserted
+  in the DOM; screenshots `qa-r5/guardian-card-*.png`, `teacher-card-styled.png`).
+
+## Gates at round-5 close
+
+`tsc` clean · `lint` clean · **`bun test` 366 pass / 0 fail / 2364 expects** (353 → 366:
++7 pdf-search unit pins, +6 exam-schedule integration). Evidence screenshots:
+`/home/z/my-project/download/qa-r5/` (sandbox-side; mirrored into the PR description).

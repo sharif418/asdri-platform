@@ -203,3 +203,17 @@ Round-3 corrections applied: items made stale by PRs #16–#19 are updated in pl
     (f) Alumni portal is v1 (notices/publications/library); batch directory + update-contact
     are follow-ups. (g) Preview links are Notice/Post only; extending to pages/courses is
     straightforward if the office wants it.
+
+21. **Round-5 decisions where the brief was silent**: (a) The seed's exam schedule for PYS
+    2026 (২৫ ফেব্রুয়ারি ২০২৬, সকাল ১০:০০, মূল ক্যাম্পাস কক্ষ ২০১) is demo data — the
+    office overwrites it through the intake form. (b) The exam-letter dialog persists
+    TIME and VENUE to the intake, but the DATE stays a structured `examDate` field edited
+    in the intake form (a free-text date in the letter would not parse reliably); the
+    dialog's hint tells the officer this. (c) The seeded demo accounts (applicant.demo in
+    addition to teacher/guardian.demo) carry random passwords by design — rotation goes
+    through invitations; the known QA password in the sandbox is a test convenience.
+    (d) Reader search over Bangla PDFs matches the logical-order query against both the
+    raw and reconstructed (visual→logical) haystack; conjunct ligatures the producer
+    emits without ToUnicode maps (দ্ব…) cannot be searched by ANY consumer — recorded as
+    a Chromium-generation limitation. (e) Seed day-one data (intakes/applications) is
+    office-safe: re-runs upsert intakes and never reset or duplicate applications.
