@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { ConfirmDialog } from "@/components/admin/ui/confirm-dialog";
 import { BilingualField } from "@/components/admin/ui/bilingual-field";
 import { formatNumber } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 interface FaqRow {
   id: string;
@@ -169,10 +170,18 @@ export function FaqsManager({ faqs }: { faqs: FaqRow[] }) {
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     {busyId === row.id ? <Loader2 aria-hidden className="h-4 w-4 animate-spin text-muted-foreground" /> : null}
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-0.5 text-[11px] font-bold",
+                        row.isPublished ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
+                      )}
+                    >
+                      {row.isPublished ? "প্রকাশিত" : "অপ্রকাশিত"}
+                    </span>
                     <Switch
                       checked={row.isPublished}
                       onCheckedChange={(checked) => void togglePublish(row, checked)}
-                      aria-label={`${row.questionBn} ${row.isPublished ? "লুকান" : "প্রকাশ"} করুন`}
+                      aria-label={`${row.questionBn} — ${row.isPublished ? "প্রকাশিত" : "অপ্রকাশিত"}`}
                     />
                     <Button type="button" variant="ghost" size="sm" aria-label="সম্পাদনা" onClick={() => openEdit(row)}>
                       <Pencil aria-hidden className="h-4 w-4" />
@@ -267,7 +276,7 @@ export function FaqsManager({ faqs }: { faqs: FaqRow[] }) {
       <ConfirmDialog
         open={confirmId !== null}
         onOpenChange={(open) => !open && setConfirmId(null)}
-        title="প্রশ্নোত্তরটি মুছে ফেলবেন?"
+        title={`‘${faqs.find((row) => row.id === confirmId)?.questionBn ?? "এই"}’ প্রশ্নোত্তরটি মুছে ফেলবেন?`}
         description="এটি ভর্তি প্রশ্নোত্তর পেজ থেকে স্থায়ীভাবে সরে যাবে।"
         confirmLabel="স্থায়ীভাবে মুছুন"
         onConfirm={() => confirmId && remove(confirmId)}

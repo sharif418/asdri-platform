@@ -77,7 +77,7 @@ export function FlagsManager({ flags }: { flags: FlagRow[] }) {
             <Switch
               checked={row.isEnabled}
               onCheckedChange={(checked) => void toggle(row, checked)}
-              aria-label={`${row.labelBn} ${row.isEnabled ? "বন্ধ" : "চালু"} করুন`}
+              aria-label={`${row.labelBn} মডিউল — বর্তমান অবস্থা: ${row.isEnabled ? "চালু" : "বন্ধ"}`}
             />
           </div>
         </li>
