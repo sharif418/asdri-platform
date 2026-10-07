@@ -19,6 +19,7 @@ import { seedSettings } from "./seed-data/settings";
 import { seedAcademics } from "./seed-data/academics";
 import { seedContent } from "./seed-data/content";
 import { seedClarificationPosts } from "./seed-data/clarification-posts";
+import { seedLibrary } from "./seed-data/library";
 import { uploadImage } from "@/lib/storage/upload";
 import { hashPassword } from "@/lib/auth";
 import { randomBytes } from "node:crypto";
@@ -286,6 +287,8 @@ async function main(): Promise<void> {
   await seedContent(db);
   // after seedContent: the clar-* categories exist for the topic articles
   await seedClarificationPosts(db);
+  // after seedContent: the journal Publications exist to convert into library items
+  await seedLibrary(db);
   const mediaByPath = await importMedia();
   await attachMedia(mediaByPath);
   await seedAdmin();
@@ -310,6 +313,7 @@ async function main(): Promise<void> {
     menus: await db.menuItem.count(),
     settings: await db.siteSetting.count(),
     flags: await db.featureFlag.count(),
+    libraryItems: await db.libraryItem.count(),
   };
   console.log("📊", counts);
   console.log("✅ Seed complete.");
