@@ -189,3 +189,17 @@ Round-3 corrections applied: items made stale by PRs #16–#19 are updated in pl
 19. **Guardian linking is officer-side** (admissions invites the guardian against an
     application). A self-service "add my child by tracking number" flow would need the same
     second-factor verification as the public status lookup — offered as a follow-up.
+
+20. **Round-4 close-out notes**: (a) mobile perf sits at 69–83 across audited pages on this
+    sandbox (target 90) — LCP is font+hero arrival on simulated slow-4G; PPR/ISR for the home
+    shell and hero format work are the next levers; sandbox variance ±5–13 is documented in
+    §C.10. (b) The reader's in-document search is a match-list, not canvas overlay
+    highlighting — an option, not a defect. (c) pdfjs-dist ships base-14 fonts from our
+    origin; embedded-font PDFs carry their own. (d) The client's three source documents now
+    live at docs/source-documents/ — they remain the Bangla copy's provenance (the seed
+    quotes them verbatim); the office should keep them authoritative when revising copy.
+    (e) The exam-call letter's date/time/venue are entered by the officer at print time —
+    persisting an exam schedule per intake is a natural next step recorded here.
+    (f) Alumni portal is v1 (notices/publications/library); batch directory + update-contact
+    are follow-ups. (g) Preview links are Notice/Post only; extending to pages/courses is
+    straightforward if the office wants it.
