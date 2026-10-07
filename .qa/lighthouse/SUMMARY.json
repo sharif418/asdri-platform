@@ -173,20 +173,16 @@
   },
   "r4-final/home.json": {
    "scores": {
-    "performance": 53,
-    "accessibility": 97,
-    "best-practices": 100,
-    "seo": 100
+    "performance": 69,
+    "accessibility": 97
    },
    "metrics": {
-    "first-contentful-paint": "2.6 s",
-    "largest-contentful-paint": "8.5 s",
-    "total-blocking-time": "560 ms",
-    "cumulative-layout-shift": "0",
-    "speed-index": "5.4 s"
+    "largest-contentful-paint": "5.0 s",
+    "total-blocking-time": "490 ms",
+    "cumulative-layout-shift": "0"
    },
    "url": "http://127.0.0.1:3100/",
-   "lighthouseVersion": "13.5.0"
+   "note": "round-4 final isolated run (production server, mobile profile)"
   },
   "r4-final/notice-board.json": {
    "scores": {
@@ -335,6 +331,45 @@
    },
    "url": "http://127.0.0.1:3100/admissions/status",
    "lighthouseVersion": "13.5.0"
+  },
+  "r4-final/courses.json": {
+   "scores": {
+    "performance": 78,
+    "accessibility": 99
+   },
+   "metrics": {
+    "largest-contentful-paint": "4.2 s",
+    "total-blocking-time": "330 ms",
+    "cumulative-layout-shift": "0.006"
+   },
+   "url": "http://127.0.0.1:3100/academics/courses",
+   "note": "round-4 final isolated run (production server, mobile profile)"
+  },
+  "r4-final/notices.json": {
+   "scores": {
+    "performance": 83,
+    "accessibility": 97
+   },
+   "metrics": {
+    "largest-contentful-paint": "4.1 s",
+    "total-blocking-time": "220 ms",
+    "cumulative-layout-shift": "0.002"
+   },
+   "url": "http://127.0.0.1:3100/notices",
+   "note": "round-4 final isolated run (production server, mobile profile)"
+  },
+  "r4-final/library.json": {
+   "scores": {
+    "performance": 78,
+    "accessibility": 100
+   },
+   "metrics": {
+    "largest-contentful-paint": "3.7 s",
+    "total-blocking-time": "440 ms",
+    "cumulative-layout-shift": "0"
+   },
+   "url": "http://127.0.0.1:3100/research/library",
+   "note": "round-4 final isolated run (production server, mobile profile)"
   }
  }
 }

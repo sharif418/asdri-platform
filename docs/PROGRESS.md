@@ -13,6 +13,45 @@ site opened in both languages at 1920px and 390px with zero console errors.
 
 
 
+
+## Workstream 5 — the open items closed (PR: chore/r4-finish → feat/r4-library)
+
+From the round-3 review's "what else is still open" list, item by item:
+
+- **Content revision history + preview before publish — BUILT.** `ContentRevision` model
+  (migration `20261008140000`) captures trimmed before/after snapshots on every Notice/Post
+  update through the real handlers (latest-50 kept); admin revision panel with field-level
+  Bangla diffs (তারিখ · কর্তা · changed fields); **preview links** — HMAC-signed, 24 h,
+  content.manage-guarded — render unpublished notices/posts through the same public render
+  path (NoticePad/PostArticleView extracted; public pages regression-verified byte-identical)
+  under a gold "প্রিভিউ — প্রকাশিত হয়েনি" banner, noindex, no OG, quiet invalid-token state;
+  public draft permalinks stay 404 (pinned by test). 16 new tests. **Bonus fix found in
+  scope:** zod `.partial()` kept create-side defaults, so a title-only PATCH could blank the
+  body and silently unpublish a post — both handlers now apply only sent fields (pinned).
+- **`uuid` dependency — REMOVED** (installed and imported nowhere).
+- **The last Bangla `dir="rtl"` fields — FIXED**: the admissions officer's two note
+  textareas and the intake session-Bangla input (Arabic fields — titleAr/nameAr, the
+  calligraphy — keep theirs, correctly).
+- **48k lines of Lighthouse JSON under .qa/ — COMPACTED**: 20 raw reports → a 12 KB
+  `SUMMARY.json` (scores, key metrics, URLs; full reports reproducible).
+- **Client documents in upload/ — MOVED to docs/source-documents/**: they are the project's
+  source material (the Bangla copy's provenance — the seed quotes them verbatim), not user
+  uploads; git-tracked renames, no code references existed.
+- **Mobile performance (53–76 → target 90) — measured honestly, improved, not at 90**:
+  final isolated runs on the production server (mobile profile):
+  home **69–72**/97 (was 53–63; LCP 9.2 s → 5.7–6.5 s, TBT 600 → 120–460 ms — the header
+  rewrite shed Radix NavigationMenu and the utility bar stopped sticking),
+  courses **78**/99 (was 69–72), notices **83**/97 (was 69–71), library (new page) **78**/100.
+  The remaining gap is LCP on simulated slow-4G (font + hero arrival) on this shared-CPU
+  sandbox — the same honest note as GAPS §C.9: single-run variance here is ±5–13 points
+  (a four-concurrent-runs pass even scored home 57/54; the isolated re-run 15 minutes later
+  scored 69/97 — noise, documented). The next real levers are PPR/ISR for the home shell
+  and hero-image format work; recorded in GAPS as the standing follow-up.
+
+Gates on the branch: tsc clean · lint clean · **353 pass / 0 fail / 2328 expects**
+(291 at round start → 353) · production build + boot smoke all-200 incl. the new
+/research/library (200) and /portal (307 anonymous) · evidence `.qa/r4-audit/f1-*.png`.
+
 ## Workstream 4 — the library as a real module (PR: feat/r4-library → feat/r4-roles-portals)
 
 **Data model** (migration `20261008120000`, hand-written in house style): `LibraryItem`
