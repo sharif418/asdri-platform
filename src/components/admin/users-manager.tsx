@@ -35,7 +35,7 @@ const ROLE_LABELS: Record<string, string> = {
   ALUMNI: "প্রাক্তন",
 };
 
-const STAFF_ROLES = ["ADMIN", "EDITOR", "ADMISSIONS", "FINANCE", "FATWA"] as const;
+const STAFF_ROLES = ["ADMIN", "EDITOR", "ADMISSIONS", "FINANCE", "FATWA", "LIBRARIAN"] as const;
 
 /** One-line responsibility hints under the role select (r4 O-M4). */
 const ROLE_HINTS: Record<(typeof STAFF_ROLES)[number], string> = {
@@ -44,6 +44,7 @@ const ROLE_HINTS: Record<(typeof STAFF_ROLES)[number], string> = {
   ADMISSIONS: "ইনটেক, আবেদন ও ভর্তি প্রক্রিয়া",
   FINANCE: "ফান্ড, ক্যাম্পেইন, অনুদান ও লেজার",
   FATWA: "ফতোয়া প্রশ্ন ও উত্তর প্রকাশ",
+  LIBRARIAN: "লাইব্রেরি ক্যাটালগ, ফাইল ও ধার ব্যবস্থাপনা",
 };
 
 function csrfToken(): string {

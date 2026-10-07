@@ -22,7 +22,7 @@ export type MediaListQueryInput = z.infer<typeof mediaListQuerySchema>;
 
 /* ————————— Users ————————— */
 
-export const userRoleSchema = z.enum(["ADMIN", "EDITOR", "ADMISSIONS", "FINANCE", "FATWA"]);
+export const userRoleSchema = z.enum(["ADMIN", "EDITOR", "ADMISSIONS", "FINANCE", "FATWA", "LIBRARIAN"]);
 
 export const userCreateSchema = z.object({
   name: z.string().trim().min(2, "নাম কমপক্ষে ২ অক্ষরের হতে হবে").max(150),

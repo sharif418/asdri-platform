@@ -12,6 +12,51 @@ site opened in both languages at 1920px and 390px with zero console errors.
 
 
 
+
+## Workstream 4 — the library as a real module (PR: feat/r4-library → feat/r4-roles-portals)
+
+**Data model** (migration `20261008120000`, hand-written in house style): `LibraryItem`
+(BOOK / JOURNAL_ISSUE / PAPER / DIGITAL_FILE with full bibliographic metadata — creators
+with roles, publisher, year/place, ISBN/ISSN/DOI, volume/issue/journal grouping for
+periodicals, PDF + cover media, PUBLIC/MEMBERS visibility), `LibraryCategory` (two-level
+tree), `LibraryCreator`, `LibraryPublisher`, `LibraryCheckout` (borrow + return),
+`LibraryReading` (read counter). 11 indexes, 9 FKs.
+
+**The librarian's module** (the office runs it without a developer): `/admin/library`
+(stats strip — মোট আইটেম / বই / জার্নল সংখ্যা / পড়া হয়েছে / বর্তমানে ধার — type tabs, search,
+table with designed delete confirms naming the item, a full create/edit dialog: bilingual
+fields, rich text, creators repeater, identifiers, journal fields with live journalKey
+preview, MediaPicker for PDF + cover, state-labelled publish switch), `/admin/library/categories`
+(tree + reorder), `/admin/library/checkouts` (open/returned tabs, ধার নিন, ফেরত দিন). The
+LIBRARIAN role's door: verified live that their admin sidebar shows exactly ড্যাশবোর্ড +
+লাইব্রেরি + মিডিয়া লাইব্রেরি. APIs follow the requireModule/zod/audit pattern; 8 new
+library.* audit codes carry Bangla labels.
+
+**The public face**: the catalogue rebuilt (`/research/library`) — no-JS GET search +
+type/category/year/language filters as removable chips, journals organised by issue
+(journalKey groups → `?journal=` views), server pagination, designed empty states. Record
+page per item: the citation generator extended (APA/Chicago/MLA with publisher/place/
+edition/journal), identifiers table, actions card, related items, JSON-LD + OG. **The
+in-browser reader** (`[slug]/read`): pdfjs-dist 4.10 (worker self-hosted from our origin)
+as a client island that loads ONLY on the reader route (verified — zero pdf resources on
+catalogue/record), DPR-aware canvas, page/jump/keyboard navigation, zoom, in-document text
+search with a match list, branded loading/error states, print CSS, and a readings counter
+API (30/min/IP). **MEMBERS visibility proven both ways live**: anonymous visitors get the
+inline login notice (browser + curl), a registered account unlocks the file; the gate is
+page-level, catalogue inclusion is by design and pinned by test.
+
+**Tests**: 11 new in `library-public` (search by Bangla prefix + English, facets, gating,
+readings, unpublished exclusion, journal grouping) + 9 in `library-admin` (LIBRARIAN
+create/update, EDITOR 403, slug -2 suffixing, category-delete guard, checkout flow).
+**337 pass / 0 fail / 2251 expects**; tsc + lint clean. Evidence: `.qa/r4-audit/lib1-*.png`
+(16) + `lib2-*.png` (21) — admin + public at 1440/390 in both languages, reader interactions,
+MEMBERS gate, print artifact.
+
+Honest notes: clipboard-write could not be verified in headless Chromium (the error-toast
+path was shown; the success path is the site-wide CopyButton pattern); the reader's text
+search is a match-list (no canvas overlay highlight — recorded as an option); pdfjs base-14
+fonts ship from our origin.
+
 ## Workstream 3 — roles, portals & invitations (PR: feat/r4-roles-portals → feat/r4-identity)
 
 **The model** (decided where the brief was silent; recorded in GAPS): permissions, not role

@@ -157,5 +157,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
+  // library record pages (the catalogue itself rides the research flag)
+  if (flags.get("research") !== false) {
+    const libraryItems = await db.libraryItem.findMany({
+      where: { isPublished: true },
+      select: { slug: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
+    });
+    for (const item of libraryItems) {
+      out.push(bnEntry(`/research/library/${item.slug}`, item.updatedAt, 0.6, "monthly"));
+      out.push(enEntry(`/research/library/${item.slug}`, item.updatedAt, 0.55, "monthly"));
+    }
+  }
+
   return out;
 }

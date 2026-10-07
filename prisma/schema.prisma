@@ -606,6 +606,8 @@ model Media {
   campaignCovers  Campaign[]      @relation("CampaignCover")
   applicationPhotos Application[] @relation("ApplicationPhoto")
   applicationDocs ApplicationDocument[] @relation("ApplicationDocument")
+  libraryFiles    LibraryItem[]   @relation("LibraryFile")
+  libraryCovers   LibraryItem[]   @relation("LibraryCover")
 
   @@index([createdAt(sort: Desc)])
   @@index([kind])
@@ -1071,4 +1073,156 @@ model TeacherAssignment {
 
   @@index([teacherUserId])
   @@index([courseId])
+}
+
+/* ══════════════════════════ 8. Library ══════════════════════════ */
+
+/// The online library (round 4, workstream 4). One table for every shelf:
+/// books, journal issues, research papers and loose digital files. JOURNAL_ISSUE
+/// rows group themselves by journalKey (slug of the journal's name).
+enum LibraryItemType {
+  BOOK
+  JOURNAL_ISSUE
+  PAPER
+  DIGITAL_FILE
+}
+
+/// PUBLIC items list to everyone; MEMBERS items need an account (the public
+/// catalogue hides them, the reader checks the session).
+enum LibraryVisibility {
+  PUBLIC
+  MEMBERS
+}
+
+/// A creator's role on a specific item (AUTHOR / EDITOR / TRANSLATOR) lives on
+/// the link, so one person can be translator here and author there.
+enum LibraryCreatorRole {
+  AUTHOR
+  EDITOR
+  TRANSLATOR
+}
+
+/// Two-level category tree for the catalogue (ইসলামী আকীদা / হাদীস ও সুন্নাহ …).
+model LibraryCategory {
+  id        String           @id @default(cuid())
+  slug      String           @unique
+  nameBn    String
+  nameEn    String
+  parentId  String?
+  parent    LibraryCategory? @relation("LibraryCategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children  LibraryCategory[] @relation("LibraryCategoryTree")
+  items     LibraryItem[]
+  sortOrder Int              @default(0)
+  createdAt DateTime         @default(now())
+
+  @@index([parentId, sortOrder])
+}
+
+/// A person who authored/edited/translated library items — shared across items,
+/// upserted by the (nameBn, nameEn) pair from the admin repeater.
+model LibraryCreator {
+  id        String              @id @default(cuid())
+  nameBn    String
+  nameEn    String
+  itemLinks LibraryItemCreator[]
+
+  @@index([nameBn])
+}
+
+/// Publishing house (আস-সুন্নাহ ফাউন্ডেশন, দারুল ইসলাম …). Items upsert it by name pair.
+model LibraryPublisher {
+  id        String        @id @default(cuid())
+  nameBn    String
+  nameEn    String
+  itemLinks LibraryItem[]
+}
+
+/// One shelf entry. The PDF lives in Media (`mediaId`, PRIVATE for MEMBERS
+/// visibility) or behind `externalUrl`; physical copies circulate via
+/// LibraryCheckout; anonymous read counts land in LibraryReading.
+model LibraryItem {
+  id             String            @id @default(cuid())
+  slug           String            @unique
+  type           LibraryItemType
+  titleBn        String
+  titleEn        String            @default("")
+  subtitleBn     String            @default("")
+  subtitleEn     String            @default("")
+  descriptionBn  String            @default("") // rich HTML
+  descriptionEn  String            @default("")
+  language       String            @default("bn") // bn | en | ar | mixed
+  categoryId     String?
+  category       LibraryCategory?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  creators       LibraryItemCreator[]
+  publisherId    String?
+  publisher      LibraryPublisher? @relation(fields: [publisherId], references: [id], onDelete: SetNull)
+  publishYear    Int?
+  publishPlaceBn String            @default("")
+  isbn           String?
+  issn           String?
+  doi            String?
+  editionBn      String            @default("")
+  volume         String            @default("") // JOURNAL_ISSUE
+  issueLabel     String            @default("") // "১ম সংখ্যা" etc
+  journalKey     String            @default("") // groups issues of the same journal (slug of journal name)
+  journalNameBn  String            @default("")
+  journalNameEn  String            @default("")
+  mediaId        String? // the PDF (Media, PRIVATE or PUBLIC per visibility)
+  media          Media?            @relation("LibraryFile", fields: [mediaId], references: [id], onDelete: SetNull)
+  filePages      Int? // page count (set on upload by the librarian or left null)
+  coverMediaId   String?
+  coverMedia     Media?            @relation("LibraryCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  externalUrl    String? // link-out for items hosted elsewhere
+  visibility     LibraryVisibility @default(PUBLIC)
+  isPublished    Boolean           @default(true)
+  readings       LibraryReading[]
+  checkouts      LibraryCheckout[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([type, isPublished, createdAt(sort: Desc)])
+  @@index([categoryId])
+  @@index([journalKey, publishYear(sort: Desc)])
+}
+
+/// Item ↔ creator link with the role on THIS item; replaced wholesale on edit.
+model LibraryItemCreator {
+  id        String             @id @default(cuid())
+  itemId    String
+  item      LibraryItem        @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  creatorId String
+  creator   LibraryCreator     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  role      LibraryCreatorRole @default(AUTHOR)
+  sortOrder Int                @default(0)
+
+  @@unique([itemId, creatorId])
+  @@index([itemId, sortOrder])
+}
+
+/// Physical circulation: who borrowed a shelf copy and when it came back.
+/// borrowerUserId stays a plain string for v1 (no FK) — a portal join comes later.
+model LibraryCheckout {
+  id             String      @id @default(cuid())
+  itemId         String
+  item           LibraryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  borrowerName   String
+  borrowerPhone  String      @default("")
+  borrowerUserId String? // User relation optional — kept a plain string, no FK for v1
+  borrowedAt     DateTime    @default(now())
+  dueAt          DateTime?
+  returnedAt     DateTime?
+  note           String      @default("")
+
+  @@index([itemId, returnedAt])
+  @@index([borrowerName])
+}
+
+/// Read counter — one row per reader open, aggregated per item for the stats.
+model LibraryReading {
+  id     String      @id @default(cuid())
+  itemId String
+  item   LibraryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  readAt DateTime    @default(now())
+
+  @@index([itemId, readAt(sort: Desc)])
 }
