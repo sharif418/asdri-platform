@@ -97,6 +97,31 @@ export function formatMonthYear(iso: string | Date, lang: Language): string {
   return `${EN_MONTHS[date.getMonth()]} ${year}`;
 }
 
+/** Bangla day-period word for a 24h hour (রাত, ভোর, সকাল, দুপুর, বিকাল, সন্ধ্যা). */
+function bnDayPeriod(hour: number): string {
+  if (hour < 4) return "রাত";
+  if (hour < 6) return "ভোর";
+  if (hour < 12) return "সকাল";
+  if (hour < 16) return "দুপুর";
+  if (hour < 18) return "বিকাল";
+  if (hour < 19) return "সন্ধ্যা";
+  return "রাত";
+}
+
+/**
+ * Format an ISO datetime as a Bangla sentence: "৭ অক্টোবর ২০২৬, দুপুর ২:৪২".
+ * Replaces toLocaleString("bn-BD"), which mixed US month/day order with
+ * Bangla digits and an English "PM". 12-hour Bangla clock with the day
+ * period; used for admin tables (users last-login) so far.
+ */
+export function formatDateTimeBn(iso: string | Date): string {
+  const date = typeof iso === "string" ? new Date(iso) : iso;
+  if (Number.isNaN(date.getTime())) return "";
+  const h12 = date.getHours() % 12 || 12;
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${toBnDigits(date.getDate())} ${BN_MONTHS[date.getMonth()]} ${toBnDigits(date.getFullYear())}, ${bnDayPeriod(date.getHours())} ${toBnDigits(h12)}:${toBnDigits(minutes)}`;
+}
+
 /** Estimated reading time in minutes for a body of text. */
 export function readMinutes(text: string): number {
   const words = text.trim().split(/\s+/).length;

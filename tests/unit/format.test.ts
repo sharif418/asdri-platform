@@ -5,6 +5,7 @@ import {
   formatTaka,
   formatCompactTaka,
   formatDate,
+  formatDateTimeBn,
   formatMonthYear,
   daysAgoLabel,
   isNewNotice,
@@ -107,6 +108,32 @@ describe("formatMonthYear", () => {
   test("month + year for archive headers", () => {
     expect(formatMonthYear(new Date(2025, 0, 15), "bn")).toBe("জানুয়ারি ২০২৫");
     expect(formatMonthYear(new Date(2025, 0, 15), "en")).toBe("January 2025");
+  });
+});
+
+describe("formatDateTimeBn", () => {
+  test("full Bangla sentence with day period and 12-hour clock", () => {
+    // The exact shape the round-4 audit asked for (was: "৭/১০/২০২৬, ২:৪২:৩৫ PM").
+    expect(formatDateTimeBn(new Date(2026, 9, 7, 14, 42, 35))).toBe("৭ অক্টোবর ২০২৬, দুপুর ২:৪২");
+  });
+
+  test("day-period boundaries (রাত/ভোর/সকাল/দুপুর/বিকাল/সন্ধ্যা/রাত)", () => {
+    expect(formatDateTimeBn(new Date(2026, 9, 7, 2, 5))).toBe("৭ অক্টোবর ২০২৬, রাত ২:০৫");
+    expect(formatDateTimeBn(new Date(2026, 9, 7, 5, 30))).toBe("৭ অক্টোবর ২০২৬, ভোর ৫:৩০");
+    expect(formatDateTimeBn(new Date(2026, 9, 7, 9, 0))).toBe("৭ অক্টোবর ২০২৬, সকাল ৯:০০");
+    expect(formatDateTimeBn(new Date(2026, 9, 7, 17, 10))).toBe("৭ অক্টোবর ২০২৬, বিকাল ৫:১০");
+    expect(formatDateTimeBn(new Date(2026, 9, 7, 18, 30))).toBe("৭ অক্টোবর ২০২৬, সন্ধ্যা ৬:৩০");
+    expect(formatDateTimeBn(new Date(2026, 9, 7, 23, 59))).toBe("৭ অক্টোবর ২০২৬, রাত ১১:৫৯");
+  });
+
+  test("midnight and noon render as ১২", () => {
+    expect(formatDateTimeBn(new Date(2026, 9, 7, 0, 15))).toBe("৭ অক্টোবর ২০২৬, রাত ১২:১৫");
+    expect(formatDateTimeBn(new Date(2026, 9, 7, 12, 0))).toBe("৭ অক্টোবর ২০২৬, দুপুর ১২:০০");
+  });
+
+  test("accepts ISO strings and rejects invalid dates", () => {
+    expect(formatDateTimeBn("2026-01-31T08:05:00")).toBe("৩১ জানুয়ারি ২০২৬, সকাল ৮:০৫");
+    expect(formatDateTimeBn("not-a-date")).toBe("");
   });
 });
 

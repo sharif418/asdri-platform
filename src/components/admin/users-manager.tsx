@@ -6,6 +6,7 @@ import { Copy, KeyRound, Loader2, Plus, Trash2, UserPlus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { formatNumber } from "@/lib/format";
+import { formatDateTimeBn } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { adminConfirm } from "@/components/admin/ui/confirm";
 
@@ -257,7 +258,7 @@ export function UsersManager({ users }: { users: UserRow[] }) {
                 </td>
                 <td className="hidden px-4 py-3 md:table-cell">
                   <span className="text-[12px] text-muted-foreground">
-                    {row.lastLoginAt ? new Date(row.lastLoginAt).toLocaleString("bn-BD") : "কখনো নয়"}
+                    {row.lastLoginAt ? formatDateTimeBn(row.lastLoginAt) : "কখনো নয়"}
                   </span>
                 </td>
                 <td className="px-4 py-3">
