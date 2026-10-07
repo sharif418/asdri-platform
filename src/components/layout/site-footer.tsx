@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Facebook, Mail, MapPin, Phone, Send, Youtube } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { InstituteLogo } from "@/components/shared/logo";
+import { LogoLockup } from "@/components/shared/logo";
 import { StarMotif } from "@/components/shared/ornaments";
 import { useLanguage } from "@/components/providers/language-provider";
 import { useSiteConfig, useSiteMenu } from "@/components/providers/site-config-provider";
@@ -147,17 +147,7 @@ export function SiteFooter() {
       <div className="container-site relative grid gap-12 py-14 sm:grid-cols-2 sm:gap-10 lg:grid-cols-4 lg:gap-12 lg:py-16">
         {/* Brand + about */}
         <div>
-          <div className="flex items-center gap-3">
-            <InstituteLogo tone="on-dark" className="h-12 w-12" />
-            <div>
-              <p className="font-heading text-[15px] font-semibold leading-snug text-ivory">
-                {lang === "bn" ? siteConfig.shortBn : siteConfig.nameEn}
-              </p>
-              <p className="text-[10px] uppercase tracking-[0.16em] text-gold">
-                {lang === "bn" ? siteConfig.nameEn : siteConfig.shortEn}
-              </p>
-            </div>
-          </div>
+          <LogoLockup tone="on-dark" className="h-14" />
           <p className="mt-4 text-sm leading-relaxed text-ivory/80">
             {lang === "bn" ? siteConfig.taglineBn : siteConfig.taglineEn}
           </p>

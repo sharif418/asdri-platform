@@ -157,7 +157,7 @@ function ActiveNavUnderline() {
 }
 
 /** Desktop mega-menu trigger + panel. */
-function DesktopNavItem({ section }: { section: NavSection }) {
+function DesktopNavItem({ section, alignRight = false }: { section: NavSection; alignRight?: boolean }) {
   const { lang } = useLanguage();
   const pathname = displayPath(usePathname());
   const base = section.href;
@@ -168,7 +168,7 @@ function DesktopNavItem({ section }: { section: NavSection }) {
       <div className="relative">
         <NavigationMenuLink
           asChild
-          className={cn(navigationMenuTriggerStyle(), "bg-transparent px-3 py-2 text-[14px] font-medium")}
+          className={cn(navigationMenuTriggerStyle(), "bg-transparent px-2.5 py-2 text-[13px] font-medium 2xl:px-3 2xl:text-[14px]")}
           data-active={active}
         >
           <Link href={langPath(lang, base)}>
@@ -185,7 +185,7 @@ function DesktopNavItem({ section }: { section: NavSection }) {
             >
               <span className="sr-only">{section.label} menu</span>
             </NavigationMenuTrigger>
-            <NavigationMenuContent>
+            <NavigationMenuContent className={cn("mt-1.5 rounded-xl border border-border/80 shadow-lg", alignRight && "left-auto right-0")}>
               <ul className="grid w-[260px] gap-1 p-2">
                 {section.children.map((child) => (
                   <li key={child.href}>
@@ -222,7 +222,7 @@ function MobileNav({ onSearchClick }: { onSearchClick: () => void }) {
         <button
           type="button"
           aria-label={t("a11y.openMenu")}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-md border text-foreground transition-colors hover:bg-secondary lg:hidden"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-md border text-foreground transition-colors hover:bg-secondary xl:hidden"
         >
           <Menu aria-hidden className="h-5 w-5" />
         </button>
@@ -233,12 +233,7 @@ function MobileNav({ onSearchClick }: { onSearchClick: () => void }) {
       >
         <div className="border-b bg-emerald-deep px-5 py-4">
           <SheetTitle className="text-left">
-            <LogoLockup
-              nameBn={siteConfig.nameBn}
-              nameEn={siteConfig.nameEn}
-              parentBn={siteConfig.parentBn}
-              tone="on-dark"
-            />
+            <LogoLockup tone="on-dark" className="h-11" />
           </SheetTitle>
         </div>
         <nav aria-label={t("a11y.mobileNav")} className="flex-1 px-4 py-4">
@@ -371,18 +366,18 @@ export function SiteHeader() {
         )}
       >
         <div className="container-site flex h-16 items-center justify-between gap-4 lg:h-[72px]">
-          <Link href={langPath(lang, "/")} aria-label={siteConfig.nameEn} className="min-w-0">
-            <LogoLockup nameBn={siteConfig.nameBn} nameEn={siteConfig.nameEn} parentBn={siteConfig.parentBn} />
+          <Link href={langPath(lang, "/")} aria-label={siteConfig.nameEn} className="shrink-0">
+            <LogoLockup priority className="h-10 sm:h-11 lg:h-14" />
           </Link>
 
-          <nav aria-label={t("a11y.mainNav")} className="hidden lg:block">
-            <NavigationMenu>
+          <nav aria-label={t("a11y.mainNav")} className="hidden xl:block">
+            <NavigationMenu viewport={false}>
               <NavigationMenuList className="gap-0.5">
                 <NavigationMenuItem>
                   <div className="relative">
                     <NavigationMenuLink
                       asChild
-                      className={cn(navigationMenuTriggerStyle(), "bg-transparent px-3 py-2 text-[14px] font-medium")}
+                      className={cn(navigationMenuTriggerStyle(), "bg-transparent px-2.5 py-2 text-[13px] font-medium 2xl:px-3 2xl:text-[14px]")}
                     >
                       <Link href={langPath(lang, "/")}>
                         <span className={cn(pathname === "/" ? "text-primary font-semibold" : "link-sweep")}>
@@ -393,15 +388,25 @@ export function SiteHeader() {
                     {pathname === "/" ? <ActiveNavUnderline /> : null}
                   </div>
                 </NavigationMenuItem>
-                {navSections.map((section) => (
-                  <DesktopNavItem key={section.href} section={section} />
+                {navSections.map((section, index) => (
+                  <DesktopNavItem key={section.href} section={section} alignRight={index >= navSections.length - 2} />
                 ))}
               </NavigationMenuList>
             </NavigationMenu>
           </nav>
 
           <div className="flex items-center gap-2.5">
-            <SearchTrigger onClick={() => setSearchOpen(true)} className="hidden lg:inline-flex" />
+            <SearchTrigger onClick={() => setSearchOpen(true)} className="hidden 2xl:inline-flex" />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => setSearchOpen(true)}
+              aria-label={t("search.placeholder")}
+              className="hidden h-10 w-10 rounded-full lg:inline-flex 2xl:hidden"
+            >
+              <Search aria-hidden className="h-4 w-4 text-primary" />
+            </Button>
             {donationsEnabled ? (
               <Button
                 asChild
