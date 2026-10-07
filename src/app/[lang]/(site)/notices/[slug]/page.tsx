@@ -14,6 +14,8 @@ import { sanitizeRichText } from "@/lib/sanitize";
 import { ModuleUnavailable } from "@/components/shared/module-unavailable";
 import { PageHero } from "@/components/shared/page-hero";
 import { PrintButton } from "@/components/shared/print-button";
+import { PrintMasthead } from "@/components/shared/print-masthead";
+import { brand } from "@/lib/brand";
 import { ArticleShare } from "@/components/media/article-share";
 import { categoryLabel, statusBadgeClass, statusLabel } from "@/lib/notice-labels";
 import { Badge } from "@/components/ui/badge";
@@ -53,8 +55,9 @@ export async function generateMetadata({ params }: NoticePageProps): Promise<Met
       publishedTime: notice.publishedAt,
       modifiedTime: notice.updatedAt,
       section: categoryLabel(notice.category, lang),
+      images: [{ url: brand.og.image, width: brand.og.width, height: brand.og.height, alt: brand.nameEn }],
     },
-    twitter: { card: "summary_large_image", title, description },
+    twitter: { card: "summary_large_image", title, description, images: [brand.og.image] },
   };
 }
 
@@ -139,15 +142,11 @@ export default async function NoticeDetailPage({ params }: NoticePageProps) {
           <article className="print-zone relative overflow-hidden rounded-2xl border border-gold/25 bg-card shadow-sm">
             <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-gold-gradient" />
 
-            {/* print-only official masthead */}
-            <header className="hidden print:mb-5 print:block print:border-b-2 print:border-black print:pb-3 print:text-center">
-              <p className="font-heading text-lg font-bold print:text-black">
-                {bn ? "আস-সুন্নাহ দাওয়াহ অ্যান্ড রিসার্চ ইনস্টিটিউট" : "As-Sunnah Dawah & Research Institute"}
-              </p>
-              <p className="mt-1 text-sm print:text-black">
-                {bn ? "দাপ্তরিক বিজ্ঞপ্তি" : "Official Notice"} — {categoryLabel(notice.category, lang)}
-              </p>
-            </header>
+            {/* print-only official masthead — the mono-emerald mark beside the institute name */}
+            <PrintMasthead
+              name={bn ? brand.nameBn : brand.nameEn}
+              title={`${bn ? "দাপ্তরিক বিজ্ঞপ্তি" : "Official Notice"} — ${categoryLabel(notice.category, lang)}`}
+            />
 
             <div className="p-5 sm:p-8">
               <div className="flex flex-wrap items-center gap-2 print:justify-center">

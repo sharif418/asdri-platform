@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 
 interface PrintButtonProps {
   /** Body class toggled during printing — selects the site's print stylesheet. */
-  bodyClass: "printing-notice" | "printing-fatwa" | "printing-receipt";
+  bodyClass: "printing-notice" | "printing-fatwa" | "printing-receipt" | "printing-exam-letter";
   label: string;
   /** Variant/size tweaks per surface (defaults match the notice pad). */
   className?: string;

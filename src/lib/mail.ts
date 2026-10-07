@@ -1,5 +1,6 @@
 import type { OutboxEmail, Prisma } from "@prisma/client";
 import type { Transporter } from "nodemailer";
+import { brand } from "@/lib/brand";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 
@@ -154,6 +155,21 @@ export function escapeHtml(text: string): string {
 }
 
 /**
+ * Branded e-mail header — the official lockup (flattened on white, the only
+ * form e-mail clients render reliably) centred in the dark emerald bar, with
+ * an images-off fallback: the alt text carries the English name and a 10px
+ * gold small-caps line below carries it in Bangla. Inline styles only.
+ */
+function brandedEmailHeader(title: string): string {
+  return (
+    `<div style="background:#0f5132;padding:22px 28px 20px;text-align:center">` +
+    `<img src="${env.siteUrl}${brand.email.image}" width="${brand.email.width / 2}" height="${brand.email.height / 2}" alt="${escapeHtml(brand.nameEn)}" style="display:block;margin:0 auto;border:0;height:auto">` +
+    `<p style="margin:8px 0 0;color:#d4af37;font-size:10px;letter-spacing:1.5px;text-transform:uppercase">${escapeHtml(brand.nameBn)}</p>` +
+    `<p style="margin:10px 0 0;color:#ffffff;font-size:18px;font-weight:700">${title}</p></div>`
+  );
+}
+
+/**
  * English donation receipt email (PDF receipts are English; the Bangla
  * receipt is the in-app print view — see PLAN §6 decisions).
  */
@@ -166,8 +182,7 @@ export function buildDonationReceiptEmail(donation: DonationReceiptInput): Outbo
 
   const html =
     `<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;border:1px solid #e6e9e3;border-radius:12px;overflow:hidden">` +
-    `<div style="background:#0f5132;padding:20px 28px"><p style="margin:0;color:#d4af37;font-size:11px;letter-spacing:2px;text-transform:uppercase">As-Sunnah Dawah &amp; Research Institute</p>` +
-    `<p style="margin:4px 0 0;color:#ffffff;font-size:18px;font-weight:700">Donation Receipt</p></div>` +
+    brandedEmailHeader("Donation Receipt") +
     `<div style="padding:24px 12px"><table style="width:100%;border-collapse:collapse">` +
     row("Receipt No.", donation.receiptNo) +
     row("Tracking Code", donation.trackingCode) +
@@ -228,8 +243,7 @@ export function buildVerificationEmail(input: VerificationEmailInput): OutboxEma
 
   const html =
     `<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;border:1px solid #e6e9e3;border-radius:12px;overflow:hidden">` +
-    `<div style="background:#0f5132;padding:20px 28px"><p style="margin:0;color:#d4af37;font-size:11px;letter-spacing:2px;text-transform:uppercase">As-Sunnah Dawah &amp; Research Institute</p>` +
-    `<p style="margin:4px 0 0;color:#ffffff;font-size:18px;font-weight:700">Verify your email address</p></div>` +
+    brandedEmailHeader("Verify your email address") +
     `<div style="padding:24px 28px">` +
     `<p style="margin:0;color:#3d4a3d;font-size:14px;line-height:1.7">Assalamu alaikum ${escapeHtml(input.name)},</p>` +
     `<p style="margin:12px 0 0;color:#3d4a3d;font-size:14px;line-height:1.7">` +

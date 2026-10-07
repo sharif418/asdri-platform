@@ -12,6 +12,7 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ServiceWorkerRegister } from "@/components/providers/sw-register";
 import { isLang, type Lang } from "@/lib/locale";
 import { env } from "@/lib/env";
+import { brand } from "@/lib/brand";
 import { siteConfig } from "@/content/site";
 
 export function generateStaticParams(): Array<{ lang: string }> {
@@ -68,13 +69,15 @@ export async function generateMetadata({
       type: "website",
       locale: isBn ? "bn_BD" : "en_US",
       siteName: siteConfig.nameEn,
-      images: [{ url: "/images/hero-campus.png", width: 1344, height: 768, alt: siteConfig.nameEn }],
+      // The branded OG card that travels with every shared link (metadataBase
+      // above resolves the relative URL to an absolute one).
+      images: [{ url: brand.og.image, width: brand.og.width, height: brand.og.height, alt: brand.nameEn }],
     },
     twitter: {
       card: "summary_large_image",
       title: isBn ? siteConfig.nameBn : siteConfig.nameEn,
       description: isBn ? siteConfig.taglineBn : siteConfig.taglineEn,
-      images: ["/images/hero-campus.png"],
+      images: [brand.og.image],
     },
     robots: { index: true, follow: true },
     alternates: {
