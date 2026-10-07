@@ -239,9 +239,9 @@ export function PostForm({
         <BilingualField label="মূল লেখা">
           {(active) =>
             active === "bn" ? (
-              <RichTextEditor value={values.bodyBn} onChange={(html) => set("bodyBn", html)} placeholder="আর্টিকলের মূল অংশ…" />
+              <RichTextEditor value={values.bodyBn} onChange={(html) => set("bodyBn", html)} label="নিবন্ধের মূল অংশ" placeholder="আর্টিকলের মূল অংশ…" />
             ) : (
-              <RichTextEditor value={values.bodyEn} onChange={(html) => set("bodyEn", html)} placeholder="Full article body…" />
+              <RichTextEditor value={values.bodyEn} onChange={(html) => set("bodyEn", html)} label="Article body" placeholder="Full article body…" />
             )
           }
         </BilingualField>

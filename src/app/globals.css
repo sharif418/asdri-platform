@@ -517,6 +517,18 @@ html:not([data-lang="en"]) .prose-islamic p {
   scroll-margin-top: 120px;
 }
 
+/* Admin rich-text editor placeholder (round 4 M3): the Tiptap Placeholder
+   decoration tags the first empty paragraph with .is-editor-empty and a
+   data-placeholder attribute — render it as the Bangla hint text. Scoped
+   to the editor body's own class so the rule cannot leak elsewhere. */
+.admin-editor-focus p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--muted-foreground);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
 /* kbd chips — palette footers, shortcut hints (site-wide base) */
 kbd {
   display: inline-block;

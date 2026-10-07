@@ -228,9 +228,9 @@ export function PersonForm({ initial, teams, mode }: { initial: PersonFormValues
         <BilingualField label="জীবনবৃত্তান্ত">
           {(active) =>
             active === "bn" ? (
-              <RichTextEditor value={values.bioBn} onChange={(html) => set("bioBn", html)} placeholder="শিক্ষা ও অভিজ্ঞতা…" minHeight={160} />
+              <RichTextEditor value={values.bioBn} onChange={(html) => set("bioBn", html)} label="জীবনবৃত্তান্ত" placeholder="শিক্ষা ও অভিজ্ঞতা…" minHeight={160} />
             ) : (
-              <RichTextEditor value={values.bioEn} onChange={(html) => set("bioEn", html)} placeholder="Education & experience…" minHeight={160} />
+              <RichTextEditor value={values.bioEn} onChange={(html) => set("bioEn", html)} label="Biography" placeholder="Education & experience…" minHeight={160} />
             )
           }
         </BilingualField>

@@ -177,10 +177,11 @@ export function NoticeForm({ initial, mode }: { initial: NoticeFormValues; mode:
               <RichTextEditor
                 value={values.bodyBn}
                 onChange={(html) => set("bodyBn", html)}
+                label="বিস্তারিত বিজ্ঞপ্তি"
                 placeholder="বিস্তারিত বিজ্ঞপ্তি…"
               />
             ) : (
-              <RichTextEditor value={values.bodyEn} onChange={(html) => set("bodyEn", html)} placeholder="Full notice body…" />
+              <RichTextEditor value={values.bodyEn} onChange={(html) => set("bodyEn", html)} label="Full notice body" placeholder="Full notice body…" />
             )
           }
         </BilingualField>
