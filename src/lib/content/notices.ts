@@ -19,29 +19,41 @@ export interface NoticeDetailRecord {
   updatedAt: string;
 }
 
-export async function getNoticeBySlug(slug: string): Promise<NoticeDetailRecord | null> {
-  if (!(await isFeatureEnabled("notices"))) return null;
-  const row = await db.notice.findUnique({
-    where: { slug },
-    select: {
-      slug: true,
-      titleBn: true,
-      titleEn: true,
-      excerptBn: true,
-      excerptEn: true,
-      bodyBn: true,
-      bodyEn: true,
-      category: true,
-      status: true,
-      pinned: true,
-      publishedAt: true,
-      updatedAt: true,
-      isPublished: true,
-      attachment: { select: { key: true } },
-    },
-  });
-  // Unpublished/missing notices are indistinguishable to the public (404).
-  if (!row || !row.isPublished || row.publishedAt > new Date()) return null;
+const NOTICE_DETAIL_SELECT = {
+  slug: true,
+  titleBn: true,
+  titleEn: true,
+  excerptBn: true,
+  excerptEn: true,
+  bodyBn: true,
+  bodyEn: true,
+  category: true,
+  status: true,
+  pinned: true,
+  publishedAt: true,
+  updatedAt: true,
+  isPublished: true,
+  attachment: { select: { key: true } },
+} as const;
+
+interface NoticeDetailRow {
+  slug: string;
+  titleBn: string;
+  titleEn: string;
+  excerptBn: string;
+  excerptEn: string;
+  bodyBn: string;
+  bodyEn: string;
+  category: string;
+  status: string;
+  pinned: boolean;
+  publishedAt: Date;
+  updatedAt: Date;
+  attachment: { key: string } | null;
+}
+
+/** DB row → the detail view-model the permalink page (and previews) render. */
+function toNoticeDetail(row: NoticeDetailRow): NoticeDetailRecord {
   return {
     slug: row.slug,
     title: { bn: row.titleBn, en: row.titleEn },
@@ -58,6 +70,28 @@ export async function getNoticeBySlug(slug: string): Promise<NoticeDetailRecord 
     publishedAt: row.publishedAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
+}
+
+export async function getNoticeBySlug(slug: string): Promise<NoticeDetailRecord | null> {
+  if (!(await isFeatureEnabled("notices"))) return null;
+  const row = await db.notice.findUnique({
+    where: { slug },
+    select: NOTICE_DETAIL_SELECT,
+  });
+  // Unpublished/missing notices are indistinguishable to the public (404).
+  if (!row || !row.isPublished || row.publishedAt > new Date()) return null;
+  return toNoticeDetail(row);
+}
+
+/**
+ * Preview variant (round 4 ws 5): by id, bypasses the published/feature-flag
+ * gates. Reached only through a signed /preview/<token> link — never linked
+ * from any public route. Same view-model as the permalink, same render.
+ */
+export async function getNoticeForPreview(id: string): Promise<NoticeDetailRecord | null> {
+  const row = await db.notice.findUnique({ where: { id }, select: NOTICE_DETAIL_SELECT });
+  if (!row) return null;
+  return toNoticeDetail(row);
 }
 
 /**

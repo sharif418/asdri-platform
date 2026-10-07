@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { BilingualField, LanguageStatus } from "@/components/admin/ui/bilingual-field";
 import { RichTextEditor } from "@/components/admin/ui/rich-text-editor";
 import { MediaPicker, type PickedMedia } from "@/components/admin/ui/media-picker";
+import { PreviewLinkButton } from "@/components/admin/preview-link-button";
 import { sanitizeRichTextPreview } from "@/lib/sanitize";
 import { slugifyTitle } from "@/lib/slug";
 import { toBnDigits } from "@/lib/format";
@@ -392,6 +393,14 @@ export function PostForm({
             {saving ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <Save aria-hidden className="h-4 w-4" />}
             {mode === "create" ? "পোস্ট তৈরি করুন" : "পরিবর্তন সংরক্ষণ"}
           </Button>
+          {mode === "edit" && values.id && (
+            <div className="space-y-1">
+              <PreviewLinkButton entity="Post" entityId={values.id} />
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                ড্রাফটসহ — প্রকাশের আগে যে কাউকে পড়ার সুযোগ দিতে শেয়ারযোগ্য লিংক (২৪ ঘণ্টা বৈধ)।
+              </p>
+            </div>
+          )}
           {mode === "edit" && (
             <>
               <Button asChild variant="ghost" size="sm" className="w-full">
