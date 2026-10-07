@@ -14,6 +14,7 @@ import { sanitizeRichTextPreview } from "@/lib/sanitize";
 import { slugifyTitle } from "@/lib/slug";
 import { toBnDigits } from "@/lib/format";
 import { adminConfirm } from "@/components/admin/ui/confirm";
+import { GeneralError, fieldId, useFieldErrors } from "@/components/admin/ui/form-errors";
 
 export interface PostFormValues {
   id?: string;
@@ -75,6 +76,7 @@ export function PostForm({
   const [newCatBn, setNewCatBn] = useState("");
   const [newCatEn, setNewCatEn] = useState("");
   const [creatingCat, setCreatingCat] = useState(false);
+  const fe = useFieldErrors();
 
   // Server-side generation covers Bangla-only titles (slugify → "").
   const slug = useMemo(
@@ -117,6 +119,7 @@ export function PostForm({
   async function onSave() {
     if (saving) return;
     setSaving(true);
+    fe.clear();
     try {
       const payload = {
         titleBn: values.titleBn,
@@ -141,7 +144,8 @@ export function PostForm({
       });
       const json = (await res.json()) as { ok: boolean; error?: string; fields?: Record<string, string>; data?: { slug: string } };
       if (!res.ok || !json.ok) {
-        toast({ title: json.error ?? "সংরক্ষণ করা যায়নি", variant: "destructive" });
+        const summary = fe.setFromResponse(json) ?? "সংরক্ষণ করা যায়নি";
+        toast({ title: summary, variant: "destructive" });
         return;
       }
       toast({ title: mode === "create" ? "পোস্ট তৈরি হয়েছে" : "সংরক্ষিত হয়েছে" });
@@ -178,23 +182,34 @@ export function PostForm({
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="space-y-5">
+        <GeneralError message={fe.general} />
         <BilingualField label="শিরোনাম" required>
           {(active) =>
             active === "bn" ? (
-              <input
-                value={values.titleBn}
-                onChange={(e) => set("titleBn", e.target.value)}
-                placeholder="বাংলা শিরোনাম লিখুন"
-                required
-                className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
-              />
+              <>
+                <input
+                  id={fieldId("titleBn")}
+                  value={values.titleBn}
+                  onChange={(e) => set("titleBn", e.target.value)}
+                  placeholder="বাংলা শিরোনাম লিখুন"
+                  aria-invalid={fe.errors.titleBn ? true : undefined}
+                  required
+                  className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] font-heading outline-none focus:border-primary/50"
+                />
+                <fe.ErrorText name="titleBn" />
+              </>
             ) : (
-              <input
-                value={values.titleEn}
-                onChange={(e) => set("titleEn", e.target.value)}
-                placeholder="English title"
-                className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] outline-none focus:border-primary/50"
-              />
+              <>
+                <input
+                  id={fieldId("titleEn")}
+                  value={values.titleEn}
+                  onChange={(e) => set("titleEn", e.target.value)}
+                  placeholder="English title"
+                  aria-invalid={fe.errors.titleEn ? true : undefined}
+                  className="w-full rounded-lg border bg-card px-3.5 py-2.5 text-[15px] outline-none focus:border-primary/50"
+                />
+                <fe.ErrorText name="titleEn" />
+              </>
             )
           }
         </BilingualField>
@@ -234,8 +249,9 @@ export function PostForm({
 
       <aside className="space-y-4 rounded-2xl border bg-card p-5 shadow-sm xl:sticky xl:top-20 h-fit">
         <div>
-          <label className="text-sm font-semibold">ধরন</label>
+          <label htmlFor={fieldId("kind")} className="text-sm font-semibold">ধরন</label>
           <select
+            id={fieldId("kind")}
             value={values.kind}
             onChange={(e) => set("kind", e.target.value as PostFormValues["kind"])}
             className="mt-1.5 w-full rounded-lg border bg-background px-3 py-2 text-sm"
@@ -246,6 +262,7 @@ export function PostForm({
               </option>
             ))}
           </select>
+          <fe.ErrorText name="kind" />
         </div>
 
         <div>
@@ -261,8 +278,10 @@ export function PostForm({
             </button>
           </div>
           <select
+            id={fieldId("categoryId")}
             value={values.categoryId}
             onChange={(e) => set("categoryId", e.target.value)}
+            aria-invalid={fe.errors.categoryId ? true : undefined}
             className="mt-1.5 w-full rounded-lg border bg-background px-3 py-2 text-sm"
           >
             <option value="">— ক্যাটাগরি নেই —</option>
@@ -272,6 +291,7 @@ export function PostForm({
               </option>
             ))}
           </select>
+          <fe.ErrorText name="categoryId" />
           {newCatOpen && (
             <div className="mt-2 space-y-1.5 rounded-lg border bg-background/60 p-2.5">
               <input
