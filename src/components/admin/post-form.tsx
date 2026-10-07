@@ -76,8 +76,9 @@ export function PostForm({
   const [newCatEn, setNewCatEn] = useState("");
   const [creatingCat, setCreatingCat] = useState(false);
 
+  // Server-side generation covers Bangla-only titles (slugify → "").
   const slug = useMemo(
-    () => values.slug ?? (slugifyTitle(values.titleEn || values.titleBn) || "post"),
+    () => values.slug ?? slugifyTitle(values.titleEn || values.titleBn),
     [values.slug, values.titleEn, values.titleBn],
   );
   const minutes = useMemo(() => estimateMinutes(values.bodyBn), [values.bodyBn]);
@@ -130,7 +131,8 @@ export function PostForm({
         coverMediaId: values.cover?.id ?? null,
         isPublished: values.isPublished,
         ...(values.publishedAt ? { publishedAt: new Date(values.publishedAt).toISOString() } : {}),
-        ...(mode === "create" ? { slug } : {}),
+        // Only send a slug the API can accept (≥3 chars); empty → server generates.
+        ...(mode === "create" && slug.length >= 3 ? { slug } : {}),
       };
       const res = await fetch(mode === "create" ? "/api/admin/posts" : `/api/admin/posts/${values.id}`, {
         method: mode === "create" ? "POST" : "PATCH",
@@ -345,7 +347,7 @@ export function PostForm({
             পড়ার সময় (আনুমানিক): {toBnDigits(minutes)} মিনিট — বাংলা লেখা অনুযায়ী স্বয়ংক্রিয়
           </p>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            স্লাগ: <code className="rounded bg-secondary px-1">{slug}</code>
+            স্লাগ: <code className="rounded bg-secondary px-1">{slug || "স্বয়ংক্রিয়"}</code>
           </p>
           <div className="mt-1">
             <LanguageStatus hasBn={values.titleBn.length > 2} hasEn={values.titleEn.length > 2} />

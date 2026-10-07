@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireModule, unauthorized, forbidden } from "@/lib/auth";
 import { audit } from "@/lib/audit";
-import { slugify } from "@/lib/slug";
+import { buildUniqueSlug, slugify } from "@/lib/slug";
 import { albumCreateSchema } from "@/lib/validators/admin-content";
 
 export const dynamic = "force-dynamic";
@@ -32,10 +32,13 @@ export async function POST(request: NextRequest): Promise<Response> {
   }
 
   const data = parsed.data;
-  const slug = data.slug || slugify(data.titleEn || data.titleBn);
-  if (await db.album.findUnique({ where: { slug } })) {
-    return NextResponse.json({ ok: false, error: "এই স্লাগ ইতিমধ্যেই ব্যবহৃত — অন্য একটি দিন।", fields: { slug: "স্লাগ ডুপ্লিকেট" } }, { status: 409 });
-  }
+  // Client slug wins when unique; otherwise (none sent / collision, e.g. a
+  // Bangla-only title that slugifies to "") a unique slug is generated.
+  const base = data.slug || slugify(data.titleEn || data.titleBn);
+  const slug = await buildUniqueSlug(base, async (candidate) => {
+    const existing = await db.album.findUnique({ where: { slug: candidate }, select: { id: true } });
+    return !!existing;
+  });
   if (data.coverMediaId && !(await db.media.findUnique({ where: { id: data.coverMediaId } }))) {
     return NextResponse.json({ ok: false, error: "নির্বাচিত কভার ছবি খুঁজে পাওয়া যায়নি।", fields: { coverMediaId: "মিডিয়া নেই" } }, { status: 400 });
   }

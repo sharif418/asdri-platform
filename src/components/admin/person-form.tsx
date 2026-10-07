@@ -46,8 +46,9 @@ export function PersonForm({ initial, teams, mode }: { initial: PersonFormValues
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Server-side generation covers Bangla-only names (slugify → "").
   const slug = useMemo(
-    () => values.slug ?? (slugifyTitle(values.nameEn || values.nameBn) || "person"),
+    () => values.slug ?? slugifyTitle(values.nameEn || values.nameBn),
     [values.slug, values.nameEn, values.nameBn],
   );
 
@@ -75,7 +76,8 @@ export function PersonForm({ initial, teams, mode }: { initial: PersonFormValues
         isPublished: values.isPublished,
         isFeatured: values.isFeatured,
         sortOrder: values.sortOrder,
-        ...(mode === "create" ? { slug } : {}),
+        // Only send a slug the API can accept (≥3 chars); empty → server generates.
+        ...(mode === "create" && slug.length >= 3 ? { slug } : {}),
       };
       const res = await fetch(mode === "create" ? "/api/admin/people" : `/api/admin/people/${values.id}`, {
         method: mode === "create" ? "POST" : "PATCH",
@@ -274,7 +276,7 @@ export function PersonForm({ initial, teams, mode }: { initial: PersonFormValues
 
         <div className="border-t pt-4">
           <p className="text-[11px] text-muted-foreground">
-            স্লাগ: <code className="rounded bg-secondary px-1">{slug}</code>
+            স্লাগ: <code className="rounded bg-secondary px-1">{slug || "স্বয়ংক্রিয়"}</code>
           </p>
           <div className="mt-1">
             <LanguageStatus hasBn={values.nameBn.length > 2} hasEn={values.nameEn.length > 2} />

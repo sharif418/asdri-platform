@@ -38,7 +38,8 @@ export function ResearchProjectForm({ initial, mode }: { initial: ResearchProjec
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const slug = mode === "create" ? slugifyTitle(values.titleEn) || slugifyTitle(values.titleBn) || "research-project" : values.id ?? "";
+  // Display-only; Bangla-only titles get their slug generated server-side.
+  const slug = mode === "create" ? slugifyTitle(values.titleEn) || slugifyTitle(values.titleBn) : values.id ?? "";
 
   function set<K extends keyof ResearchProjectFormValues>(key: K, value: ResearchProjectFormValues[K]) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -230,7 +231,9 @@ export function ResearchProjectForm({ initial, mode }: { initial: ResearchProjec
 
         <div className="border-t pt-4">
           <p className="text-[11px] text-muted-foreground" dir="ltr">
-            {mode === "create" ? <span>স্লাগ স্বয়ংক্রিয়: <code className="rounded bg-secondary px-1">{slug}</code></span> : null}
+            {mode === "create" ? (
+              <span>স্লাগ: {slug ? <code className="rounded bg-secondary px-1">{slug}</code> : "স্বয়ংক্রিয়"}</span>
+            ) : null}
           </p>
           <div className="mt-1">
             <LanguageStatus hasBn={values.titleBn.length > 2} hasEn={values.titleEn.length > 2} />

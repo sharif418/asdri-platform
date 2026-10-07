@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireModule, unauthorized, forbidden } from "@/lib/auth";
 import { audit } from "@/lib/audit";
-import { slugify } from "@/lib/slug";
+import { buildUniqueSlug, slugify } from "@/lib/slug";
 import { publicationCreateSchema, sanitizePublicationPayload } from "@/lib/validators/admin-research";
 
 export const dynamic = "force-dynamic";
@@ -46,7 +46,10 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
   }
 
-  const slug = await uniqueSlug(data.titleEn || data.titleBn);
+  const slug = await buildUniqueSlug(slugify(data.titleEn || data.titleBn), async (candidate) => {
+    const existing = await db.publication.findUnique({ where: { slug: candidate }, select: { id: true } });
+    return !!existing;
+  });
   const publication = await db.publication.create({
     data: {
       slug,
@@ -77,16 +80,4 @@ export async function POST(request: NextRequest): Promise<Response> {
   );
 
   return NextResponse.json({ ok: true, data: { slug: publication.slug, id: publication.id } }, { status: 201 });
-}
-
-/** Ensure a unique publication slug (-2, -3… suffixes). */
-async function uniqueSlug(source: string): Promise<string> {
-  const base = slugify(source) || "publication";
-  let candidate = base;
-  for (let attempt = 2; attempt <= 25; attempt++) {
-    const existing = await db.publication.findUnique({ where: { slug: candidate }, select: { id: true } });
-    if (!existing) return candidate;
-    candidate = `${base}-${attempt}`;
-  }
-  return `${base}-${Date.now()}`;
 }

@@ -35,8 +35,9 @@ export function AlbumForm({ initial, mode }: { initial: AlbumFormValues; mode: "
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Server-side generation covers Bangla-only titles (slugify → "").
   const slug = useMemo(
-    () => values.slug ?? (slugifyTitle(values.titleEn || values.titleBn) || "album"),
+    () => values.slug ?? slugifyTitle(values.titleEn || values.titleBn),
     [values.slug, values.titleEn, values.titleBn],
   );
 
@@ -56,7 +57,8 @@ export function AlbumForm({ initial, mode }: { initial: AlbumFormValues; mode: "
         isPublished: values.isPublished,
         sortOrder: values.sortOrder,
         coverMediaId: values.cover?.id ?? null,
-        ...(mode === "create" ? { slug } : {}),
+        // Only send a slug the API can accept (≥3 chars); empty → server generates.
+        ...(mode === "create" && slug.length >= 3 ? { slug } : {}),
       };
       const res = await fetch(mode === "create" ? "/api/admin/albums" : `/api/admin/albums/${values.id}`, {
         method: mode === "create" ? "POST" : "PATCH",
@@ -178,7 +180,7 @@ export function AlbumForm({ initial, mode }: { initial: AlbumFormValues; mode: "
 
           <div className="border-t pt-4">
             <p className="text-[11px] text-muted-foreground">
-              স্লাগ: <code className="rounded bg-secondary px-1">{slug}</code>
+              স্লাগ: <code className="rounded bg-secondary px-1">{slug || "স্বয়ংক্রিয়"}</code>
             </p>
             <div className="mt-1">
               <LanguageStatus hasBn={values.titleBn.length > 2} hasEn={values.titleEn.length > 2} />

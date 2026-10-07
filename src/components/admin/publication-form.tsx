@@ -61,7 +61,8 @@ export function PublicationForm({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const slug = mode === "create" ? slugifyTitle(values.titleEn) || slugifyTitle(values.titleBn) || "publication" : values.id ?? "";
+  // Display-only; Bangla-only titles get their slug generated server-side.
+  const slug = mode === "create" ? slugifyTitle(values.titleEn) || slugifyTitle(values.titleBn) : values.id ?? "";
 
   function set<K extends keyof PublicationFormValues>(key: K, value: PublicationFormValues[K]) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -278,7 +279,7 @@ export function PublicationForm({
 
         <div className="border-t pt-4">
           <p className="text-[11px] text-muted-foreground" dir="ltr">
-            {mode === "create" ? "স্লাগ স্বয়ংক্রিয়" : ""} {slug && mode === "create" ? <code className="rounded bg-secondary px-1">{slug}</code> : ""}
+            {slug && mode === "create" ? <code className="rounded bg-secondary px-1">{slug}</code> : "স্লাগ: স্বয়ংক্রিয়"}
           </p>
           <div className="mt-1">
             <LanguageStatus hasBn={values.titleBn.length > 2} hasEn={values.titleEn.length > 2} />
