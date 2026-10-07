@@ -40,6 +40,9 @@ const KNOWN_ACTIONS = [
   "team.create", "team.update", "team.delete", "team.reorder",
   "user.create", "user.update", "user.delete", "user.reset-password",
   "video.create", "video.update", "video.delete",
+  "library.item.create", "library.item.update", "library.item.delete",
+  "library.category.create", "library.category.update", "library.category.delete",
+  "library.checkout.create", "library.checkout.return",
 ] as const;
 
 describe("auditActionLabelBn", () => {
@@ -77,6 +80,7 @@ describe("auditEntityLabelBn", () => {
       "ManualLedgerEntry", "Media", "MenuItem", "Notice", "OutboxEmail", "Person",
       "Post", "PostCategory", "Publication", "ResearchProject", "SiteSetting",
       "Stat", "Team", "User", "Video",
+      "LibraryItem", "LibraryCategory", "LibraryCheckout",
     ];
     for (const entity of entities) {
       const label = auditEntityLabelBn(entity);

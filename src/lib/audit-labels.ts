@@ -119,6 +119,15 @@ const ACTION_LABELS_BN: Record<string, string> = {
   "downloadResource.create": "ডাউনলোড আইটেম তৈরি",
   "downloadResource.update": "ডাউনলোড আইটেম সম্পাদনা",
   "downloadResource.delete": "ডাউনলোড আইটেম মুছে ফেলা",
+  // library
+  "library.item.create": "লাইব্রেরি আইটেম তৈরি",
+  "library.item.update": "লাইব্রেরি আইটেম সম্পাদনা",
+  "library.item.delete": "লাইব্রেরি আইটেম মুছে ফেলা",
+  "library.category.create": "লাইব্রেরি ক্যাটাগরি তৈরি",
+  "library.category.update": "লাইব্রেরি ক্যাটাগরি সম্পাদনা",
+  "library.category.delete": "লাইব্রেরি ক্যাটাগরি মুছে ফেলা",
+  "library.checkout.create": "ধার রেকর্ড তৈরি",
+  "library.checkout.return": "ধার ফেরত গ্রহণ",
 };
 
 /** Prisma model name (the audit `entity` column) → Bangla label. */
@@ -156,6 +165,9 @@ const ENTITY_LABELS_BN: Record<string, string> = {
   User: "ইউজার",
   Invitation: "আমন্ত্রণ",
   Video: "ভিডিও",
+  LibraryItem: "লাইব্রেরি আইটেম",
+  LibraryCategory: "লাইব্রেরি ক্যাটাগরি",
+  LibraryCheckout: "ধারের রেকর্ড",
 };
 
 /** Bangla sentence for an audit action dot-code; unknown codes pass through. */
