@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpenCheck, GraduationCap } from "lucide-react";
+import { ArrowRight, BookOpenCheck, GraduationCap, Layers, ListChecks } from "lucide-react";
 import type { TeacherCourseView } from "@/lib/portals/access";
 import { formatNumber } from "@/lib/format";
 
@@ -26,19 +26,50 @@ export function TeacherHome({ courses }: { courses: TeacherCourseView[] }) {
         <Link
           key={course.assignmentId}
           href={`/academics/courses/${course.slug}`}
-          className="group rounded-2xl border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-md"
+          className="group relative flex flex-col overflow-hidden rounded-2xl border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-md"
         >
-          <div className="flex items-start justify-between gap-3">
-            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary" dir="ltr">
+          {/* quiet gold spine — the course-card motif from the public site */}
+          <span
+            aria-hidden
+            className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-gold/70 via-gold/30 to-transparent transition-colors group-hover:from-gold"
+          />
+          <div className="flex items-start justify-between gap-3 pl-1.5">
+            <span className="rounded-full bg-primary/10 px-2.5 py-1 font-mono text-[11px] font-bold tracking-wide text-primary" dir="ltr">
               {course.code}
             </span>
             <BookOpenCheck aria-hidden className="h-5 w-5 text-gold" />
           </div>
-          <h2 className="mt-3 text-[16.5px] font-bold leading-snug group-hover:text-primary">{course.titleBn}</h2>
-          <p className="mt-1 text-[12px] text-muted-foreground">{course.titleEn}</p>
-          <p className="mt-4 border-t pt-3 text-[12.5px] font-medium text-muted-foreground">
-            {formatNumber(course.semesterCount, "bn")} সেমিস্টার ·{" "}
-            {formatNumber(course.subjectCount, "bn")} বিষয়
+          <h2 className="mt-3 pl-1.5 text-[16.5px] font-bold leading-snug group-hover:text-primary">
+            {course.titleBn}
+          </h2>
+          <p className="mt-1 pl-1.5 text-[12px] leading-relaxed text-muted-foreground">{course.titleEn}</p>
+
+          <dl className="mt-4 grid grid-cols-2 gap-2 border-t pl-1.5 pt-3">
+            <div className="flex items-center gap-2">
+              <Layers aria-hidden className="h-4 w-4 shrink-0 text-gold" />
+              <div>
+                <dt className="sr-only">সেমিস্টার</dt>
+                <dd className="text-[12.5px] font-semibold">
+                  {formatNumber(course.semesterCount, "bn")}{" "}
+                  <span className="font-normal text-muted-foreground">সেমিস্টার</span>
+                </dd>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <ListChecks aria-hidden className="h-4 w-4 shrink-0 text-gold" />
+              <div>
+                <dt className="sr-only">বিষয়</dt>
+                <dd className="text-[12.5px] font-semibold">
+                  {formatNumber(course.subjectCount, "bn")}{" "}
+                  <span className="font-normal text-muted-foreground">বিষয়</span>
+                </dd>
+              </div>
+            </div>
+          </dl>
+
+          <p className="mt-3.5 flex items-center gap-1.5 pl-1.5 text-[12px] font-semibold text-primary opacity-70 transition-opacity group-hover:opacity-100">
+            সিলেবাস ও কারিকুলাম
+            <ArrowRight aria-hidden className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
           </p>
         </Link>
       ))}
