@@ -8,6 +8,7 @@ import { getSiteConfig } from "@/lib/content/site";
 import { SiteConfigProvider } from "@/components/providers/site-config-provider";
 import { AdminLogoutButton } from "@/components/auth/admin-logout-button";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
+import { AdminMobileNav } from "@/components/admin/admin-mobile-nav";
 import { InstituteLogo } from "@/components/shared/logo";
 import { Toaster } from "@/components/ui/toaster";
 import { ConfirmBridge } from "@/components/admin/ui/confirm";
@@ -52,12 +53,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
               মূল কনটেন্টে যান
             </a>
             <header className="sticky top-0 z-40 border-b bg-card/95 backdrop-blur lg:hidden">
-              <div className="flex h-14 items-center justify-between gap-4 px-4">
-                <div className="flex items-center gap-3">
-                  <InstituteLogo className="h-8 w-8" />
-                  <div className="leading-tight">
-                    <p className="font-heading text-sm font-bold">অ্যাডমিন প্যানেল</p>
-                    <p className="text-[11px] text-muted-foreground">{session.user.name}</p>
+              <div className="flex h-14 items-center justify-between gap-3 px-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  {/* Phone navigation (round 4, C1) — the sidebar is lg:flex only. */}
+                  <AdminMobileNav role={session.user.role} unread={unreadMessages} />
+                  <InstituteLogo className="h-8 w-8 shrink-0" />
+                  <div className="min-w-0 leading-tight">
+                    <p className="truncate font-heading text-sm font-bold">অ্যাডমিন প্যানেল</p>
+                    <p className="truncate text-[11px] text-muted-foreground">{session.user.name}</p>
                   </div>
                 </div>
                 <AdminLogoutButton />
