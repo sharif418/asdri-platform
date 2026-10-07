@@ -17,7 +17,7 @@ function csvCell(value: string): string {
 export async function GET(request: NextRequest): Promise<Response> {
   const session = await getSession();
   if (!session) return unauthorized();
-  if (!roleCan(session.user.role, "audit")) return forbidden();
+  if (!roleCan(session.user.role, "audit.view")) return forbidden();
 
   const url = new URL(request.url);
   const entity = url.searchParams.get("entity")?.trim().slice(0, 60) ?? "";

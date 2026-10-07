@@ -13,7 +13,7 @@ export const metadata = { title: "ইনটেক ও ব্যাচ" };
 /** Intakes manager — every course-year intake with seats, dates, and open/close. */
 export default async function AdminIntakesPage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "admissions")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "admissions.manage")) redirect("/admin");
 
   const [intakeRows, admittedRows, courses] = await Promise.all([
     db.intake.findMany({

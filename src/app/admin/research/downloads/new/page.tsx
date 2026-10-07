@@ -10,7 +10,7 @@ export const metadata = { title: "নতুন ডাউনলোড আইট�
 /** New download centre resource. */
 export default async function NewDownloadPage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "content")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "content.manage")) redirect("/admin");
 
   const [courses, existingCategories] = await Promise.all([
     db.course.findMany({ select: { id: true, titleBn: true }, orderBy: { sortOrder: "asc" } }),

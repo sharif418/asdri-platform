@@ -16,7 +16,7 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 /** Newsletter subscribers — table + CSV export. */
 export default async function AdminInboxSubscribersPage({ searchParams }: { searchParams: SearchParams }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "messages")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "messages.read")) redirect("/admin");
 
   const sp = await searchParams;
   const q = (typeof sp.q === "string" ? sp.q : "").trim().slice(0, 120);

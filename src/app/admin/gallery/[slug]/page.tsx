@@ -10,7 +10,7 @@ export const metadata = { title: "অ্যালবাম সম্পাদন
 
 export default async function EditAlbumPage({ params }: { params: Promise<{ slug: string }> }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "content")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "content.manage")) redirect("/admin");
 
   const { slug } = await params;
   const album = await db.album.findUnique({

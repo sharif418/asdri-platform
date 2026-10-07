@@ -144,7 +144,7 @@ const NAV: AdminNavItem[] = [
     href: "/admin/media",
     label: "মিডিয়া লাইব্রেরি",
     icon: Archive,
-    roles: ["ADMIN", "EDITOR", "ADMISSIONS", "FINANCE", "FATWA"],
+    roles: ["ADMIN", "EDITOR", "ADMISSIONS", "FINANCE", "FATWA", "LIBRARIAN"],
   },
   {
     href: "/admin/inbox",

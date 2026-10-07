@@ -10,7 +10,7 @@ export const metadata = { title: "ফতোয়া সম্পাদনা" }
 /** Edit an existing fatwa bank entry. */
 export default async function EditFatwaEntryPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "fatwa")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "fatwa.read")) redirect("/admin");
 
   const { id } = await params;
   const [entry, categories] = await Promise.all([

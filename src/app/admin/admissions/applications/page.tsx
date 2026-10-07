@@ -34,7 +34,7 @@ function buildQuery(base: Record<string, string | undefined>, page: number): str
 /** The officer's application workflow — filter, review, and jump into detail. */
 export default async function AdminApplicationsPage({ searchParams }: { searchParams: SearchParams }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "admissions")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "admissions.manage")) redirect("/admin");
 
   const sp = await searchParams;
   const q = (typeof sp.q === "string" ? sp.q : "").trim().slice(0, 120);

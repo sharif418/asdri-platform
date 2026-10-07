@@ -12,7 +12,7 @@ export const metadata = { title: "হোম সেকশন ও পরিসং�
 /** Home page composition editor: sections (order/enable/titles) + the stats band + hero image. */
 export default async function AdminContentHomePage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "content")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "content.manage")) redirect("/admin");
 
   const [sections, stats, heroMediaId] = await Promise.all([
     db.homeSection.findMany({ orderBy: { sortOrder: "asc" } }),

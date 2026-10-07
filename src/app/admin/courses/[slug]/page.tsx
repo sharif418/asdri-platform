@@ -10,7 +10,7 @@ export const metadata = { title: "কোর্স সম্পাদনা" };
 /** Full course editor — meta + curriculum tree + specializations + SDP. */
 export default async function EditCoursePage({ params }: { params: Promise<{ slug: string }> }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "academics")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "academics.manage")) redirect("/admin");
 
   const { slug } = await params;
   const course = await db.course.findUnique({

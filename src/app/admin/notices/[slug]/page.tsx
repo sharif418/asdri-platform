@@ -9,7 +9,7 @@ export const metadata = { title: "নোটিশ সম্পাদনা" };
 
 export default async function EditNoticePage({ params }: { params: Promise<{ slug: string }> }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "content")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "content.manage")) redirect("/admin");
 
   const { slug } = await params;
   const notice = await db.notice.findUnique({ where: { slug } });

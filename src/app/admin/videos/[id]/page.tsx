@@ -9,7 +9,7 @@ export const metadata = { title: "ভিডিও সম্পাদনা" };
 
 export default async function EditVideoPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "content")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "content.manage")) redirect("/admin");
 
   const { id } = await params;
   const [video, playlists] = await Promise.all([

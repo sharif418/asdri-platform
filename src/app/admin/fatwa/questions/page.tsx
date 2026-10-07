@@ -33,7 +33,7 @@ function buildQuery(base: Record<string, string | undefined>, page: number): str
 /** Fatwa question inbox — answer, publish to the bank, or reject. */
 export default async function AdminFatwaQuestionsPage({ searchParams }: { searchParams: SearchParams }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "fatwa")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "fatwa.read")) redirect("/admin");
 
   const sp = await searchParams;
   const q = (typeof sp.q === "string" ? sp.q : "").trim().slice(0, 120);

@@ -11,7 +11,7 @@ export const metadata = { title: "কোর্স ও সিলেবাস" };
 /** Courses admin — the seven programs with computed curriculum totals. */
 export default async function AdminCoursesPage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "academics")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "academics.manage")) redirect("/admin");
 
   const courses = await db.course.findMany({
     orderBy: { sortOrder: "asc" },

@@ -14,7 +14,7 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 /** Outbox email viewer — every queued/sent email with a safe rendered preview. */
 export default async function AdminOutboxPage({ searchParams }: { searchParams: SearchParams }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "finance")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "finance.manage")) redirect("/admin");
 
   const sp = await searchParams;
   const kind = typeof sp.kind === "string" && sp.kind.length > 0 ? sp.kind : undefined;

@@ -14,7 +14,7 @@ const PAGE_SIZE = 50;
 export async function GET(request: NextRequest): Promise<Response> {
   const session = await getSession();
   if (!session) return unauthorized();
-  if (!roleCan(session.user.role, "media")) return forbidden();
+  if (!roleCan(session.user.role, "media.upload")) return forbidden();
 
   const url = new URL(request.url);
   const parsed = mediaListQuerySchema.safeParse({

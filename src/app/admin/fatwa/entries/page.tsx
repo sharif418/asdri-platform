@@ -14,7 +14,7 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 /** Fatwa bank — published Q/A entries with the category manager. */
 export default async function AdminFatwaEntriesPage({ searchParams }: { searchParams: SearchParams }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "fatwa")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "fatwa.read")) redirect("/admin");
 
   const sp = await searchParams;
   const q = (typeof sp.q === "string" ? sp.q : "").trim().slice(0, 120);

@@ -9,7 +9,7 @@ export const metadata = { title: "নতুন পোস্ট" };
 
 export default async function NewPostPage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "content")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "content.manage")) redirect("/admin");
 
   const [categories, authors] = await Promise.all([
     db.postCategory.findMany({ orderBy: { sortOrder: "asc" }, select: { id: true, nameBn: true } }),

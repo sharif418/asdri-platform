@@ -10,7 +10,7 @@ export const metadata = { title: "সচরাচর প্রশ্ন" };
 /** FAQ manager — the /admissions/faq page content, grouped by category. */
 export default async function AdminFaqsPage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "content")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "content.manage")) redirect("/admin");
 
   const faqs = await db.faq.findMany({ orderBy: [{ categoryBn: "asc" }, { sortOrder: "asc" }] });
   const categories = [...new Set(faqs.map((faq) => faq.categoryBn || "সাধারণ"))];

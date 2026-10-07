@@ -11,7 +11,7 @@ export const metadata = { title: "ডাউনলোড আইটেম সম�
 /** Edit an existing download resource. */
 export default async function EditDownloadPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "content")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "content.manage")) redirect("/admin");
 
   const { id } = await params;
   const [resource, courses, existingCategories] = await Promise.all([

@@ -10,7 +10,7 @@ export const metadata = { title: "ফিচার ফ্ল্যাগ" };
 /** Feature flag toggles — modules on/off across nav, sitemap, search and public APIs. */
 export default async function AdminFlagsPage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "flags")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "flags.manage")) redirect("/admin");
 
   const flags = await db.featureFlag.findMany({ orderBy: { key: "asc" } });
 

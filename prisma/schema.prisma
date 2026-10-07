@@ -141,6 +141,8 @@ model Course {
   sdpPrograms      SdpProgram[]
   intakes          Intake[]
   downloads        DownloadResource[]
+  teacherAssignments TeacherAssignment[]
+  invitations      Invitation[]
 
   @@index([isPublished, sortOrder])
   @@index([isFeatured, isPublished])
@@ -209,6 +211,7 @@ model Person {
   subjectsEn  String   @default("")
   teamId      String?
   team        Team?    @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  teacherAssignments TeacherAssignment[] @relation("TeacherPersonRecord")
   photoMediaId String?
   photoMedia  Media?   @relation("PersonPhoto", fields: [photoMediaId], references: [id], onDelete: SetNull)
   isPublished Boolean  @default(true)
@@ -690,6 +693,7 @@ model Application {
   education   ApplicationEducation[]
   documents   ApplicationDocument[]
   events      ApplicationEvent[]
+  guardianLinks GuardianLink[]
 
   @@index([intakeId, status])
   @@index([status, submittedAt(sort: Desc)])
@@ -901,6 +905,10 @@ model User {
   answeredFatwa FatwaQuestion[] @relation("FatwaAnswerer")
   initiatedDonations Donation[] @relation("DonationInitiator")
   ledgerEntries ManualLedgerEntry[] @relation("LedgerAuthor")
+  guardianLinks GuardianLink[] @relation("GuardianUser")
+  taughtCourses TeacherAssignment[] @relation("TeacherUser")
+  createdInvitations Invitation[] @relation("InvitationCreator")
+  studentGuardianLinks GuardianLink[] @relation("GuardianStudent")
 
   @@index([role])
 }
@@ -912,6 +920,12 @@ enum UserRole {
   FINANCE
   FATWA
   APPLICANT
+  TEACHER
+  STUDENT
+  GUARDIAN
+  LIBRARIAN
+  DONOR
+  ALUMNI
 }
 
 model Session {
@@ -999,4 +1013,62 @@ model OutboxEmail {
 
   @@index([kind, createdAt(sort: Desc)])
   @@index([sentAt])
+}
+
+/// Round 4 — roles & portals. Office-controlled roles are invited, never
+/// self-registered: an officer creates an Invitation (single-use hashed
+/// token, 7-day expiry); the invitee sets a password at /accept-invite.
+model Invitation {
+  id          String    @id @default(cuid())
+  email       String
+  name        String
+  role        UserRole
+  courseId    String? // scope for TEACHER invitations
+  course      Course?   @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  note        String?   @default("")
+  tokenHash   String    @unique // sha256 of the URL token — the token never rests in the DB
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  acceptedUserId String?
+  createdById String
+  createdBy   User     @relation("InvitationCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([email])
+  @@index([role, createdAt(sort: Desc)])
+}
+
+/// A guardian's scoped view: exactly the students this account may see —
+/// the relation IS the authorisation (enforced in src/lib/portals/guardian.ts;
+//  a guardian can never query another family's child).
+model GuardianLink {
+  id              String   @id @default(cuid())
+  guardianUserId  String
+  guardian        User     @relation("GuardianUser", fields: [guardianUserId], references: [id], onDelete: Cascade)
+  applicationId   String?  @unique // the child's admission application (pre-account)
+  application     Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  studentUserId   String? // set when the student has their own account
+  studentUser     User?    @relation("GuardianStudent", fields: [studentUserId], references: [id], onDelete: Cascade)
+  studentNameBn   String
+  relation        String   @default("অভিভাবক") // পিতা | মাতা | অভিভাবক …
+  createdAt       DateTime @default(now())
+
+  @@index([guardianUserId])
+}
+
+/// A teacher's scoped view: the courses this account may see. personId links
+/// the account to the faculty Person record (photo, designation) when it exists.
+model TeacherAssignment {
+  id             String   @id @default(cuid())
+  teacherUserId  String?
+  teacherUser    User?    @relation("TeacherUser", fields: [teacherUserId], references: [id], onDelete: Cascade)
+  personId       String?
+  person         Person?  @relation("TeacherPersonRecord", fields: [personId], references: [id], onDelete: SetNull)
+  courseId       String
+  course         Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+
+  @@index([teacherUserId])
+  @@index([courseId])
 }

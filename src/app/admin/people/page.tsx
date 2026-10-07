@@ -14,7 +14,7 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 /** People directory — grouped by team, with inline team management. */
 export default async function AdminPeoplePage({ searchParams }: { searchParams: SearchParams }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "academics")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "academics.manage")) redirect("/admin");
 
   const sp = await searchParams;
   const q = (typeof sp.q === "string" ? sp.q : "").trim().slice(0, 120);

@@ -49,7 +49,7 @@ function realIdentifiers(publication: { issn: string | null; isbn: string | null
 /** Publications admin — journals, books, bulletins, papers list. */
 export default async function AdminPublicationsPage({ searchParams }: { searchParams: SearchParams }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "content")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "content.manage")) redirect("/admin");
 
   const sp = await searchParams;
   const q = (typeof sp.q === "string" ? sp.q : "").trim().slice(0, 120);

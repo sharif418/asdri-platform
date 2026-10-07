@@ -147,44 +147,21 @@ export async function requireCsrf(request: Request): Promise<FullSession | null>
 
 /* ————————— role enforcement (data layer) ————————— */
 
-export const STAFF_ROLES: UserRole[] = ["ADMIN", "EDITOR", "ADMISSIONS", "FINANCE", "FATWA"];
+export { STAFF_ROLES, roleCan, isStaff, canAccessModule, type Permission } from "@/lib/permissions";
 
-export function isStaff(role: UserRole): boolean {
-  return STAFF_ROLES.includes(role);
-}
+import { canAccessModule, isStaff } from "@/lib/permissions";
+// (re-exported above for importers; imported here for requireModule/requireStaff)
 
-/** Permission matrix: which role may mutate which module. */
-const MODULE_ROLES: Record<string, UserRole[]> = {
-  settings: ["ADMIN"],
-  users: ["ADMIN"],
-  flags: ["ADMIN"],
-  menus: ["ADMIN", "EDITOR"],
-  media: ["ADMIN", "EDITOR", "ADMISSIONS", "FINANCE", "FATWA"],
-  content: ["ADMIN", "EDITOR"],
-  academics: ["ADMIN", "EDITOR"],
-  admissions: ["ADMIN", "ADMISSIONS"],
-  finance: ["ADMIN", "FINANCE"],
-  fatwa: ["ADMIN", "FATWA", "EDITOR"],
-  audit: ["ADMIN"],
-  messages: ["ADMIN", "EDITOR", "ADMISSIONS"],
-};
-
-export type AdminModule = keyof typeof MODULE_ROLES | string;
-
-export function roleCan(role: UserRole, module: AdminModule): boolean {
-  const allowed = MODULE_ROLES[module];
-  if (!allowed) return role === "ADMIN";
-  return allowed.includes(role);
-}
-
-/** Guard for admin APIs: session + CSRF + module permission. 403 on failure. */
+/** Guard for admin APIs: session + CSRF + module permission. 403 on failure.
+ *  Modules map to permissions once in src/lib/permissions.ts — unknown
+ *  modules fall back to ADMIN-only (fail closed). */
 export async function requireModule(
   request: Request,
-  module: AdminModule,
+  module: string,
 ): Promise<{ session: FullSession } | { error: "unauth" | "forbidden"; status: 401 | 403 }> {
   const session = await requireCsrf(request);
   if (!session) return { error: "unauth", status: 401 };
-  if (!roleCan(session.user.role, module)) return { error: "forbidden", status: 403 };
+  if (!canAccessModule(session.user.role, module)) return { error: "forbidden", status: 403 };
   return { session };
 }
 
