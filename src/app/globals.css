@@ -752,3 +752,26 @@ kbd {
 p {
   text-wrap: pretty;
 }
+
+/* ————— Library reader print: the current page, and only it —————
+   The sitewide print block above already strips the site chrome; the
+   reader adds its own: toolbar, search results and the exits row are
+   marked .reader-chrome and vanish, leaving the rendered canvas page
+   centred on white at its natural width (a PDF page's own margins win). */
+@media print {
+  .reader-chrome {
+    display: none !important;
+  }
+  .reader-stage {
+    overflow: visible !important;
+    padding: 0 !important;
+    border: none !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+  .reader-stage canvas {
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+}
