@@ -144,7 +144,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="mt-10 grid gap-6 lg:grid-cols-3">
-        <section className="rounded-2xl border bg-card p-5 shadow-sm lg:col-span-2">
+        <section className="min-w-0 rounded-2xl border bg-card p-5 shadow-sm lg:col-span-2">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-sm font-semibold">
               <Megaphone aria-hidden className="h-4 w-4 text-primary" />
@@ -181,7 +181,7 @@ export default async function AdminDashboardPage() {
           </ul>
         </section>
 
-        <section className="rounded-2xl border bg-card p-5 shadow-sm">
+        <section className="min-w-0 rounded-2xl border bg-card p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-sm font-semibold">
               <History aria-hidden className="h-4 w-4 text-primary" />
