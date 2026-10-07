@@ -10,7 +10,7 @@ export const metadata = { title: "নতুন ফতোয়া" };
 /** New fatwa bank entry — direct authoring (without an inbox question). */
 export default async function NewFatwaEntryPage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "fatwa")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "fatwa.read")) redirect("/admin");
 
   const categories = await db.fatwaCategory.findMany({ orderBy: { sortOrder: "asc" }, select: { id: true, nameBn: true } });
 

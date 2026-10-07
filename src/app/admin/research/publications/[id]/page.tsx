@@ -15,7 +15,7 @@ function toPicked(media: { id: string; filename: string; key: string; width: num
 /** Edit an existing publication. */
 export default async function EditPublicationPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "content")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "content.manage")) redirect("/admin");
 
   const { id } = await params;
   const publication = await db.publication.findUnique({

@@ -16,7 +16,7 @@ function toLocalInput(iso: Date | null): string {
 
 export default async function EditPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "content")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "content.manage")) redirect("/admin");
 
   const { slug } = await params;
   const [post, categories, authorRows] = await Promise.all([

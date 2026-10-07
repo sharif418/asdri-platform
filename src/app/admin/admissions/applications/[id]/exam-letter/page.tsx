@@ -37,7 +37,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
  */
 export default async function ExamLetterPage({ params, searchParams }: ExamLetterPageProps) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "admissions")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "admissions.manage")) redirect("/admin");
 
   const [{ id }, query] = await Promise.all([params, searchParams]);
   const application = await db.application.findUnique({

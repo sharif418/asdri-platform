@@ -170,3 +170,22 @@ Round-3 corrections applied: items made stale by PRs #16–#19 are updated in pl
   `asdri_dev` (seeded) + `asdri_test` (tests, recreated per run by `tests/preload.ts`).
 - `agent-browser` quirk: occasional first-click no-op after a refresh — retries fire;
   never reproduced for real users.
+
+## E. Round-4 decisions where the brief was silent
+
+15. **Permissions, not role names, are the unit of access** (workstream 3): `UserRole` grew
+    to 12 values, but `roleCan` consults `ROLE_PERMISSIONS` — a new role is a data change.
+    Staff = ADMIN/EDITOR/ADMISSIONS/FINANCE/FATWA/LIBRARIAN (librarian is staff: their door
+    is the admin's library module); STUDENT/GUARDIAN/TEACHER/DONOR/ALUMNI have /portal;
+    APPLICANT keeps the public /account. Data scoping is a relation (GuardianLink/
+    TeacherAssignment), never a role check alone.
+16. **Office-controlled accounts are invited, never self-registered**: single-use hashed
+    token, 7-day expiry, revocable; invitee sets the password (e-mail counted as verified —
+    the office vouched). Public self-registration remains for applicants/donors.
+17. **Portals are Bangla-only** (like the admin): the brief names students, guardians and
+    teachers as Bangla-first users; an English portal can follow if the office asks.
+18. **Alumni portal v1** is notices/publications/library + an honest note — batch directory
+    and update-contact flows are recorded follow-ups, not silently dropped.
+19. **Guardian linking is officer-side** (admissions invites the guardian against an
+    application). A self-service "add my child by tracking number" flow would need the same
+    second-factor verification as the public status lookup — offered as a follow-up.

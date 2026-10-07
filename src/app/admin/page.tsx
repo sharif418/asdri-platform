@@ -114,13 +114,13 @@ export default async function AdminDashboardPage() {
 
   const cards: { icon: LucideIcon; value: string; label: string; caption: string; href?: string; accent?: "gold" | "emerald"; show: boolean }[] = [
     { icon: Megaphone, value: formatNumber(noticeCount, "bn"), label: "প্রকাশিত নোটিশ", caption: "নোটিশ বোর্ডে এখন দৃশ্যমান", href: "/admin/notices", show: true },
-    { icon: BookMarked, value: formatNumber(courseCount, "bn"), label: "চলমান কোর্স", caption: "সিলেবাসসহ সম্পূর্ণ কারিকুলাম", href: "/admin/courses", show: roleCan(role, "academics") },
-    { icon: Users, value: formatNumber(peopleCount, "bn"), label: "শিক্ষক ও কর্মকর্তা", caption: "টিমসহ প্রোফাইল", href: "/admin/people", show: roleCan(role, "academics") },
-    { icon: PenLine, value: formatNumber(postCount, "bn"), label: "ব্লগ পোস্ট", caption: "প্রকাশিত আর্টিকেল ও খবর", href: "/admin/blog", show: roleCan(role, "content") },
-    { icon: MessageSquareText, value: toBnDigits(pendingFatwa), label: "অপেক্ষমাণ ফতোয়া প্রশ্ন", caption: "গবেষণা বোর্ডের উত্তরের অপেক্ষায়", href: "/admin/fatwa/questions", accent: "gold", show: roleCan(role, "fatwa") && pendingFatwa > 0 },
-    { icon: ClipboardList, value: toBnDigits(pendingApplications), label: "নতুন ভর্তি আবেদন", caption: "প্রাথমিক যাচাইয়ের অপেক্ষায়", href: "/admin/admissions/applications", accent: "gold", show: roleCan(role, "admissions") },
-    { icon: HandCoins, value: formatTaka(donationCompleted._sum.amount ?? 0, "bn"), label: "সম্পন্ন ডোনেশন (মোট)", caption: `${toBnDigits(donationPending)} টি পেন্ডিং লেনদেন`, href: "/admin/finance/donations", show: roleCan(role, "finance") },
-    { icon: Inbox, value: toBnDigits(unreadMessages), label: "অপঠিত বার্তা", caption: "যোগাযোগ ফর্ম থেকে", href: "/admin/inbox/messages", accent: "gold", show: roleCan(role, "messages") && unreadMessages > 0 },
+    { icon: BookMarked, value: formatNumber(courseCount, "bn"), label: "চলমান কোর্স", caption: "সিলেবাসসহ সম্পূর্ণ কারিকুলাম", href: "/admin/courses", show: roleCan(role, "academics.manage") },
+    { icon: Users, value: formatNumber(peopleCount, "bn"), label: "শিক্ষক ও কর্মকর্তা", caption: "টিমসহ প্রোফাইল", href: "/admin/people", show: roleCan(role, "academics.manage") },
+    { icon: PenLine, value: formatNumber(postCount, "bn"), label: "ব্লগ পোস্ট", caption: "প্রকাশিত আর্টিকেল ও খবর", href: "/admin/blog", show: roleCan(role, "content.manage") },
+    { icon: MessageSquareText, value: toBnDigits(pendingFatwa), label: "অপেক্ষমাণ ফতোয়া প্রশ্ন", caption: "গবেষণা বোর্ডের উত্তরের অপেক্ষায়", href: "/admin/fatwa/questions", accent: "gold", show: roleCan(role, "fatwa.read") && pendingFatwa > 0 },
+    { icon: ClipboardList, value: toBnDigits(pendingApplications), label: "নতুন ভর্তি আবেদন", caption: "প্রাথমিক যাচাইয়ের অপেক্ষায়", href: "/admin/admissions/applications", accent: "gold", show: roleCan(role, "admissions.manage") },
+    { icon: HandCoins, value: formatTaka(donationCompleted._sum.amount ?? 0, "bn"), label: "সম্পন্ন ডোনেশন (মোট)", caption: `${toBnDigits(donationPending)} টি পেন্ডিং লেনদেন`, href: "/admin/finance/donations", show: roleCan(role, "finance.manage") },
+    { icon: Inbox, value: toBnDigits(unreadMessages), label: "অপঠিত বার্তা", caption: "যোগাযোগ ফর্ম থেকে", href: "/admin/inbox/messages", accent: "gold", show: roleCan(role, "messages.read") && unreadMessages > 0 },
   ];
 
   return (
@@ -190,7 +190,7 @@ export default async function AdminDashboardPage() {
               <History aria-hidden className="h-4 w-4 text-primary" />
               সাম্প্রতিক কার্যক্রম
             </h2>
-            {roleCan(role, "audit") && (
+            {roleCan(role, "audit.view") && (
               <Link href="/admin/audit" className="text-xs font-semibold text-primary hover:underline">
                 অডিট লগ
               </Link>

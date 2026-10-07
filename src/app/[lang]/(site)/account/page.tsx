@@ -26,7 +26,13 @@ const ROLE_LABELS: Record<UserRole, { bn: string; en: string }> = {
   ADMISSIONS: { bn: "ভর্তি কর্মকর্তা", en: "Admissions Officer" },
   FINANCE: { bn: "অর্থ বিভাগ", en: "Finance" },
   FATWA: { bn: "ফতোয়া বোর্ড", en: "Fatwa Board" },
+  LIBRARIAN: { bn: "গ্রন্থাগারিক", en: "Librarian" },
   APPLICANT: { bn: "আবেদনকারী", en: "Applicant" },
+  TEACHER: { bn: "শিক্ষক", en: "Teacher" },
+  STUDENT: { bn: "শিক্ষার্থী", en: "Student" },
+  GUARDIAN: { bn: "অভিভাবক", en: "Guardian" },
+  DONOR: { bn: "দাতা", en: "Donor" },
+  ALUMNI: { bn: "প্রাক্তন", en: "Alumni" },
 };
 
 /** Account hub: profile, role, and the doorways available to this account. */

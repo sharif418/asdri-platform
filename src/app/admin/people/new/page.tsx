@@ -9,7 +9,7 @@ export const metadata = { title: "নতুন প্রোফাইল" };
 
 export default async function NewPersonPage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "academics")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "academics.manage")) redirect("/admin");
 
   const teams = await db.team.findMany({ orderBy: { sortOrder: "asc" }, select: { id: true, nameBn: true } });
 

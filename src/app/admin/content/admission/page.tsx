@@ -18,7 +18,7 @@ const FALLBACK = {
 /** Admission copy editor — the apply-form declaration + intro, from the `admissions.settings` blob. */
 export default async function AdminAdmissionCopyPage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "content")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "content.manage")) redirect("/admin");
 
   const setting = await readSetting("admissions.settings", FALLBACK);
 

@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/components/providers/language-provider";
 import { toast } from "@/hooks/use-toast";
+import { STAFF_ROLES as STAFF_LOGIN_ROLES } from "@/lib/permissions";
+import type { UserRole } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { langPath } from "@/lib/locale";
 import type { Language } from "@/types";
@@ -65,7 +67,9 @@ export function LoginForm({ lang }: { lang: Language }) {
         title: bn ? `স্বাগতম, ${payload.data.user.name}!` : `Welcome back, ${payload.data.user.name}!`,
         description: bn ? "সফলভাবে লগইন হয়েছে" : "Signed in successfully",
       });
-      router.push(["ADMIN", "EDITOR", "ADMISSIONS", "FINANCE", "FATWA"].includes(payload.data.user.role) ? "/admin" : langPath(lang, "/account"));
+      const role = payload.data.user.role as UserRole;
+      const home = STAFF_LOGIN_ROLES.includes(role) ? "/admin" : role === "APPLICANT" ? langPath(lang, "/account") : "/portal";
+      router.push(home);
       router.refresh();
     } catch {
       toast({ title: t("toast.error"), variant: "destructive" });

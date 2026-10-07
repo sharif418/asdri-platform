@@ -61,7 +61,7 @@ function KpiCard({
 /** Finance module home — the officer's money board: KPIs, fund breakdown, desks. */
 export default async function AdminFinancePage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "finance")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "finance.manage")) redirect("/admin");
 
   const monthStart = new Date();
   monthStart.setUTCDate(1);

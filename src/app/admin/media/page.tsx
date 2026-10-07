@@ -56,7 +56,7 @@ function Pager({
 /** Media library — images first, documents in their own section. */
 export default async function AdminMediaPage({ searchParams }: { searchParams: SearchParams }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "media")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "media.upload")) redirect("/admin");
 
   const sp = await searchParams;
   const q = (typeof sp.q === "string" ? sp.q : "").trim().slice(0, 120);

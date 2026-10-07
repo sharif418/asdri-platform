@@ -94,6 +94,8 @@ const ACTION_LABELS_BN: Record<string, string> = {
   "user.create": "ইউজার তৈরি",
   "user.update": "ইউজার সম্পাদনা",
   "user.delete": "ইউজার মুছে ফেলা",
+  "invitation.create": "আমন্ত্রণ পাঠানো হয়েছে",
+  "invitation.revoke": "আমন্ত্রণ বাতিল করা হয়েছে",
   "user.reset-password": "ইউজারের পাসওয়ার্ড রিসেট",
   "setting.update": "সাইট সেটিংস পরিবর্তন",
   "menu.create": "মেনু আইটেম তৈরি",
@@ -152,6 +154,7 @@ const ENTITY_LABELS_BN: Record<string, string> = {
   Stat: "পরিসংখ্যান",
   Team: "টিম",
   User: "ইউজার",
+  Invitation: "আমন্ত্রণ",
   Video: "ভিডিও",
 };
 

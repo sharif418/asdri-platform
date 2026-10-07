@@ -48,7 +48,7 @@ function KpiCard({
 /** Admissions module home — officer's KPI board and the two working desks. */
 export default async function AdminAdmissionsPage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "admissions")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "admissions.manage")) redirect("/admin");
 
   const [total, submitted, shortlisted, admitted, intakeRows, admittedRows, recent] = await Promise.all([
     db.application.count(),

@@ -10,7 +10,7 @@ export const metadata = { title: "সাইট সেটিংস" };
 /** Site settings hub — identity/contact, navigation menus and feature flags. */
 export default async function AdminSettingsPage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "settings")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "settings.manage")) redirect("/admin");
 
   const [settingsCount, menuCount, visibleMenus, flagsCount, enabledFlags] = await Promise.all([
     db.siteSetting.count(),

@@ -52,7 +52,7 @@ function SectionCard({ icon: Icon, title, children }: { icon: typeof UserRound; 
 /** Application detail — the officer's single-desk review + decision workflow. */
 export default async function ApplicationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "admissions")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "admissions.manage")) redirect("/admin");
 
   const { id } = await params;
   const application = await db.application.findUnique({

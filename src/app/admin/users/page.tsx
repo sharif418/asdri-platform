@@ -3,17 +3,24 @@ import { db } from "@/lib/db";
 import { getSession, roleCan } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { UsersManager, type UserRow } from "@/components/admin/users-manager";
+import { InvitationsManager } from "@/components/admin/invitations-manager";
 
 export const metadata = { title: "ইউজার ও রোল" };
 
 /** User & role management (ADMIN only). */
 export default async function AdminUsersPage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "users")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "users.manage")) redirect("/admin");
 
   const users = await db.user.findMany({
     orderBy: [{ role: "asc" }, { createdAt: "asc" }],
     select: { id: true, name: true, email: true, role: true, isActive: true, lastLoginAt: true },
+  });
+
+  const courses = await db.course.findMany({
+    where: { isPublished: true },
+    orderBy: { sortOrder: "asc" },
+    select: { id: true, titleBn: true, code: true },
   });
 
   const rows: UserRow[] = users.map((user) => ({
@@ -36,6 +43,10 @@ export default async function AdminUsersPage() {
         স্টাফ অ্যাকাউন্ট ও পারমিশন — পাসওয়ার্ড কখনো সংরক্ষিত থাকে না, তৈরির সময় একবারই দেখানো হয়।
       </p>
       <UsersManager key={rows.map((row) => `${row.id}:${row.role}:${row.isActive}`).join("|")} users={rows} />
+      <InvitationsManager
+        key={users.map((u) => `${u.id}:${u.role}`).join("|")}
+        courses={courses.map((course) => ({ id: course.id, label: `${course.titleBn} (${course.code})` }))}
+      />
     </div>
   );
 }

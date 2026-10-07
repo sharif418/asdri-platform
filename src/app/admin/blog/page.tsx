@@ -31,7 +31,7 @@ function buildQuery(base: Record<string, string | undefined>, page: number): str
 /** Blog & articles list — title, category, author, status, views. */
 export default async function AdminBlogPage({ searchParams }: { searchParams: SearchParams }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "content")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "content.manage")) redirect("/admin");
 
   const sp = await searchParams;
   const q = (typeof sp.q === "string" ? sp.q : "").trim().slice(0, 120);

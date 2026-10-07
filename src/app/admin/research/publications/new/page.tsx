@@ -10,7 +10,7 @@ export const metadata = { title: "নতুন প্রকাশনা" };
 /** New publication — journal / book / bulletin / paper. */
 export default async function NewPublicationPage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "content")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "content.manage")) redirect("/admin");
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

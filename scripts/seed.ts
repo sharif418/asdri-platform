@@ -21,6 +21,7 @@ import { seedContent } from "./seed-data/content";
 import { seedClarificationPosts } from "./seed-data/clarification-posts";
 import { uploadImage } from "@/lib/storage/upload";
 import { hashPassword } from "@/lib/auth";
+import { randomBytes } from "node:crypto";
 import { env } from "@/lib/env";
 
 const db = new PrismaClient();
@@ -214,6 +215,69 @@ async function seedAdmin(): Promise<void> {
   console.log(`  ✓ admin created: ${email} (change the password after first login)`);
 }
 
+/**
+ * Round-4 portal demo data: a teacher with an assigned course and a guardian
+ * linked to the seeded application, so the portals have reality on day one.
+ * Passwords are the office-set SEED values only for the admin; these demo
+ * accounts get random passwords (rotate via invitation) — they exist so the
+ * relations are visible, not for signing in.
+ */
+async function seedPortalDemo(): Promise<void> {
+  const teacher = await db.user.findUnique({ where: { email: "teacher.demo@assunnahinstitute.org" } });
+  const teacherId =
+    teacher?.id ??
+    (
+      await db.user.create({
+        data: {
+          email: "teacher.demo@assunnahinstitute.org",
+          name: "উস্তাজ দেমো (শিক্ষক)",
+          role: "TEACHER",
+          passwordHash: hashPassword(randomBytes(18).toString("base64url")),
+          emailVerifiedAt: new Date(),
+        },
+      })
+    ).id;
+
+  const course = await db.course.findFirst({ where: { code: "PYS" } });
+  if (course) {
+    const assigned = await db.teacherAssignment.findFirst({ where: { teacherUserId: teacherId, courseId: course.id } });
+    if (!assigned) {
+      await db.teacherAssignment.create({ data: { teacherUserId: teacherId, courseId: course.id } });
+    }
+  }
+
+  const guardian = await db.user.findUnique({ where: { email: "guardian.demo@assunnahinstitute.org" } });
+  const guardianId =
+    guardian?.id ??
+    (
+      await db.user.create({
+        data: {
+          email: "guardian.demo@assunnahinstitute.org",
+          name: "আব্দুল করিম (অভিভাবক)",
+          role: "GUARDIAN",
+          passwordHash: hashPassword(randomBytes(18).toString("base64url")),
+          emailVerifiedAt: new Date(),
+        },
+      })
+    ).id;
+
+  const application = await db.application.findFirst({ orderBy: { submittedAt: "asc" } });
+  if (application) {
+    const linked = await db.guardianLink.findUnique({ where: { applicationId: application.id } });
+    if (!linked) {
+      await db.guardianLink.create({
+        data: {
+          guardianUserId: guardianId,
+          applicationId: application.id,
+          studentNameBn: application.fullNameBn,
+          relation: "অভিভাবক",
+        },
+      });
+    }
+  }
+  console.log("  ✓ portal demo: teacher (PYS) + guardian (seeded application)");
+}
+
 async function main(): Promise<void> {
   console.log("🌱 Seeding ASDRI platform (PostgreSQL)…");
 
@@ -225,6 +289,7 @@ async function main(): Promise<void> {
   const mediaByPath = await importMedia();
   await attachMedia(mediaByPath);
   await seedAdmin();
+  await seedPortalDemo();
 
   const counts = {
     courses: await db.course.count(),

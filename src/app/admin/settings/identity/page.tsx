@@ -15,7 +15,7 @@ export const metadata = { title: "পরিচিতি ও যোগাযো�
 /** Identity / contact / social / payment / zakat settings editor (typed forms per key). */
 export default async function AdminSettingsIdentityPage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "settings")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "settings.manage")) redirect("/admin");
 
   const [identity, contact, social, payment, zakat] = await Promise.all([
     getSiteIdentity(),

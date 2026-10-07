@@ -13,7 +13,7 @@ export const metadata = { title: "ফান্ড" };
 /** Funds manager — the donation pots (key immutable, enable/disable, guarded delete). */
 export default async function AdminFundsPage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "finance")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "finance.manage")) redirect("/admin");
 
   const [rows, donationCounts, completedTotals, entryCounts] = await Promise.all([
     db.fund.findMany({

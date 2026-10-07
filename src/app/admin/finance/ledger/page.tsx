@@ -25,7 +25,7 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
  */
 export default async function AdminLedgerPage({ searchParams }: { searchParams: SearchParams }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "finance")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "finance.manage")) redirect("/admin");
 
   const sp = await searchParams;
   const fundId = typeof sp.fundId === "string" && sp.fundId.length > 0 ? sp.fundId : undefined;

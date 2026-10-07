@@ -14,7 +14,7 @@ export interface UserRow {
   id: string;
   name: string;
   email: string;
-  role: "ADMIN" | "EDITOR" | "ADMISSIONS" | "FINANCE" | "FATWA" | "APPLICANT";
+  role: string; // UserRole (kept string so portal roles never break this table)
   isActive: boolean;
   lastLoginAt: string | null;
   isSelf: boolean;
@@ -26,7 +26,13 @@ const ROLE_LABELS: Record<string, string> = {
   ADMISSIONS: "ভর্তি কর্মকর্তা",
   FINANCE: "আর্থিক কর্মকর্তা",
   FATWA: "ফতোয়া বিভাগ",
+  LIBRARIAN: "গ্রন্থাগারিক",
   APPLICANT: "আবেদনকারী",
+  TEACHER: "শিক্ষক",
+  STUDENT: "শিক্ষার্থী",
+  GUARDIAN: "অভিভাবক",
+  DONOR: "দাতা",
+  ALUMNI: "প্রাক্তন",
 };
 
 const STAFF_ROLES = ["ADMIN", "EDITOR", "ADMISSIONS", "FINANCE", "FATWA"] as const;

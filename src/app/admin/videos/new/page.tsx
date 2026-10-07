@@ -9,7 +9,7 @@ export const metadata = { title: "নতুন ভিডিও" };
 
 export default async function NewVideoPage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "content")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "content.manage")) redirect("/admin");
 
   const playlists = await db.video.findMany({ distinct: ["playlistKey"], select: { playlistKey: true }, orderBy: { playlistKey: "asc" } });
 

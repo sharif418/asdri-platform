@@ -16,7 +16,7 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 /** Audit log — every mutation: who, what, when, from where. (ADMIN only) */
 export default async function AdminAuditPage({ searchParams }: { searchParams: SearchParams }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "audit")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "audit.view")) redirect("/admin");
 
   const sp = await searchParams;
   const entity = typeof sp.entity === "string" ? sp.entity.trim().slice(0, 60) : "";

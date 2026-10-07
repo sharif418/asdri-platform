@@ -13,7 +13,7 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 /** Videos list — grouped by playlist key. */
 export default async function AdminVideosPage({ searchParams }: { searchParams: SearchParams }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "content")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "content.manage")) redirect("/admin");
 
   const sp = await searchParams;
   const playlist = typeof sp.playlist === "string" ? sp.playlist.trim().slice(0, 120) : "";

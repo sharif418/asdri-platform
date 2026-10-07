@@ -13,7 +13,7 @@ export const metadata = { title: "ক্যাম্পেইন" };
 /** Campaigns manager — live raised sums, guarded delete, create/edit dialog. */
 export default async function AdminCampaignsPage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "finance")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "finance.manage")) redirect("/admin");
 
   const [rows, funds, raisedRows, donorRows] = await Promise.all([
     db.campaign.findMany({

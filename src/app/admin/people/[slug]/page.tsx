@@ -9,7 +9,7 @@ export const metadata = { title: "প্রোফাইল সম্পাদন
 
 export default async function EditPersonPage({ params }: { params: Promise<{ slug: string }> }) {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "academics")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "academics.manage")) redirect("/admin");
 
   const { slug } = await params;
   const [person, teams] = await Promise.all([

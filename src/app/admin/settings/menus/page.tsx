@@ -10,7 +10,7 @@ export const metadata = { title: "নেভিগেশন মেনু" };
 /** Navigation menu editor — the tree the public header/footer actually render. */
 export default async function AdminMenusPage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "menus")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "menus.manage")) redirect("/admin");
 
   const items = await db.menuItem.findMany({
     orderBy: [{ location: "asc" }, { sortOrder: "asc" }],

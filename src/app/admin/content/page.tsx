@@ -10,7 +10,7 @@ export const metadata = { title: "পেজ কনটেন্ট" };
 /** Page content hub — the home page composition, FAQs and admission copy. */
 export default async function AdminContentPage() {
   const session = await getSession();
-  if (!session || !roleCan(session.user.role, "content")) redirect("/admin");
+  if (!session || !roleCan(session.user.role, "content.manage")) redirect("/admin");
 
   const [sectionCount, enabledCount, statCount, publishedStats, faqCount, publishedFaqs] = await Promise.all([
     db.homeSection.count(),
