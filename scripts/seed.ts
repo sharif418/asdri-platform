@@ -17,6 +17,7 @@ import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { seedSettings } from "./seed-data/settings";
 import { seedAcademics } from "./seed-data/academics";
+import { seedAdmissions } from "./seed-data/admissions";
 import { seedContent } from "./seed-data/content";
 import { seedClarificationPosts } from "./seed-data/clarification-posts";
 import { seedLibrary } from "./seed-data/library";
@@ -271,12 +272,16 @@ async function seedPortalDemo(): Promise<void> {
           guardianUserId: guardianId,
           applicationId: application.id,
           studentNameBn: application.fullNameBn,
-          relation: "অভিভাবক",
+          relation: application.guardianRelation || "অভিভাবক",
         },
       });
     }
   }
-  console.log("  ✓ portal demo: teacher (PYS) + guardian (seeded application)");
+  console.log(
+    application
+      ? "  ✓ portal demo: teacher (PYS) + guardian linked to seeded application ASDRI tracking no."
+      : "  ⚠ portal demo: teacher (PYS) linked; guardian has no application to link (seed-data/admissions.ts skipped?)",
+  );
 }
 
 async function main(): Promise<void> {
@@ -284,6 +289,8 @@ async function main(): Promise<void> {
 
   await seedSettings(db);
   await seedAcademics(db);
+  // after seedAcademics: the courses exist to open intakes against
+  await seedAdmissions(db);
   await seedContent(db);
   // after seedContent: the clar-* categories exist for the topic articles
   await seedClarificationPosts(db);
@@ -314,6 +321,8 @@ async function main(): Promise<void> {
     settings: await db.siteSetting.count(),
     flags: await db.featureFlag.count(),
     libraryItems: await db.libraryItem.count(),
+    intakes: await db.intake.count(),
+    applications: await db.application.count(),
   };
   console.log("📊", counts);
   console.log("✅ Seed complete.");
