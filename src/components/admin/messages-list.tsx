@@ -103,10 +103,12 @@ export function MessagesList({ messages }: { messages: MessageRow[] }) {
           type="button"
           onClick={() => void markAllRead()}
           disabled={markingAll || unread === 0}
+          title={unread === 0 ? "সব বার্তা ইতিমধ্যেই পঠিত" : undefined}
           className="inline-flex items-center gap-1.5 rounded-lg border bg-card px-3 py-1.5 text-[12.5px] font-semibold hover:bg-secondary disabled:opacity-40"
         >
           {markingAll ? <Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin" /> : <CheckCheck aria-hidden className="h-3.5 w-3.5" />}
           সব পঠিত করুন
+          {unread === 0 && <span className="sr-only">(সব বার্তা ইতিমধ্যেই পঠিত)</span>}
         </button>
       </div>
 

@@ -148,6 +148,7 @@ export default async function AdminDonationsPage({ searchParams }: { searchParam
       <div className="mt-4 flex flex-wrap gap-2 text-[11.5px] font-semibold">
         <Link
           href="/admin/finance/donations"
+          aria-current={!status ? "page" : undefined}
           className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1", !status ? "bg-primary text-primary-foreground" : "bg-gold/15 text-gold")}
         >
           সব অনুদান <span className="font-bold">{formatNumber(total, "bn")}</span>
@@ -159,6 +160,7 @@ export default async function AdminDonationsPage({ searchParams }: { searchParam
             <Link
               key={value}
               href={buildQuery({ q: q || undefined, fundId, month, status: value }, 1).replace(/[?&]page=1$/, "")}
+              aria-current={active ? "page" : undefined}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-3 py-1 transition-opacity",
                 active ? DONATION_STATUS_META[value].chip : "opacity-75 hover:opacity-100",

@@ -107,7 +107,7 @@ export function FundsTable({ funds }: { funds: FundRowData[] }) {
         <thead>
           <tr className="border-b bg-secondary/30 text-left text-[11.5px] uppercase tracking-wide text-muted-foreground">
             <th className="px-4 py-3 font-semibold">ফান্ড</th>
-            <th className="hidden px-4 py-3 font-semibold md:table-cell">সংগ্রহ</th>
+            <th className="hidden px-4 py-3 text-right font-semibold md:table-cell">সংগ্রহ</th>
             <th className="hidden px-4 py-3 font-semibold lg:table-cell">রেফারেন্স</th>
             <th className="px-4 py-3 font-semibold">অবস্থা</th>
             <th className="px-4 py-3 text-right font-semibold">অ্যাকশন</th>
@@ -130,8 +130,8 @@ export function FundsTable({ funds }: { funds: FundRowData[] }) {
                     {fund.key}
                   </p>
                 </td>
-                <td className="hidden px-4 py-3 md:table-cell">
-                  <p className="text-[12.5px] font-bold text-primary">{formatTaka(fund.completedTotal, "bn")}</p>
+                <td className="hidden px-4 py-3 text-right md:table-cell">
+                  <p className="text-[12.5px] font-bold tabular-nums text-primary">{formatTaka(fund.completedTotal, "bn")}</p>
                   <p className="text-[11px] text-muted-foreground">
                     {toBnDigits(fund.donationCount)} অনুদান · {toBnDigits(fund.entryCount)} এন্ট্রি
                   </p>
@@ -155,14 +155,15 @@ export function FundsTable({ funds }: { funds: FundRowData[] }) {
                         <button
                           type="button"
                           onClick={() => patchEnabled(fund, !fund.isEnabled)}
-                          title={fund.isEnabled ? "নিষ্ক্রিয় করুন — সাপোর্ট পেজ থেকে সরে যাবে" : "সক্রিয় করুন — সাপোর্ট পেজে ফিরে আসবে"}
+                          title={fund.isEnabled ? "নিষ্ক্রিয় করুন — সাপোর্ট পেজ থেকে সরে যাবে" : "চালু করুন — সাপোর্ট পেজে ফিরে আসবে"}
+                          aria-label={`${fund.nameBn} — ${fund.isEnabled ? "নিষ্ক্রিয় করুন" : "চালু করুন"}`}
                           className={`inline-flex h-9 items-center rounded-lg px-2.5 text-[12px] font-semibold transition-colors ${
                             fund.isEnabled
                               ? "border text-muted-foreground hover:bg-secondary"
                               : "bg-primary/10 text-primary hover:bg-primary/20"
                           }`}
                         >
-                          {fund.isEnabled ? "নিষ্ক্রিয়" : "সক্রিয়"}
+                          {fund.isEnabled ? "নিষ্ক্রিয় করুন" : "চালু করুন"}
                         </button>
                         <FundDialog
                           mode="edit"

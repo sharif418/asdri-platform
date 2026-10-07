@@ -3,7 +3,7 @@ import { Download, Plus, Search } from "lucide-react";
 import { db } from "@/lib/db";
 import { getSession, roleCan } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { formatNumber } from "@/lib/format";
+import { formatNumber, toBnDigits } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "ডাউনলোড আইটেম" };
@@ -40,6 +40,11 @@ export default async function AdminDownloadsPage({ searchParams }: { searchParam
     if (bucket) bucket.push(resource);
     else groups.set(key, [resource]);
   }
+
+  // Published rows without a file render as empty shells on the public
+  // download page — surface the count to the officer without changing the
+  // publish gate (r4 M16; data decision recorded by the coordinator).
+  const filelessPublished = resources.filter((resource) => resource.isPublished && !resource.fileMedia).length;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -91,6 +96,11 @@ export default async function AdminDownloadsPage({ searchParams }: { searchParam
         </div>
       ) : (
         <div className="mt-6 space-y-8">
+          {filelessPublished > 0 && (
+            <p role="status" className="rounded-xl border border-gold/50 bg-gold/10 px-4 py-3 text-[12.5px] font-semibold text-gold-foreground dark:text-gold">
+              ⚠ {toBnDigits(filelessPublished)}টি প্রকাশিত আইটেমে ফাইল সংযুক্ত নেই — পাবলিক ডাউনলোড পাতায় এগুলো খালি দেখাবে।
+            </p>
+          )}
           {[...groups.entries()].map(([category, items]) => (
             <section key={category}>
               <div className="flex items-center gap-2">

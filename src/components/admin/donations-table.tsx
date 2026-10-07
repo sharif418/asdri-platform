@@ -72,7 +72,7 @@ export function DonationsTable({ donations }: { donations: DonationRowData[] }) 
           <tr className="border-b bg-secondary/30 text-left text-[11.5px] uppercase tracking-wide text-muted-foreground">
             <th className="px-4 py-3 font-semibold">রিসিপ্ট / ট্র্যাকিং</th>
             <th className="hidden px-4 py-3 font-semibold md:table-cell">ফান্ড</th>
-            <th className="px-4 py-3 font-semibold">পরিমাণ</th>
+            <th className="px-4 py-3 text-right font-semibold">পরিমাণ</th>
             <th className="hidden px-4 py-3 font-semibold lg:table-cell">দাতা</th>
             <th className="hidden px-4 py-3 font-semibold lg:table-cell">তারিখ</th>
             <th className="px-4 py-3 font-semibold">স্ট্যাটাস</th>
@@ -94,7 +94,7 @@ export function DonationsTable({ donations }: { donations: DonationRowData[] }) 
                     <p className="truncate text-[11px] text-gold-foreground dark:text-gold">{donation.campaignTitle}</p>
                   )}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 text-right tabular-nums">
                   <p className="text-[13px] font-bold text-primary">{formatTaka(donation.amount, "bn")}</p>
                   {donation.currency !== "BDT" && (
                     <p className="text-[10.5px] text-muted-foreground">{donation.currency}</p>
