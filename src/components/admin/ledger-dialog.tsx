@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { BengaliDatePicker } from "@/components/shared/bengali-date-picker";
 import { Button } from "@/components/ui/button";
 import { MediaPicker, type PickedMedia } from "@/components/admin/ui/media-picker";
 import {
@@ -184,7 +185,7 @@ export function LedgerDialog({
           </div>
           <div>
             <label className="text-sm font-semibold">তারিখ *</label>
-            <input type="date" value={values.entryDate} onChange={(e) => set("entryDate", e.target.value)} dir="ltr" className={inputClass} />
+            <BengaliDatePicker value={values.entryDate} onChange={(wire) => set("entryDate", wire)} aria-label="লেজারের তারিখ (বাংলা ক্যালেন্ডার)" placeholder="বাংলা ক্যালেন্ডারে বাছুন" />
           </div>
           <div className="sm:col-span-2">
             <label className="text-sm font-semibold">সংযুক্তি (ভাউচার/রিসিট)</label>

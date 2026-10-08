@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { BookOpenCheck, Loader2, Plus, Search } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { BengaliDatePicker } from "@/components/shared/bengali-date-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -312,7 +313,7 @@ export function LibraryCheckoutsManager({ items }: { items: CheckoutItemOption[]
               </label>
               <label className="block space-y-1.5">
                 <span className="text-sm font-semibold">ফেরতের শেষ তারিখ</span>
-                <Input id={fieldId("dueAt")} dir="ltr" type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} className={inputClass} />
+                <span id={fieldId("dueAt")}><BengaliDatePicker value={dueAt} onChange={setDueAt} aria-label="ফেরতের শেষ তারিখ (বাংলা ক্যালেন্ডার)" placeholder="বাংলা ক্যালেন্ডারে বাছুন" /></span>
                 <fe.ErrorText name="dueAt" />
               </label>
             </div>

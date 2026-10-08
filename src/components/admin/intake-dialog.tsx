@@ -18,6 +18,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { INTAKE_STATUS_META } from "@/lib/admission-labels";
+import { BengaliDatePicker } from "@/components/shared/bengali-date-picker";
 
 export interface IntakeCourseOption {
   id: string;
@@ -235,21 +236,21 @@ export function IntakeDialog({
               <CalendarDays aria-hidden className="h-3.5 w-3.5 text-muted-foreground" />
               আবেদন শুরু
             </label>
-            <input type="date" value={values.opensAt} onChange={(e) => set("opensAt", e.target.value)} dir="ltr" className={inputClass} />
+            <BengaliDatePicker value={values.opensAt} onChange={(wire) => set("opensAt", wire)} aria-label="আবেদন শুরু (বাংলা ক্যালেন্ডার)" placeholder="বাংলা ক্যালেন্ডারে বাছুন" />
           </div>
           <div>
             <label className="flex items-center gap-1.5 text-sm font-semibold">
               <CalendarDays aria-hidden className="h-3.5 w-3.5 text-muted-foreground" />
               আবেদন শেষ
             </label>
-            <input type="date" value={values.closesAt} onChange={(e) => set("closesAt", e.target.value)} dir="ltr" className={inputClass} />
+            <BengaliDatePicker value={values.closesAt} onChange={(wire) => set("closesAt", wire)} aria-label="আবেদন শেষ (বাংলা ক্যালেন্ডার)" placeholder="বাংলা ক্যালেন্ডারে বাছুন" />
           </div>
           <div className="sm:col-span-2">
             <label className="flex items-center gap-1.5 text-sm font-semibold">
               <CalendarDays aria-hidden className="h-3.5 w-3.5 text-gold" />
               পরীক্ষার তারিখ (প্রাথমিক)
             </label>
-            <input type="date" value={values.examDate} onChange={(e) => set("examDate", e.target.value)} dir="ltr" className={inputClass} />
+            <BengaliDatePicker value={values.examDate} onChange={(wire) => set("examDate", wire)} aria-label="পরীক্ষার তারিখ (বাংলা ক্যালেন্ডার)" placeholder="বাংলা ক্যালেন্ডারে বাছুন" />
           </div>
           <div>
             <label className="flex items-center gap-1.5 text-sm font-semibold">
