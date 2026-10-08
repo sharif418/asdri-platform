@@ -217,3 +217,49 @@ Round-3 corrections applied: items made stale by PRs #16–#19 are updated in pl
     emits without ToUnicode maps (দ্ব…) cannot be searched by ANY consumer — recorded as
     a Chromium-generation limitation. (e) Seed day-one data (intakes/applications) is
     office-safe: re-runs upsert intakes and never reset or duplicate applications.
+
+## §E.25 — Round-9 decisions + open items
+
+### Decisions (why round 9 looks different)
+
+1. **Sandbox reset recovery**: rounds 6–8 existed only on local branches (push is
+   token-gated in this sandbox) and were lost to a reset. Round 9 restored the
+   highest-value modules from the worklog specs — alumni, Bangla date picker,
+   dashboard insights, /en overflow fix, portal card language — on ONE branch
+   (`feat/r9-restore-and-extend`) rather than recreating the per-round stack.
+   Two round-6/7 items were deliberately NOT re-implemented this round (see
+   open items) and remain recorded exactly as before.
+2. **Alumni privacy model**: contact fields live on the office row; the public
+   directory's select is contact-free by construction (a test proves no contact
+   key can appear), and `isPublished=false` rows are invisible to the public
+   layer. The self-service form can never publish anything — publication is the
+   office's switch alone.
+3. **Bengali calendar**: the picker commits Gregorian wire values (unchanged
+   contract); the Bangla reading is presentation. The utility-bar chip and the
+   notice dual-date are additive surfaces — no stored date changed calendars.
+4. **Insights scope**: PENDING donations never trend (money that hasn't arrived
+   isn't income); the funnel shows point-in-time counts per journey step (who
+   waits where), not cumulative passes; the trend seed is trackingCode-keyed and
+   months-ago anchored so it never drifts stale.
+
+### Open items (next-phase candidates)
+
+a. **Guardian self-service child-link (E.19 — open again after the reset)**:
+   the round-7 implementation (tracking + family-phone second factor,
+   anti-enumeration 404, idempotent same-guardian 409, lookup-grade rate limit,
+   `guardianLink.self` audit) is fully specced in the round-7 worklog entry and
+   was browser-proven before the loss — the top restoration candidate.
+b. **Reader canvas-overlay highlight**: the round-7 gold overlay (per-item
+   geometry + pointer-transparent overlay canvas) is specced in the same entry.
+c. **Course preview links (E.20g — open again)**: PreviewEntity + "Course",
+   module gate following the parsed entity, draft course rendered under the
+   public template with the gold banner (no apply CTA). Specced in the round-8
+   entry.
+d. **Reader per-character highlight runs (E.23.d)** — unchanged, low value.
+e. **PPR/ISR home shell** for the 90 mobile-perf target — unchanged, deliberate
+   deferral until Next 16 stabilizes PPR.
+f. **Donation-ledger cursor pagination + audit CSV range-aware paging (C.2)** —
+   unchanged, the next data-scale candidate.
+g. **Admin `users` UI**: an "unlink account" affordance for linked alumni rows
+   (the API guards deletes; a one-click unlink in the manager would spare the
+   officer a manual DB trip) — small, recorded here.

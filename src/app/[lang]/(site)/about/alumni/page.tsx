@@ -6,8 +6,10 @@ import { SectionHeading } from "@/components/shared/section-heading";
 import { Reveal } from "@/components/shared/reveal";
 import { GoldRule } from "@/components/shared/ornaments";
 import { AlumniBatchTable, AlumniEngagement, AlumniSummary } from "@/components/about/alumni-sections";
+import { AlumniDirectory } from "@/components/about/alumni-directory";
 import { getAlumniIntro } from "@/lib/content/about";
 import { getInstituteStats } from "@/lib/content/stats";
+import { getAlumniDirectory } from "@/lib/alumni";
 import { alternatesFor, type Lang, langPath } from "@/lib/locale";
 import { env } from "@/lib/env";
 import { pick } from "@/types";
@@ -24,10 +26,26 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: Lan
   };
 }
 
-/** /about/alumni — alumni intro, batch statistics, engagement. */
-export default async function AlumniPage({ params }: { params: Promise<{ lang: Lang }> }) {
+/** /about/alumni — alumni intro, batch statistics, public directory, engagement. */
+export default async function AlumniPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ lang: Lang }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { lang } = await params;
-  const [alumniIntro, stats] = await Promise.all([getAlumniIntro(), getInstituteStats()]);
+  const sp = await searchParams;
+  const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : (v ?? "")).trim();
+  const q = first(sp.q).slice(0, 120);
+  const course = first(sp.course);
+  const requestedPage = Number.parseInt(first(sp.page) || "1", 10);
+  const page = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const [alumniIntro, stats, directory] = await Promise.all([
+    getAlumniIntro(),
+    getInstituteStats(),
+    getAlumniDirectory({ q: q || undefined, course: course || undefined, page }),
+  ]);
   const totalAlumni = stats.find((stat) => stat.id === "alumni")?.value ?? 293;
 
   return (
@@ -87,6 +105,26 @@ export default async function AlumniPage({ params }: { params: Promise<{ lang: L
           <div className="mx-auto mt-12 max-w-4xl">
             <AlumniBatchTable lang={lang} />
             <GoldRule className="mt-10" />
+          </div>
+        </div>
+      </section>
+
+      {/* ——— Public directory (published registry rows, contact-free) ——— */}
+      <section className="bg-background py-16 sm:py-24">
+        <div className="container-site">
+          <Reveal>
+            <SectionHeading
+              eyebrow={lang === "bn" ? "ব্যাচ ডিরেক্টরি" : "Batch Directory"}
+              title={{ bn: "আমাদের প্রাক্তন শিক্ষার্থীর তালিকা", en: "Our Graduates Directory" }}
+              description={{
+                bn: "অফিস-অনুমোদিত তালিকা — প্রতিটি প্রাক্তনের নাম, ব্যাচ ও বর্তমান পরিচয়। কারও যোগাযোগের তথ্য এখানে কখনোই প্রকাশ করা হয় না।",
+                en: "Office-curated — each graduate's name, batch, and present life. No contact details are ever published here.",
+              }}
+              lang={lang}
+            />
+          </Reveal>
+          <div className="mt-8">
+            <AlumniDirectory lang={lang} result={directory} q={q} course={course} />
           </div>
         </div>
       </section>

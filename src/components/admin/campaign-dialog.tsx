@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { BengaliDatePicker } from "@/components/shared/bengali-date-picker";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { MediaPicker, type PickedMedia } from "@/components/admin/ui/media-picker";
@@ -208,11 +209,11 @@ export function CampaignDialog({
           <div className="grid gap-3.5 sm:grid-cols-2">
             <div>
               <label className="text-sm font-semibold">শুরু</label>
-              <input type="date" value={values.startsAt} onChange={(e) => set("startsAt", e.target.value)} dir="ltr" className={inputClass} />
+              <BengaliDatePicker value={values.startsAt} onChange={(wire) => set("startsAt", wire)} aria-label="ক্যাম্পেইন শুরু (বাংলা ক্যালেন্ডার)" placeholder="বাংলা ক্যালেন্ডারে বাছুন" />
             </div>
             <div>
               <label className="text-sm font-semibold">শেষ</label>
-              <input type="date" value={values.endsAt} onChange={(e) => set("endsAt", e.target.value)} dir="ltr" className={inputClass} />
+              <BengaliDatePicker value={values.endsAt} onChange={(wire) => set("endsAt", wire)} aria-label="ক্যাম্পেইন শেষ (বাংলা ক্যালেন্ডার)" placeholder="বাংলা ক্যালেন্ডারে বাছুন" />
             </div>
           </div>
           <div>

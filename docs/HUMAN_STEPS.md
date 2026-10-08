@@ -22,6 +22,14 @@ secret is missing or a `dev-only` placeholder). Everything below is a deliberate
 1. **Merge the PR stack** (#1 → #9 in order — they are stacked; merge bottom-up, or merge
    all via GitHub's UI which handles stacked order when merged sequentially). Review
    screenshots are in each PR description; nothing was self-merged.
+1a. **Push the round-9 branch** (sandbox has no GitHub token this session):
+   `git push origin feat/r9-restore-and-extend` (stacked on `fix/r5-day-one-reality`,
+   which is already on the remote) and open the round-9 PR with base
+   `fix/r5-day-one-reality`. The branch carries the restored alumni module,
+   BengaliDatePicker, dashboard insights, the /en overflow fix, portal keepsake
+   completion, and the new বঙ্গাব্দ surfaces — 8 commits, 407/0/3211 gates.
+   Evidence screenshots: `/home/z/my-project/download/qa-r9/` (sandbox-side;
+   mirror into the PR description).
 2. **Payment gateway merchant account** (bKash merchant / Nagad / SSLCommerz — office's
    choice): create the account, obtain API keys + callback credentials, then decide the
    adapter integration round. The sandbox provider stays functional until then

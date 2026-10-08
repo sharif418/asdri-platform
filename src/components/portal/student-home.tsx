@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpenCheck, FileText, GraduationCap } from "lucide-react";
+import { BookOpenCheck, CalendarDays, FileText, GraduationCap, Hash } from "lucide-react";
 import type { StudentSelfView } from "@/lib/portals/access";
 import { applicationStatusLabel, applicationStatusChip } from "@/lib/admission-labels";
 import { formatDate } from "@/lib/format";
@@ -28,24 +28,38 @@ export function StudentHome({ self }: { self: StudentSelfView }) {
   return (
     <div className="grid gap-6">
       {self.applications.map((application) => (
-        <section key={application.trackingNo} className="rounded-2xl border bg-card p-5 shadow-sm sm:p-6">
+        <section key={application.trackingNo} className="relative overflow-hidden rounded-2xl border bg-card p-5 pt-6 shadow-sm transition-colors hover:border-gold/40 sm:p-6 sm:pt-7">
+          {/* gold spine — the keepsake language every portal card shares */}
+          <span aria-hidden className="absolute inset-x-0 top-0 h-1.5 bg-gold-gradient" />
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                আবেদন নম্বর
-              </p>
-              <p className="mt-0.5 text-lg font-bold" dir="ltr">
-                {application.trackingNo}
-              </p>
-              <p className="mt-1 text-[12.5px] text-muted-foreground">
-                জমা: {formatDate(application.submittedAt, "bn")}
-                {application.courseTitleBn ? ` · ${application.courseTitleBn}` : ""}
-              </p>
+            <div className="flex items-start gap-3.5">
+              <span
+                aria-hidden
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-gold/40 bg-gold/[0.08] text-lg font-bold text-primary"
+              >
+                {(application.courseTitleBn || "শ").trim().charAt(0)}
+              </span>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">আবেদন নম্বর</p>
+                <p className="mt-0.5 font-mono text-lg font-bold tracking-wide" dir="ltr">
+                  {application.trackingNo}
+                </p>
+                <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[12.5px] text-muted-foreground">
+                  <CalendarDays aria-hidden className="h-3.5 w-3.5 text-gold" />
+                  জমা: {formatDate(application.submittedAt, "bn")}
+                </p>
+              </div>
             </div>
             <span className={`rounded-full px-3 py-1 text-[12px] font-bold ${applicationStatusChip(application.status as never)}`}>
               {applicationStatusLabel(application.status as never)}
             </span>
           </div>
+          {application.courseTitleBn ? (
+            <p className="mt-4 flex items-center gap-1.5 border-t pt-3.5 text-[13.5px] font-semibold">
+              <GraduationCap aria-hidden className="h-4 w-4 shrink-0 text-gold" />
+              {application.courseTitleBn}
+            </p>
+          ) : null}
 
           {application.courseSlug ? (
             <div className="mt-5 flex flex-wrap gap-3">

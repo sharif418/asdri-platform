@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Download, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Bismillah } from "@/components/shared/ornaments";
+import { Bismillah, CornerOrnament, StarMotif } from "@/components/shared/ornaments";
 import { HeroVideoDialog, type HeroVideo } from "@/components/home/hero-video-dialog";
 import { getSiteConfig } from "@/lib/content/site";
 import { dictionaries } from "@/lib/i18n";
@@ -77,6 +77,18 @@ export async function Hero({ lang, heroImageUrl, video }: HeroProps) {
         className="absolute inset-0 -z-10 bg-gradient-to-b from-emerald-deep/95 via-emerald-deep/80 to-emerald-deep/95"
       />
       <div aria-hidden className="pattern-lattice-light absolute inset-0 -z-10 opacity-50" />
+      {/* Radial glow — a soft gold lift behind the headline column (the
+          illuminated-center convention; pure CSS, no payload) */}
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 bg-[radial-gradient(60%_50%_at_50%_42%,rgba(201,162,39,0.16)_0%,rgba(201,162,39,0)_70%)]"
+      />
+
+      {/* Corner ornaments — the illuminated-manuscript frame, four corners */}
+      <CornerOrnament className="left-4 top-4 rotate-0 sm:left-6 sm:top-6" />
+      <CornerOrnament className="right-4 top-4 rotate-90 sm:right-6 sm:top-6" />
+      <CornerOrnament className="bottom-4 left-4 -rotate-90 sm:bottom-6 sm:left-6" />
+      <CornerOrnament className="bottom-4 right-4 rotate-180 sm:bottom-6 sm:right-6" />
 
       <div className="container-site relative flex flex-col items-center py-20 text-center sm:py-28 lg:py-32">
         {/* Entrance animations are CSS keyframes (.hero-rise/.hero-fade in
@@ -120,6 +132,13 @@ export async function Hero({ lang, heroImageUrl, video }: HeroProps) {
         >
           {copy.tagline}
         </p>
+
+        {/* Star divider — the folio's ornament break between word and deed */}
+        <div className="hero-rise mt-7 flex items-center gap-3" aria-hidden style={{ animationDelay: "0.38s" }}>
+          <span className="h-px w-14 bg-gradient-to-r from-transparent to-gold/70" />
+          <StarMotif className="h-3.5 w-3.5 text-gold/80" />
+          <span className="h-px w-14 bg-gradient-to-l from-transparent to-gold/70" />
+        </div>
 
         <div
           className="hero-rise mt-9 flex flex-col items-center gap-3 sm:flex-row"

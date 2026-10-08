@@ -21,6 +21,8 @@ import { seedAdmissions } from "./seed-data/admissions";
 import { seedContent } from "./seed-data/content";
 import { seedClarificationPosts } from "./seed-data/clarification-posts";
 import { seedLibrary } from "./seed-data/library";
+import { seedAlumni } from "./seed-data/alumni";
+import { seedDonations } from "./seed-data/donations";
 import { uploadImage } from "@/lib/storage/upload";
 import { hashPassword } from "@/lib/auth";
 import { randomBytes } from "node:crypto";
@@ -296,6 +298,8 @@ async function main(): Promise<void> {
   await seedClarificationPosts(db);
   // after seedContent: the journal Publications exist to convert into library items
   await seedLibrary(db);
+  await seedAlumni(db);
+  await seedDonations(db);
   const mediaByPath = await importMedia();
   await attachMedia(mediaByPath);
   await seedAdmin();
@@ -323,6 +327,8 @@ async function main(): Promise<void> {
     libraryItems: await db.libraryItem.count(),
     intakes: await db.intake.count(),
     applications: await db.application.count(),
+    alumniProfiles: await db.alumniProfile.count(),
+    donations: await db.donation.count(),
   };
   console.log("📊", counts);
   console.log("✅ Seed complete.");

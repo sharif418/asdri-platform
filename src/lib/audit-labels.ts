@@ -128,12 +128,18 @@ const ACTION_LABELS_BN: Record<string, string> = {
   "library.category.delete": "লাইব্রেরি ক্যাটাগরি মুছে ফেলা",
   "library.checkout.create": "ধার রেকর্ড তৈরি",
   "library.checkout.return": "ধার ফেরত গ্রহণ",
+  // alumni registry (round-9)
+  "alumni.profile.create": "অ্যালামনাই রেকর্ড তৈরি",
+  "alumni.profile.update": "অ্যালামনাই রেকর্ড সম্পাদনা",
+  "alumni.profile.delete": "অ্যালামনাই রেকর্ড মুছে ফেলা",
+  "alumni.profile.self": "প্রাক্তনের নিজ তথ্য হালনাগাদ",
 };
 
 /** Prisma model name (the audit `entity` column) → Bangla label. */
 const ENTITY_LABELS_BN: Record<string, string> = {
   Album: "অ্যালবাম",
   AlbumImage: "অ্যালবামের ছবি",
+  AlumniProfile: "অ্যালামনাই রেকর্ড",
   Application: "আবেদন",
   Campaign: "ক্যাম্পেইন",
   ContactMessage: "বার্তা",

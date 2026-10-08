@@ -41,6 +41,8 @@ export type Permission =
   | "messages.read"
   // library (module ships in the round-4 library workstream)
   | "library.manage"
+  // alumni registry (round-9 restore of the round-6 module)
+  | "alumni.manage"
   // portals (data scope comes from the relations, not the permission)
   | "portal.student"
   | "portal.guardian"
@@ -52,7 +54,7 @@ export type Permission =
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   ADMIN: [], // everything — roleCan short-circuits; the list documents intent
   EDITOR: ["media.upload", "media.manage", "content.manage", "academics.manage", "research.manage", "fatwa.read", "messages.read"],
-  ADMISSIONS: ["media.upload", "admissions.manage", "messages.read"],
+  ADMISSIONS: ["media.upload", "admissions.manage", "alumni.manage", "messages.read"],
   FINANCE: ["media.upload", "finance.read", "finance.manage"],
   FATWA: ["media.upload", "fatwa.read", "fatwa.answer", "fatwa.publish"],
   LIBRARIAN: ["media.upload", "library.manage"],
@@ -103,6 +105,7 @@ export const MODULE_PERMISSIONS: Record<string, Permission> = {
   fatwa: "fatwa.read",
   messages: "messages.read",
   library: "library.manage",
+  alumni: "alumni.manage",
 };
 
 export function modulePermission(module: string): Permission | null {

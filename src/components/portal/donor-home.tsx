@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BadgeCheck, HeartHandshake, MailWarning } from "lucide-react";
 import type { DonorSelfView } from "@/lib/portals/access";
 import { formatDate, formatNumber, formatTaka } from "@/lib/format";
+import { StarMotif } from "@/components/shared/ornaments";
 
 const STATUS_LABEL: Record<string, { label: string; chip: string }> = {
   PENDING: { label: "অপেক্ষমাণ", chip: "bg-gold/15 text-gold" },
@@ -33,16 +34,29 @@ export function DonorHome({ self }: { self: DonorSelfView }) {
 
   return (
     <div className="grid gap-6">
-      <section className="rounded-2xl border bg-emerald-deep p-6 text-ivory shadow-sm">
+      {/* keepsake band — the donor's lifetime card (gold spine + star divider) */}
+      <section className="relative overflow-hidden rounded-2xl border bg-emerald-deep p-6 pt-7 text-ivory shadow-sm">
+        <span aria-hidden className="absolute inset-x-0 top-0 h-1.5 bg-gold-gradient" />
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-gold">মোট অনুদান (সম্পন্ন)</p>
-            <p className="mt-1 text-3xl font-bold">{formatTaka(total, "bn")}</p>
-            <p className="mt-1 text-[12.5px] text-ivory/70">
-              {formatNumber(completed.length, "bn")} টি সম্পন্ন · মোট {formatNumber(self.donations.length, "bn")} টি লেনদেন
-            </p>
+          <div className="flex items-start gap-3.5">
+            <span
+              aria-hidden
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-gold/50 bg-gold/15 text-xl font-bold text-gold"
+            >
+              {"দ"}
+            </span>
+            <div>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-gold">মোট অনুদান (সম্পন্ন)</p>
+              <p className="mt-1 text-3xl font-bold">{formatTaka(total, "bn")}</p>
+              <p className="mt-1 text-[12.5px] text-ivory/70">
+                {formatNumber(completed.length, "bn")} টি সম্পন্ন · মোট {formatNumber(self.donations.length, "bn")} টি লেনদেন
+              </p>
+            </div>
           </div>
           <HeartHandshake aria-hidden className="h-12 w-12 text-gold/70" />
+        </div>
+        <div className="mt-5 flex items-center justify-center" aria-hidden>
+          <StarMotif className="h-4 w-4 text-gold/60" />
         </div>
       </section>
 

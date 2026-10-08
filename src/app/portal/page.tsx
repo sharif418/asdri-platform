@@ -7,6 +7,7 @@ import {
   getStudentSelf,
   getDonorSelf,
 } from "@/lib/portals/access";
+import { getAlumniSelf } from "@/lib/alumni";
 import { StudentHome } from "@/components/portal/student-home";
 import { GuardianHome } from "@/components/portal/guardian-home";
 import { TeacherHome } from "@/components/portal/teacher-home";
@@ -70,13 +71,15 @@ export default async function PortalHomePage() {
         </div>
       );
     }
-    case "ALUMNI":
+    case "ALUMNI": {
+      const self = await getAlumniSelf(user.id);
       return (
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           {heading}
-          <AlumniHome />
+          <AlumniHome self={self} />
         </div>
       );
+    }
     default:
       redirect("/account");
   }
