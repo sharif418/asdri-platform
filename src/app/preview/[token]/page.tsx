@@ -1,8 +1,10 @@
-import { EyeOff } from "lucide-react";
-import { verifyPreviewToken } from "@/lib/preview-link";
+import { EyeOff, Hourglass } from "lucide-react";
+import { verifyPreviewToken, type PreviewPayload } from "@/lib/preview-link";
 import { getNoticeForPreview } from "@/lib/content/notices";
 import { getPostForPreview } from "@/lib/content/blog";
 import { getCourseForPreview } from "@/lib/content/courses";
+import { bengaliDateChip } from "@/lib/bengali-date";
+import { formatDate } from "@/lib/format";
 import { pick } from "@/types";
 import { PageHero } from "@/components/shared/page-hero";
 import { NoticePad } from "@/components/notices/notice-pad";
@@ -36,7 +38,7 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
     if (!notice) return <UnavailableState />;
     return (
       <>
-        <PreviewBanner />
+        <PreviewBanner payload={payload} />
         <main id="preview-main" className="flex-1">
           <PageHero
             lang="bn"
@@ -60,7 +62,7 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
     if (!course) return <UnavailableState />;
     return (
       <>
-        <PreviewBanner />
+        <PreviewBanner payload={payload} />
         <main id="preview-main" className="flex-1">
           <CourseDetail course={course} lang="bn" withApplyBand={false} />
         </main>
@@ -72,7 +74,7 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
   if (!post) return <UnavailableState />;
   return (
     <>
-      <PreviewBanner />
+      <PreviewBanner payload={payload} />
       <main id="preview-main" className="flex-1">
         <PageHero
           lang="bn"
@@ -91,17 +93,35 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
   );
 }
 
-/** Fixed gold banner — this is a draft, not the published page. */
-function PreviewBanner() {
+/**
+ * Fixed gold banner — this is a draft, not the published page (round 11:
+ * manuscript lattice + the entity kind + the link's own expiry in the dual
+ * calendar, so the reviewer knows exactly when the link dies).
+ */
+function PreviewBanner({ payload }: { payload: PreviewPayload }) {
+  const kindLabel =
+    payload.entity === "Notice" ? "দাপ্তরিক বিজ্ঞপ্তি" : payload.entity === "Post" ? "ব্লগ পোস্ট" : "কোর্স পেজ";
+  const expiresAt = new Date(payload.exp * 1000);
   return (
     <>
       {/* spacer so the fixed banner never covers the hero */}
-      <div aria-hidden className="h-10 print:hidden" />
+      <div aria-hidden className="h-12 print:hidden" />
       <div className="fixed inset-x-0 top-0 z-50 print:hidden">
-        <p className="flex h-10 items-center justify-center gap-2 bg-gold-gradient px-4 text-center text-[13px] font-bold text-gold-foreground shadow-md">
-          <EyeOff aria-hidden className="h-4 w-4" />
-          প্রিভিউ — প্রকাশিত হয়নি
-        </p>
+        <div className="relative bg-gold-gradient shadow-md">
+          <div aria-hidden className="pattern-lattice-light absolute inset-0 opacity-60" />
+          <p className="relative flex h-12 flex-wrap items-center justify-center gap-x-3 gap-y-0.5 px-4 text-center text-[13px] font-bold text-gold-foreground">
+            <span className="flex items-center gap-2">
+              <EyeOff aria-hidden className="h-4 w-4" />
+              প্রিভিউ — প্রকাশিত হয়নি
+              <span aria-hidden className="opacity-50">·</span>
+              <span className="font-medium opacity-90">{kindLabel}</span>
+            </span>
+            <span className="flex items-center gap-1.5 rounded-full bg-white/25 px-2.5 py-0.5 text-[11.5px] font-semibold">
+              <Hourglass aria-hidden className="h-3.5 w-3.5" />
+              <span>লিংক বৈধ থাকবে: {formatDate(expiresAt, "bn")} · {bengaliDateChip(expiresAt)}</span>
+            </span>
+          </p>
+        </div>
       </div>
     </>
   );
