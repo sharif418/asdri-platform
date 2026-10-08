@@ -6,16 +6,20 @@ import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 
 /**
- * প্রিভিউ লিংক — mints a 24-hour signed preview URL for a saved Notice/Post
- * (POST /api/admin/preview-link) and copies it to the clipboard. The office
- * hands the URL to a reviewer; drafts render exactly like the published page.
+ * প্রিভিউ লিংক — mints a 24-hour signed preview URL for a saved Notice/Post/
+ * Course (POST /api/admin/preview-link) and copies it to the clipboard. The
+ * office hands the URL to a reviewer; drafts render exactly like the
+ * published page. `className` (round 11) lets the course editor's bottom
+ * bar host the button without the w-full default.
  */
 export function PreviewLinkButton({
   entity,
   entityId,
+  className,
 }: {
-  entity: "Notice" | "Post";
+  entity: "Notice" | "Post" | "Course";
   entityId: string;
+  className?: string;
 }) {
   const [creating, setCreating] = useState(false);
 
@@ -57,7 +61,7 @@ export function PreviewLinkButton({
       disabled={creating}
       variant="outline"
       size="sm"
-      className="w-full gap-1.5"
+      className={className ?? "w-full gap-1.5"}
     >
       {creating ? <Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin" /> : <Link2 aria-hidden className="h-3.5 w-3.5" />}
       প্রিভিউ লিংক

@@ -220,19 +220,35 @@ export async function getFeaturedCourses(): Promise<Course[]> {
 export async function getCourseBySlug(slug: string): Promise<Course | null> {
   const row = await db.course.findUnique({ where: { slug }, include: COURSE_INCLUDE });
   if (!row || !row.isPublished) return null;
+  return toViewCourse(row, await loadSdp(row.id));
+}
+
+/**
+ * Preview variant (round 11): by id, bypasses the isPublished gate — the
+ * course editor mints a signed /preview/<token> link and the draft renders
+ * through the SAME view-model + components as the public page. Reached only
+ * through that link; never linked from any public route.
+ */
+export async function getCourseForPreview(id: string): Promise<Course | null> {
+  const row = await db.course.findUnique({ where: { id }, include: COURSE_INCLUDE });
+  if (!row) return null;
+  return toViewCourse(row, await loadSdp(row.id));
+}
+
+/** SDP rows for one course, in office order (shared by slug + preview loaders). */
+async function loadSdp(courseId: string): Promise<SdpItem[]> {
   const sdpRows = await db.sdpProgram.findMany({
-    where: { courseId: row.id },
+    where: { courseId },
     orderBy: { sortOrder: "asc" },
     select: { titleBn: true, titleEn: true, objectiveBn: true, objectiveEn: true, activitiesBn: true, activitiesEn: true, hours: true, outcomeBn: true, outcomeEn: true },
   });
-  const sdp: SdpItem[] = sdpRows.map((s) => ({
+  return sdpRows.map((s) => ({
     title: { bn: s.titleBn, en: s.titleEn },
     objective: { bn: s.objectiveBn, en: s.objectiveEn },
     activities: { bn: s.activitiesBn, en: s.activitiesEn },
     hours: s.hours,
     outcome: { bn: s.outcomeBn, en: s.outcomeEn },
   }));
-  return toViewCourse(row, sdp);
 }
 
 /** Total credits + marks across a course's credit-bearing semesters. */

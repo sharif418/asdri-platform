@@ -2,10 +2,12 @@ import { EyeOff } from "lucide-react";
 import { verifyPreviewToken } from "@/lib/preview-link";
 import { getNoticeForPreview } from "@/lib/content/notices";
 import { getPostForPreview } from "@/lib/content/blog";
+import { getCourseForPreview } from "@/lib/content/courses";
 import { pick } from "@/types";
 import { PageHero } from "@/components/shared/page-hero";
 import { NoticePad } from "@/components/notices/notice-pad";
 import { PostArticleView } from "@/components/media/post-article-view";
+import { CourseDetail } from "@/components/academics/course-detail";
 
 export const dynamic = "force-dynamic";
 
@@ -14,11 +16,14 @@ interface PreviewPageProps {
 }
 
 /**
- * /preview/<token> — the signed, 24-hour preview link (round 4, workstream 5).
- * Renders a Notice or Post (drafts included) through the SAME public render
- * path as its permalink: the shared NoticePad / PostArticleView components.
- * No view counting, no OG article meta, no sitemap; invalid/expired tokens
- * all land on the same quiet "লিংকটি আর বৈধ নয়" state as accept-invite.
+ * /preview/<token> — the signed, 24-hour preview link (round 4, workstream 5;
+ * Course entity round 11). Renders a Notice, Post or Course (drafts included)
+ * through the SAME public render path as its permalink: the shared
+ * NoticePad / PostArticleView / CourseDetail components. Course previews
+ * omit the apply CTA band + sidebar button — a draft must not invite
+ * applications. No view counting, no OG article meta, no sitemap;
+ * invalid/expired tokens all land on the same quiet "লিংকটি আর বৈধ নয়" state
+ * as accept-invite.
  */
 export default async function PreviewPage({ params }: PreviewPageProps) {
   const { token } = await params;
@@ -45,6 +50,19 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
               <NoticePad notice={notice} lang="bn" />
             </div>
           </section>
+        </main>
+      </>
+    );
+  }
+
+  if (payload.entity === "Course") {
+    const course = await getCourseForPreview(payload.entityId);
+    if (!course) return <UnavailableState />;
+    return (
+      <>
+        <PreviewBanner />
+        <main id="preview-main" className="flex-1">
+          <CourseDetail course={course} lang="bn" withApplyBand={false} />
         </main>
       </>
     );
