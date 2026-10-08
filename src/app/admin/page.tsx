@@ -21,6 +21,14 @@ import { toBnDigits } from "@/lib/format";
 import { formatDate } from "@/lib/format";
 import { auditActionLabelBn } from "@/lib/audit-labels";
 import { cn } from "@/lib/utils";
+import {
+  buildAdmissionsFunnel,
+  buildApplicationTrend,
+  buildDonationTrend,
+  monthOverMonthDelta,
+} from "@/lib/insights";
+import { DonationTrendChart, DeltaChip } from "@/components/admin/insights/donation-trend-chart";
+import { AdmissionsFunnelRail } from "@/components/admin/insights/admissions-funnel-rail";
 
 export const metadata = { title: "ড্যাশবোর্ড" };
 
@@ -31,6 +39,7 @@ function StatCard({
   caption,
   href,
   accent,
+  delta,
 }: {
   icon: LucideIcon;
   value: string;
@@ -38,6 +47,7 @@ function StatCard({
   caption: string;
   href?: string;
   accent?: "gold" | "emerald";
+  delta?: { direction: "up" | "down" | "flat" | "new"; percent: number | null };
 }) {
   const inner = (
     <>
@@ -53,7 +63,10 @@ function StatCard({
         </span>
         <ArrowRight aria-hidden className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
       </div>
-      <p className="font-heading mt-3 text-2xl font-bold leading-none tracking-tight">{value}</p>
+      <p className="font-heading mt-3 flex flex-wrap items-center gap-2 text-2xl font-bold leading-none tracking-tight">
+        {value}
+        {delta ? <DeltaChip direction={delta.direction} percent={delta.percent} /> : null}
+      </p>
       <p className="mt-1.5 text-[13px] font-semibold">{label}</p>
       <p className="mt-0.5 text-[11.5px] leading-snug text-muted-foreground">{caption}</p>
     </>
@@ -73,6 +86,11 @@ export default async function AdminDashboardPage() {
   const session = await getSession();
   if (!session || !isStaff(session.user.role)) redirect("/login");
   const role = session.user.role;
+  const now = new Date();
+  const trendWindowStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 5, 1));
+
+  const canSeeFinance = roleCan(role, "finance.read");
+  const canSeeAdmissions = roleCan(role, "admissions.manage");
 
   const [
     noticeCount,
@@ -87,6 +105,9 @@ export default async function AdminDashboardPage() {
     subscribers,
     recentAudit,
     latestNotices,
+    donationTrendRows,
+    applicationTrendRows,
+    funnelIntakes,
   ] = await Promise.all([
     db.notice.count({ where: { isPublished: true } }),
     db.course.count({ where: { isPublished: true } }),
@@ -110,16 +131,59 @@ export default async function AdminDashboardPage() {
       orderBy: { publishedAt: "desc" },
       select: { slug: true, titleBn: true, category: true, publishedAt: true, status: true },
     }),
+    // insights: 6-month completed-donation rows + submitted-application rows
+    canSeeFinance
+      ? db.donation.findMany({
+          where: { status: "COMPLETED", paidAt: { gte: trendWindowStart } },
+          select: { status: true, paidAt: true, amount: true },
+        })
+      : Promise.resolve([]),
+    canSeeAdmissions
+      ? db.application.findMany({
+          where: { submittedAt: { gte: trendWindowStart } },
+          select: { submittedAt: true, status: true },
+        })
+      : Promise.resolve([]),
+    // insights: the two newest OPEN/PROCESSING intakes with their applications
+    canSeeAdmissions
+      ? db.intake.findMany({
+          where: { status: { in: ["OPEN", "PROCESSING"] } },
+          orderBy: [{ createdAt: "desc" }],
+          take: 2,
+          include: {
+            course: { select: { titleBn: true, code: true } },
+            applications: { select: { status: true } },
+          },
+        })
+      : Promise.resolve([]),
   ]);
 
-  const cards: { icon: LucideIcon; value: string; label: string; caption: string; href?: string; accent?: "gold" | "emerald"; show: boolean }[] = [
+  const donationTrend = buildDonationTrend(donationTrendRows, now);
+  const donationDelta = monthOverMonthDelta(donationTrend);
+  const applicationTrend = buildApplicationTrend(applicationTrendRows, now);
+  const applicationDelta = monthOverMonthDelta(applicationTrend);
+  const funnels = funnelIntakes.map((intake) => {
+    const countsByStatus: Record<string, number> = {};
+    for (const app of intake.applications) {
+      countsByStatus[app.status] = (countsByStatus[app.status] ?? 0) + 1;
+    }
+    return {
+      intakeId: intake.id,
+      intakeTitleBn: `${intake.course.titleBn} — ${toBnDigits(intake.year)}`,
+      seatsTotal: intake.seatsTotal,
+      steps: buildAdmissionsFunnel(countsByStatus),
+      admitted: intake.applications.filter((app) => app.status === "ADMITTED").length,
+    };
+  });
+
+  const cards: { icon: LucideIcon; value: string; label: string; caption: string; href?: string; accent?: "gold" | "emerald"; show: boolean; delta?: { direction: "up" | "down" | "flat" | "new"; percent: number | null } }[] = [
     { icon: Megaphone, value: formatNumber(noticeCount, "bn"), label: "প্রকাশিত নোটিশ", caption: "নোটিশ বোর্ডে এখন দৃশ্যমান", href: "/admin/notices", show: true },
     { icon: BookMarked, value: formatNumber(courseCount, "bn"), label: "চলমান কোর্স", caption: "সিলেবাসসহ সম্পূর্ণ কারিকুলাম", href: "/admin/courses", show: roleCan(role, "academics.manage") },
     { icon: Users, value: formatNumber(peopleCount, "bn"), label: "শিক্ষক ও কর্মকর্তা", caption: "টিমসহ প্রোফাইল", href: "/admin/people", show: roleCan(role, "academics.manage") },
     { icon: PenLine, value: formatNumber(postCount, "bn"), label: "ব্লগ পোস্ট", caption: "প্রকাশিত আর্টিকেল ও খবর", href: "/admin/blog", show: roleCan(role, "content.manage") },
     { icon: MessageSquareText, value: toBnDigits(pendingFatwa), label: "অপেক্ষমাণ ফতোয়া প্রশ্ন", caption: "গবেষণা বোর্ডের উত্তরের অপেক্ষায়", href: "/admin/fatwa/questions", accent: "gold", show: roleCan(role, "fatwa.read") && pendingFatwa > 0 },
-    { icon: ClipboardList, value: toBnDigits(pendingApplications), label: "নতুন ভর্তি আবেদন", caption: "প্রাথমিক যাচাইয়ের অপেক্ষায়", href: "/admin/admissions/applications", accent: "gold", show: roleCan(role, "admissions.manage") },
-    { icon: HandCoins, value: formatTaka(donationCompleted._sum.amount ?? 0, "bn"), label: "সম্পন্ন ডোনেশন (মোট)", caption: `${toBnDigits(donationPending)} টি পেন্ডিং লেনদেন`, href: "/admin/finance/donations", show: roleCan(role, "finance.manage") },
+    { icon: ClipboardList, value: toBnDigits(pendingApplications), label: "নতুন ভর্তি আবেদন", caption: "প্রাথমিক যাচাইয়ের অপেক্ষায়", href: "/admin/admissions/applications", accent: "gold", show: roleCan(role, "admissions.manage"), delta: canSeeAdmissions ? { direction: applicationDelta.direction, percent: applicationDelta.percent } : undefined },
+    { icon: HandCoins, value: formatTaka(donationCompleted._sum.amount ?? 0, "bn"), label: "সম্পন্ন ডোনেশন (মোট)", caption: `${toBnDigits(donationPending)} টি পেন্ডিং লেনদেন`, href: "/admin/finance/donations", show: roleCan(role, "finance.manage"), delta: canSeeFinance ? { direction: donationDelta.direction, percent: donationDelta.percent } : undefined },
     { icon: Inbox, value: toBnDigits(unreadMessages), label: "অপঠিত বার্তা", caption: "যোগাযোগ ফর্ম থেকে", href: "/admin/inbox/messages", accent: "gold", show: roleCan(role, "messages.read") && unreadMessages > 0 },
   ];
 
@@ -145,6 +209,51 @@ export default async function AdminDashboardPage() {
           <StatCard key={card.label} {...card} />
         ))}
       </div>
+
+      {/* ——— insights band: donation trend + admissions funnels ——— */}
+      {canSeeFinance || canSeeAdmissions ? (
+        <div className="mt-8 grid gap-6 lg:grid-cols-3">
+          {canSeeFinance ? (
+            <section className="min-w-0 rounded-2xl border bg-card p-5 shadow-sm lg:col-span-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="flex items-center gap-2 text-sm font-semibold">
+                  <HandCoins aria-hidden className="h-4 w-4 text-gold" />
+                  অনুদানের ৬-মাসের ধারা <span className="text-[11px] font-normal text-muted-foreground">(সম্পন্ন লেনদেন, মাস অনুযায়ী)</span>
+                </h2>
+                <Link href="/admin/finance/donations" className="text-xs font-semibold text-primary hover:underline">
+                  হিসাব দেখুন
+                </Link>
+              </div>
+              <div className="mt-4 overflow-x-auto pb-1">
+                <DonationTrendChart trend={donationTrend} />
+              </div>
+              <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                পেন্ডিং লেনদেন কখনো ধারায় গণনা হয় না — শুধু সম্পন্ন (পরিশোধিত) অনুদানই এখানে।
+              </p>
+            </section>
+          ) : null}
+          {canSeeAdmissions && funnels.length > 0 ? (
+            <section className={cn("min-w-0", canSeeFinance ? "" : "lg:col-span-3")}>
+              <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+                <ClipboardList aria-hidden className="h-4 w-4 text-primary" />
+                ভর্তি ফানেল — চলমান ইনটেক
+              </h2>
+              <div className={cn("grid gap-3", canSeeFinance ? "" : "sm:grid-cols-2")}>
+                {funnels.map((funnel) => (
+                  <AdmissionsFunnelRail
+                    key={funnel.intakeId}
+                    intakeId={funnel.intakeId}
+                    intakeTitleBn={funnel.intakeTitleBn}
+                    seatsTotal={funnel.seatsTotal}
+                    admitted={funnel.admitted}
+                    steps={funnel.steps}
+                  />
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="mt-10 grid gap-6 lg:grid-cols-3">
         <section className="min-w-0 rounded-2xl border bg-card p-5 shadow-sm lg:col-span-2">
