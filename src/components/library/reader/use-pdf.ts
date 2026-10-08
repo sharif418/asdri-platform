@@ -72,14 +72,26 @@ export function usePdfDocument(fileUrl: string) {
  * Render one page into a canvas at CSS width `cssWidth`, scaled by
  * devicePixelRatio so phones get sharp text. A previous task held in
  * `taskRef` is cancelled first — pdfjs forbids two renders on one canvas.
+ *
+ * Returns the page's geometry hook (round-10 overlay): `toViewport` maps a
+ * BASE-space (scale-1) rectangle into this render's viewport pixels, so an
+ * overlay canvas can paint highlights dpr-identical to the page beneath.
  */
+export interface PageGeometry {
+  cssWidth: number;
+  cssHeight: number;
+  dpr: number;
+  /** base-space [x1, y1, x2, y2] → viewport-space CSS pixels [x1, y1, x2, y2]. */
+  toViewport: (rect: [number, number, number, number]) => [number, number, number, number];
+}
+
 export async function renderPdfPage(
   doc: PDFDocumentProxy,
   pageNumber: number,
   canvas: HTMLCanvasElement,
   cssWidth: number,
   taskRef: { current: RenderTask | null },
-): Promise<void> {
+): Promise<PageGeometry | null> {
   taskRef.current?.cancel();
   const page = await doc.getPage(pageNumber);
   const base = page.getViewport({ scale: 1 });
@@ -93,7 +105,7 @@ export async function renderPdfPage(
   canvas.style.height = `${Math.floor(viewport.height)}px`;
 
   const context = canvas.getContext("2d");
-  if (!context) return;
+  if (!context) return null;
   const task = page.render({
     canvasContext: context,
     viewport,
@@ -107,6 +119,15 @@ export async function renderPdfPage(
   } finally {
     if (taskRef.current === task) taskRef.current = null;
   }
+  return {
+    cssWidth: Math.floor(viewport.width),
+    cssHeight: Math.floor(viewport.height),
+    dpr,
+    toViewport: (rect) => {
+      const [x1, y1, x2, y2] = viewport.convertToViewportRectangle(rect);
+      return [x1, y1, x2, y2] as [number, number, number, number];
+    },
+  };
 }
 
 /** One page's text (items joined with spaces) via getTextContent. */
@@ -178,6 +199,17 @@ export function searchSquash(input: string): string {
     .replace(/[\s\u0000]+/g, "");
 }
 
+export interface PageIndexItem {
+  /** Character range in the page's display text — offsets are exact. */
+  from: number;
+  through: number;
+  /** Base-space (scale-1) rectangle: lower-left + size, in PDF units. */
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 export interface PageSearchIndex {
   /** Display text (NULs stripped) — snippets are cut from this. */
   text: string;
@@ -187,6 +219,8 @@ export interface PageSearchIndex {
   haystackSwapped: string;
   /** haystack[i] / haystackSwapped[i] → index into text. */
   map: number[];
+  /** Per-item geometry (round-10 overlay): which text chars live where. */
+  items: PageIndexItem[];
 }
 
 /** Build the dual-form search index for one page. */
@@ -196,12 +230,31 @@ export async function pdfPageSearchIndex(
 ): Promise<PageSearchIndex> {
   const page = await doc.getPage(pageNumber);
   const content = await page.getTextContent();
-  const text = content.items
-    .filter((item): item is TextItem => "str" in item)
-    .map((item) => item.str)
-    .join(" ")
-    .replace(/[\u0000\s]+/g, " ")
-    .trim();
+
+  // Text is built INCREMENTALLY so every item's character range is exact —
+  // the overlay highlights whole text items by intersecting a match's
+  // [from, through] range with these ranges.
+  const items: PageIndexItem[] = [];
+  let text = "";
+  for (const raw of content.items) {
+    if (!("str" in raw)) continue;
+    const item = raw as TextItem;
+    const cleaned = item.str.replace(/[\u0000\s]+/g, " ").trim();
+    if (cleaned === "") continue;
+    if (text.length > 0) text += " ";
+    const from = text.length;
+    text += cleaned;
+    const transform = item.transform; // [a, b, c, d, e, f] — e,f = lower-left
+    const fontSize = Math.hypot(transform[2], transform[3]) || Math.hypot(transform[0], transform[1]) || 10;
+    items.push({
+      from,
+      through: text.length - 1,
+      x: transform[4],
+      y: transform[5],
+      w: item.width || 0,
+      h: item.height || fontSize,
+    });
+  }
 
   const lowered = text.toLowerCase();
   const hayStackChars: string[] = [];
@@ -213,5 +266,5 @@ export async function pdfPageSearchIndex(
     map.push(i);
   }
   const haystack = hayStackChars.join("");
-  return { text, haystack, haystackSwapped: swapPreBaseSigns(haystack), map };
+  return { text, haystack, haystackSwapped: swapPreBaseSigns(haystack), map, items };
 }

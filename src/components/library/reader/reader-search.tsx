@@ -4,10 +4,14 @@ import { SearchCheck } from "lucide-react";
 import { toBnDigits } from "@/lib/format";
 import type { Language } from "@/types";
 
-/** One search hit: the page it lives on plus a short context snippet. */
+/** One search hit: the page it lives on, a short context snippet, and the
+ *  exact character range in the page's display text (drives the gold
+ *  overlay on the canvas). */
 export interface PdfSearchMatch {
   page: number;
   snippet: string;
+  from: number;
+  through: number;
 }
 
 /** Match cap — the list is a navigation aid, not an index. */
