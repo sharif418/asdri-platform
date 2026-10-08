@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, GraduationCap, Link2, Loader2, Plus, Save, Search, Trash2, Users } from "lucide-react";
+import { Eye, EyeOff, GraduationCap, Link2, Link2Off, Loader2, Plus, Save, Search, Trash2, Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { adminConfirm } from "@/components/admin/ui/confirm";
 import {
   Dialog,
   DialogContent,
@@ -33,7 +34,8 @@ import { ALUMNI_COURSE_LABELS } from "@/lib/alumni";
  * Alumni registry manager (admissions office). One table over the office
  * ledger, one dialog for create/edit (the registry number is minted by the
  * API — the form never writes one), guarded deletes (a linked account must be
- * unlinked first, so a living alumnus's portal card is never orphaned).
+ * unlinked first, so a living alumnus's portal card is never orphaned) and a
+ * one-click unlink for claimed rows (round 11) — no manual DB trip.
  */
 
 interface AlumniRow {
@@ -102,6 +104,7 @@ export function AlumniManager() {
   const [form, setForm] = useState<FormValues>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<AlumniRow | null>(null);
+  const [unlinking, setUnlinking] = useState<string | null>(null);
 
   const load = useCallback(async (q: string) => {
     setLoading(true);
@@ -222,6 +225,36 @@ export function AlumniManager() {
     }
   }
 
+  /** One-click unlink for a claimed row (round 11) — confirm, then POST. */
+  async function onUnlink(row: AlumniRow) {
+    if (unlinking) return;
+    const yes = await adminConfirm({
+      title: "অ্যাকাউন্টের লিংক খুলে দিবেন?",
+      description: `${row.registryNo} (${row.nameBn}) — প্রাক্তন শিক্ষার্থীর অ্যাকাউন্ট থাকবে, কিন্তু এই রেকর্ডের সঙ্গে আর যুক্ত থাকবে না। পরে তিনি পোর্টাল থেকে আবার যুক্ত হতে পারবেন।`,
+      confirmLabel: "লিংক খুলে দিন",
+    });
+    if (!yes) return;
+    setUnlinking(row.id);
+    try {
+      const res = await fetch(`/api/admin/alumni/${row.id}/unlink`, {
+        method: "POST",
+        headers: { "x-csrf-token": document.cookie.match(/asr-csrf=([^;]+)/)?.[1] ?? "" },
+      });
+      const json = (await res.json()) as { ok: boolean; error?: string };
+      if (!res.ok || !json.ok) {
+        toast({ title: json.error ?? "লিংক খুলে দেওয়া যায়নি", variant: "destructive" });
+        return;
+      }
+      toast({ title: `${row.registryNo} — অ্যাকাউন্টের লিংক খুলে দেওয়া হয়েছে` });
+      router.refresh();
+      await load(query.trim());
+    } catch {
+      toast({ title: "নেটওয়ার্ক সমস্যা — আবার চেষ্টা করুন", variant: "destructive" });
+    } finally {
+      setUnlinking(null);
+    }
+  }
+
   async function onDelete() {
     if (!deleting) return;
     setSaving(true);
@@ -331,6 +364,23 @@ export function AlumniManager() {
                           অফিস
                         </Badge>
                       )}
+                      {row.userId ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                          aria-label={`${row.nameBn} — অ্যাকাউন্টের লিংক খুলে দিন`}
+                          title="অ্যাকাউন্টের লিংক খুলে দিন"
+                          disabled={unlinking === row.id}
+                          onClick={() => void onUnlink(row)}
+                        >
+                          {unlinking === row.id ? (
+                            <Loader2 aria-hidden className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Link2Off aria-hidden className="h-4 w-4" />
+                          )}
+                        </Button>
+                      ) : null}
                       <Button
                         variant="ghost"
                         size="icon"
@@ -535,7 +585,7 @@ export function AlumniManager() {
             <DialogDescription>
               {deleting
                 ? deleting.userId
-                  ? `${deleting.registryNo} — এই রেকর্ডের সঙ্গে একটি অ্যাকাউন্ট যুক্ত; আগে লিংক খুলে দিতে হবে।`
+                  ? `${deleting.registryNo} — এই রেকর্ডের সঙ্গে একটি অ্যাকাউন্ট যুক্ত; লিংক খুলে দিতে তালিকার লিংক-আইকনে চাপ দিন।`
                   : `${deleting.registryNo} (${deleting.nameBn}) — এই কাজ ফেরানো যায় না।`
                 : ""}
             </DialogDescription>

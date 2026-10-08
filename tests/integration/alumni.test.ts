@@ -27,6 +27,7 @@ const setCookie = installCookieMock();
 // Route handlers imported AFTER the cookie mock is installed.
 const { GET: LIST_PROFILES, POST: CREATE_PROFILE } = await import("@/app/api/admin/alumni/route");
 const { PATCH: UPDATE_PROFILE, DELETE: DELETE_PROFILE } = await import("@/app/api/admin/alumni/[id]/route");
+const { POST: UNLINK_PROFILE } = await import("@/app/api/admin/alumni/[id]/unlink/route");
 const { POST: SELF_UPDATE } = await import("@/app/api/portal/alumni/profile/route");
 const { getAlumniDirectory } = await import("@/lib/alumni");
 
@@ -71,18 +72,20 @@ function actAs(actor: Actor): void {
 let admissions: Actor;
 let editor: Actor;
 let alumnus: Actor;
+let alumnus2: Actor;
 let guardian: Actor;
 
 beforeAll(async () => {
   admissions = await createActor("ADMISSIONS", "admissions");
   editor = await createActor("EDITOR", "editor");
   alumnus = await createActor("ALUMNI", "alumnus");
+  alumnus2 = await createActor("ALUMNI", "alumnus2");
   guardian = await createActor("GUARDIAN", "guardian");
 });
 
 afterAll(async () => {
-  const ids = [admissions.userId, editor.userId, alumnus.userId, guardian.userId];
-  await db.alumniProfile.deleteMany({ where: { OR: [{ userId: { in: ids } }, { email: { in: [alumnus.email, guardian.email] } }] } });
+  const ids = [admissions.userId, editor.userId, alumnus.userId, alumnus2.userId, guardian.userId];
+  await db.alumniProfile.deleteMany({ where: { OR: [{ userId: { in: ids } }, { email: { in: [alumnus.email, alumnus2.email, guardian.email] } }] } });
   await db.session.deleteMany({ where: { userId: { in: ids } } });
   await db.user.deleteMany({ where: { id: { in: ids } } });
 });
@@ -172,6 +175,81 @@ describe("alumni registry (admin)", () => {
     const ok = await DELETE_PROFILE(new NextRequest(`http://local/api/admin/alumni/${unlinkedId}`, { method: "DELETE", headers: { "x-csrf-token": CSRF } }), { params: Promise.resolve({ id: unlinkedId }) });
     expect(ok.status).toBe(200);
     expect(await db.alumniProfile.findUnique({ where: { id: unlinkedId } })).toBeNull();
+  });
+});
+
+describe("alumni unlink (round 11, E.25g)", () => {
+  test("unlink decouples a claimed row: userId clears, audit records, DELETE now succeeds", async () => {
+    // office seeds a row carrying the second alumnus's email, then he claims it
+    actAs(admissions);
+    const created = await CREATE_PROFILE(
+      jsonRequest("http://local/api/admin/alumni", "POST", createPayload({ nameBn: "লিংক-খোলা প্রাক্তন", email: alumnus2.email })),
+    );
+    const rowId = ((await created.json()) as { data: { id: string } }).data.id;
+    actAs(alumnus2);
+    await SELF_UPDATE(jsonRequest("http://local/api/portal/alumni/profile", "POST", { phone: "01700000003" }));
+    const claimed = await db.alumniProfile.findUnique({ where: { id: rowId } });
+    expect(claimed?.userId).toBe(alumnus2.userId);
+
+    // the one-click unlink the manager offers
+    actAs(admissions);
+    const res = await UNLINK_PROFILE(
+      new NextRequest(`http://local/api/admin/alumni/${rowId}/unlink`, { method: "POST", headers: { "x-csrf-token": CSRF } }),
+      { params: Promise.resolve({ id: rowId }) },
+    );
+    expect(res.status).toBe(200);
+    const unlinked = await db.alumniProfile.findUnique({ where: { id: rowId }, select: { userId: true } });
+    expect(unlinked?.userId).toBeNull();
+
+    // the audit trail carries the unlink with before/after
+    const trail = await db.auditLog.findFirst({
+      where: { action: "alumni.profile.unlink", entity: "AlumniProfile", entityId: rowId },
+      orderBy: { createdAt: "desc" },
+    });
+    expect(trail).not.toBeNull();
+
+    // and the guarded DELETE — the reason the affordance exists — now succeeds
+    const ok = await DELETE_PROFILE(
+      new NextRequest(`http://local/api/admin/alumni/${rowId}`, { method: "DELETE", headers: { "x-csrf-token": CSRF } }),
+      { params: Promise.resolve({ id: rowId }) },
+    );
+    expect(ok.status).toBe(200);
+    expect(await db.alumniProfile.findUnique({ where: { id: rowId } })).toBeNull();
+  });
+
+  test("unlink guards: unlinked row → 409; EDITOR → 403; missing row → 404; anonymous → 401", async () => {
+    actAs(admissions);
+    const created = await CREATE_PROFILE(
+      jsonRequest("http://local/api/admin/alumni", "POST", createPayload({ nameBn: "অযুক্ত লিংক পরীক্ষা" })),
+    );
+    const rowId = ((await created.json()) as { data: { id: string } }).data.id;
+
+    const already = await UNLINK_PROFILE(
+      new NextRequest(`http://local/api/admin/alumni/${rowId}/unlink`, { method: "POST", headers: { "x-csrf-token": CSRF } }),
+      { params: Promise.resolve({ id: rowId }) },
+    );
+    expect(already.status).toBe(409);
+
+    actAs(editor);
+    const forbidden = await UNLINK_PROFILE(
+      new NextRequest(`http://local/api/admin/alumni/${rowId}/unlink`, { method: "POST", headers: { "x-csrf-token": CSRF } }),
+      { params: Promise.resolve({ id: rowId }) },
+    );
+    expect(forbidden.status).toBe(403);
+
+    actAs(admissions);
+    const missing = await UNLINK_PROFILE(
+      new NextRequest(`http://local/api/admin/alumni/no-such-row/unlink`, { method: "POST", headers: { "x-csrf-token": CSRF } }),
+      { params: Promise.resolve({ id: "no-such-row" }) },
+    );
+    expect(missing.status).toBe(404);
+
+    setCookie("");
+    const anon = await UNLINK_PROFILE(
+      new NextRequest(`http://local/api/admin/alumni/${rowId}/unlink`, { method: "POST", headers: { "x-csrf-token": CSRF } }),
+      { params: Promise.resolve({ id: rowId }) },
+    );
+    expect(anon.status).toBe(401);
   });
 });
 
