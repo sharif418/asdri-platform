@@ -19,32 +19,23 @@ secret is missing or a `dev-only` placeholder). Everything below is a deliberate
 
 ## 2. Accounts to create / actions to take on external services
 
-1. **Merge the PR stack** (#1 → #9 in order — they are stacked; merge bottom-up, or merge
-   all via GitHub's UI which handles stacked order when merged sequentially). Review
-   screenshots are in each PR description; nothing was self-merged.
-1a. **Push the round-9 branch** (sandbox has no GitHub token this session):
-   `git push origin feat/r9-restore-and-extend` (stacked on `fix/r5-day-one-reality`,
-   which is already on the remote) and open the round-9 PR with base
-   `fix/r5-day-one-reality`. The branch carries the restored alumni module,
-   BengaliDatePicker, dashboard insights, the /en overflow fix, portal keepsake
-   completion, and the new বঙ্গাব্দ surfaces — 8 commits, 407/0/3211 gates.
-   Evidence screenshots: `/home/z/my-project/download/qa-r9/` (sandbox-side;
-   mirror into the PR description).
-1b. **Push the round-10 branch** (stacked on round-9's):
-   `git push origin feat/r10-guardian-link` — base
-   `feat/r9-restore-and-extend` (push both together; round-9's note §2.1a
-   applies first). The branch carries the guardian self-service child-link
-   (E.19) + the reader gold overlay + the search-list ring polish —
-   4 commits, 415/0/3241 gates. Evidence:
-   `/home/z/my-project/download/qa-r10/`.
-1c. **Push the round-11 branch** (stacked on round-10's):
-   `git push origin feat/r11-course-preview` — base
-   `feat/r10-guardian-link` (push all three together; round-9 §2.1a and
-   round-10 §2.1b apply first). The branch carries the course preview links
-   (the last round-7/8 loss, E.26a), the alumni one-click unlink (E.25g),
-   C.2 closed (donations keyset cursor + range-aware audit export), and the
-   preview-banner/curriculum styling pass — 5 commits (4 feature + docs), 431/0/3306 gates.
-   Evidence: `/home/z/my-project/download/qa-r11/`.
+1. **Merge the PR stack** (#2 → #34 in order — they are stacked; merge bottom-up, or merge
+   all via GitHub's UI which handles stacked order when merged sequentially; #1 is already
+   merged). Review screenshots are in each PR description; nothing was self-merged.
+   ✅ DONE by the agent this session (client-provided token): the round-9/10/11 branches
+   were pushed and the stacked PRs **#32 · #33 · #34** opened exactly as specced below —
+   the remaining human step is the merge review only.
+   - #32 `feat/r9-restore-and-extend` → base `fix/r5-day-one-reality` — the restored
+     alumni module, BengaliDatePicker, dashboard insights, the /en overflow fix, portal
+     keepsake completion, and the new বঙ্গাব্দ surfaces — 8 commits, 407/0/3211 gates.
+   - #33 `feat/r10-guardian-link` → base `feat/r9-restore-and-extend` — the guardian
+     self-service child-link (E.19) + the reader gold overlay + the search-list ring
+     polish — 4 commits, 415/0/3241 gates.
+   - #34 `feat/r11-course-preview` → base `feat/r10-guardian-link` — the course preview
+     links (the last round-7/8 loss, E.26a), the alumni one-click unlink (E.25g),
+     C.2 closed (donations keyset cursor + range-aware audit export), and the
+     preview-banner/curriculum styling pass — 6 commits (4 feature + 2 docs), 431/0/3306
+     gates. Evidence screenshots: `/home/z/my-project/download/qa-r9/ · qa-r10/ · qa-r11/`.
 2. **Payment gateway merchant account** (bKash merchant / Nagad / SSLCommerz — office's
    choice): create the account, obtain API keys + callback credentials, then decide the
    adapter integration round. The sandbox provider stays functional until then

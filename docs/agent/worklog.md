@@ -1230,3 +1230,19 @@ Stage Summary:
   LOCAL ONLY; push is token-gated (HUMAN_STEPS §2.1a+1b+1c). Next-phase
   top: the push queue, then PPR/ISR home shell (the last big perf lever)
   and the CursorPager migration for the manual ledger if it ever scales.
+
+## Round 11 — addendum: the push queue cleared (R11-POST)
+
+The client supplied a GitHub token after the round-11 close. All three
+stacked branches were pushed and the PRs opened exactly as specced in
+HUMAN_STEPS §2.1a/1b/1c (now folded into §2.1):
+
+- `feat/r9-restore-and-extend` → **PR #32** (base `fix/r5-day-one-reality`)
+- `feat/r10-guardian-link` → **PR #33** (base `feat/r9-restore-and-extend`)
+- `feat/r11-course-preview` → **PR #34** (base `feat/r10-guardian-link`)
+
+Stack integrity verified before pushing (r9~8 = fix/r5 tip 810a7f2;
+merge-base r10/r9 = a6321f4; merge-base r11/r10 = 5bc6e19). Nothing was
+merged — the PR chain #2 → #34 remains client-review-only, bottom-up.
+HUMAN_STEPS §2.1 updated: the push notes are resolved; the remaining human
+step is the merge review itself.
