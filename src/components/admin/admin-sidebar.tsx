@@ -125,6 +125,7 @@ const NAV: AdminNavItem[] = [
     children: [
       { href: "/admin/admissions/intakes", label: "ইনটেক ও ব্যাচ" },
       { href: "/admin/admissions/applications", label: "আবেদনসমূহ" },
+      { href: "/admin/admissions/alumni", label: "অ্যালামনাই রেজিস্ট্রি" },
     ],
   },
   {

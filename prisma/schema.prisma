@@ -914,6 +914,7 @@ model User {
   createdInvitations Invitation[] @relation("InvitationCreator")
   studentGuardianLinks GuardianLink[] @relation("GuardianStudent")
   contentRevisions ContentRevision[] @relation("ContentRevisionActor")
+  alumniProfile AlumniProfile? @relation("AlumniProfile")
 
   @@index([role])
 }
@@ -1246,4 +1247,37 @@ model LibraryReading {
   readAt DateTime    @default(now())
 
   @@index([itemId, readAt(sort: Desc)])
+}
+
+/// Round-9 alumni registry (restored round-6 module) — one row per graduated
+/// student, office-curated. Contact fields live here for the office and the
+/// alumnus's own portal only; the public directory selects them out
+/// structurally (privacy-by-default). An account link (userId) is optional
+/// and claimed by the alumnus themself on first portal self-update.
+model AlumniProfile {
+  id             String   @id @default(cuid())
+  registryNo     String   @unique // AL-2026-0001 — office handle, printed on keepsakes
+  userId         String?  @unique
+  user           User?    @relation("AlumniProfile", fields: [userId], references: [id], onDelete: SetNull)
+  nameBn         String
+  nameEn         String   @default("")
+  courseKey      String // PYS | PGDID | CCIS | ATT — matches Course.code
+  batchYear      Int
+  batchNoBn      String   @default("") // "১ম ব্যাচ"
+  occupationBn   String   @default("")
+  occupationEn   String   @default("")
+  organizationBn String   @default("")
+  organizationEn String   @default("")
+  districtBn     String   @default("")
+  districtEn     String   @default("")
+  // contact — office + the alumnus's own portal only, never the public layer
+  phone          String   @default("")
+  email          String   @default("")
+  addressBn      String   @default("")
+  isPublished    Boolean  @default(false) // directory gate; false = office-eyes only
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([courseKey, batchYear])
+  @@index([isPublished])
 }
