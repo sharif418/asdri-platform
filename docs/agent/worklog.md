@@ -1220,7 +1220,7 @@ QA, fixes first (none needed), then development with the mandatory styling
   dies; wraps at 390px); CurriculumTabs per-semester subject-count chips.
 - R11-6: gates tsc + eslint clean, bun test 431/0/3306 (415 → 431).
   Docs: PROGRESS §R11, GAPS §E.27, HUMAN_STEPS §2.1c, this entry —
-  committed (4 commits on the branch).
+  committed (5 commits on the branch: 4 feature + docs).
 
 Stage Summary:
 - Round 11 complete: the preview infrastructure is whole again (all three

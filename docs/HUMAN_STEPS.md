@@ -43,7 +43,7 @@ secret is missing or a `dev-only` placeholder). Everything below is a deliberate
    round-10 §2.1b apply first). The branch carries the course preview links
    (the last round-7/8 loss, E.26a), the alumni one-click unlink (E.25g),
    C.2 closed (donations keyset cursor + range-aware audit export), and the
-   preview-banner/curriculum styling pass — 4 commits, 431/0/3306 gates.
+   preview-banner/curriculum styling pass — 5 commits (4 feature + docs), 431/0/3306 gates.
    Evidence: `/home/z/my-project/download/qa-r11/`.
 2. **Payment gateway merchant account** (bKash merchant / Nagad / SSLCommerz — office's
    choice): create the account, obtain API keys + callback credentials, then decide the
