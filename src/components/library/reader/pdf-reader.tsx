@@ -318,6 +318,7 @@ export function PdfReader({
         matches={matches}
         searching={searching}
         onJump={goToPage}
+        currentPage={page}
       />
 
       {/* ————— the page stage ————— */}
