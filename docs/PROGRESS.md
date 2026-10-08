@@ -818,3 +818,54 @@ guarded delete, DB back to 12), portal claim + self-update (DB + audit verified,
 demo value restored), dashboard insights band (zero errors), BengaliDatePicker in
 the intake dialog (আজ → ২৩ আশ্বিন ১৪৩৩ বঙ্গাব্দ). Evidence:
 `/home/z/my-project/download/qa-r9/` (12 screenshots).
+
+## R10 — the lost round-7 remainder restored: guardian self-link + reader overlay
+
+**Context**: the environment survived the round-9 close intact (Postgres, dev
+server, repo all alive; baseline gates reproduced 407/0/3211 exactly, and the
+QA sweep found zero product bugs). Round 10 therefore took the worklog's top
+two next-phase priorities — the two remaining fully-specced round-7 losses.
+Branch: `feat/r10-guardian-link` (stacked on `feat/r9-restore-and-extend`;
+push remains token-gated — HUMAN_STEPS §2.1b).
+
+### R10-1 — guardian self-service child-link (E.19 closed for good)
+
+- `POST /api/portal/guardian/link`: the guardian proves parenthood with BOTH
+  halves of what the office holds — the tracking number + the family phone
+  (guardianPhone, falling back to the applicant's own). Passing both creates
+  the GuardianLink with the application's own relation label.
+- Security shape mirrors the public status-lookup: session + GUARDIAN role +
+  CSRF + same-origin; lookup-grade rate limit keyed per ACCOUNT (8/15min — a
+  signed-in prober is the scarier actor); **anti-enumeration** — unknown
+  number, wrong phone, and DRAFT all answer ONE byte-identical 404; the 409
+  (already linked elsewhere) fires ONLY after the phone factor passed, so the
+  conflict answer can never be a probe; same-guardian repeats are idempotent.
+- Portal: gold-spine link-form card below the children; the empty state
+  routes straight to it (a second child joins the same way).
+- Audit `guardianLink.self` + Bangla labels. 8 integration tests.
+- Live-verified in the browser: wrong phone → identical mismatch toast;
+  correct phone → second child card + toast + audit row; DB restored.
+
+### R10-2 — reader gold canvas overlay (E.25b / the E.23.d visual)
+
+- `pdfPageSearchIndex` builds text INCREMENTALLY so every text item's
+  character range is exact; each item carries its base-space rectangle.
+- `renderPdfPage` returns a geometry hook (`toViewport`) mapping base-space
+  rects into the current render's viewport pixels — the overlay is
+  dpr-identical to the page beneath.
+- The overlay canvas paints gold boxes (rgba fill + stroke) for every text
+  item intersecting a match's `[from, through]` on the current page —
+  whole-item highlighting (per-character runs would need a full text layer;
+  still recorded as the honest limit). Pointer-transparent, print-hidden,
+  repaints on page/zoom/match changes.
+- Browser-verified: তাওহীদের → **৮,৮২০ gold pixels on page 1** (exactly the
+  lost round-7's number), ৪,৮৭৫ on page 2, ArrowRight/ArrowLeft round-trip
+  repaints back to ৮,৮২০; zero page errors.
+- Polish: the search list's current-page entries wear a gold ring + dot so
+  the list and the overlay read together.
+
+## Gates at round-10 close
+
+`tsc` clean · `lint` clean · **`bun test` 415 pass / 0 fail / 3241 expects**
+(407 → 415: +8 guardian-link). Evidence:
+`/home/z/my-project/download/qa-r10/` (4 screenshots).

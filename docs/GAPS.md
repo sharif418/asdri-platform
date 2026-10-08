@@ -263,3 +263,33 @@ f. **Donation-ledger cursor pagination + audit CSV range-aware paging (C.2)** �
 g. **Admin `users` UI**: an "unlink account" affordance for linked alumni rows
    (the API guards deletes; a one-click unlink in the manager would spare the
    officer a manual DB trip) — small, recorded here.
+
+## §E.26 — Round-10 decisions + the remaining open items
+
+### Decisions
+
+1. **Guardian self-link security shape** (E.19 closed for good): the family
+   phone is the second factor exactly as the round-7 spec held it —
+   guardianPhone with fallback to the applicant's own, so an application
+   filed without a separate guardian number is still linkable by the family.
+   The 409 is factor-gated (never a probe), and the rate budget is per
+   ACCOUNT rather than per IP: a signed-in account probing tracking numbers
+   is the scarier actor, and per-IP would let one abusive family lock out a
+   shared NAT (school/office) of real guardians.
+2. **Reader overlay granularity**: whole text items (the honest limit —
+   per-character runs would need a full pdf.js text layer rebuild; recorded
+   in §E.23.d). The geometry flows through the render's own viewport mapping
+   so the overlay is dpr-identical and zoom-exact.
+
+### Open items (next-phase candidates)
+
+a. **Course preview links (§E.25c / E.20g)** — now the LAST surviving
+   round-7/8 loss; fully specced in the round-8 worklog entry (PreviewEntity
+   + "Course", module gate follows the parsed entity, draft course under the
+   public template with the gold banner, no apply CTA).
+b. **Push + PR queue**: feat/r9-restore-and-extend AND feat/r10-guardian-link
+   are local-only (token-gated); round-10's PR stacks on round-9's.
+c. **PPR/ISR home shell** (unchanged), **donation-ledger cursor pagination
+   (C.2)** (unchanged).
+d. **Admin "unlink account" affordance** for linked alumni rows (§E.25g,
+   unchanged — small).

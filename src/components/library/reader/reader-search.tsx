@@ -3,11 +3,16 @@
 import { SearchCheck } from "lucide-react";
 import { toBnDigits } from "@/lib/format";
 import type { Language } from "@/types";
+import { cn } from "@/lib/utils";
 
-/** One search hit: the page it lives on plus a short context snippet. */
+/** One search hit: the page it lives on, a short context snippet, and the
+ *  exact character range in the page's display text (drives the gold
+ *  overlay on the canvas). */
 export interface PdfSearchMatch {
   page: number;
   snippet: string;
+  from: number;
+  through: number;
 }
 
 /** Match cap — the list is a navigation aid, not an index. */
@@ -19,13 +24,16 @@ interface ReaderSearchResultsProps {
   matches: PdfSearchMatch[];
   searching: boolean;
   onJump: (page: number) => void;
+  /** the page currently on the stage — its matches wear the gold ring
+   *  (round-10 polish: the list and the canvas overlay speak together) */
+  currentPage: number;
 }
 
 /**
  * The match list for the reader's in-document search — pdfjs's text layer
  * per page, matched case-insensitively, listed with context. Clicking a
- * match turns to its page (overlay highlighting stays out of scope: the
- * canvas text layer would need its own geometry pass).
+ * match turns to its page; the matches on the page currently on the stage
+ * wear a gold ring so the list and the canvas overlay read together.
  */
 export function ReaderSearchResults({
   lang,
@@ -33,6 +41,7 @@ export function ReaderSearchResults({
   matches,
   searching,
   onJump,
+  currentPage,
 }: ReaderSearchResultsProps) {
   const bn = lang === "bn";
   if (!query.trim()) return null;
@@ -65,27 +74,41 @@ export function ReaderSearchResults({
               : `${matches.length} ${matches.length === 1 ? "match" : "matches"}${matches.length >= MAX_MATCHES ? ` (showing the first ${MAX_MATCHES})` : ""}`}
           </p>
           <ul className="mt-3 grid max-h-64 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
-            {matches.map((match, index) => (
-              <li key={`${match.page}-${index}`}>
-                <button
-                  type="button"
-                  onClick={() => onJump(match.page)}
-                  className="w-full rounded-xl border bg-background/60 p-2.5 text-left transition-colors hover:border-gold/50 hover:bg-gold/5"
-                >
-                  <span className="text-[10.5px] font-bold uppercase tracking-wider text-gold">
-                    {bn
-                      ? `পৃষ্ঠা ${toBnDigits(match.page)}`
-                      : `Page ${match.page}`}
-                  </span>
-                  <span
-                    className="mt-1 block line-clamp-2 text-[12.5px] leading-relaxed text-foreground/85"
-                    dir="auto"
+            {matches.map((match, index) => {
+              const onStage = match.page === currentPage;
+              return (
+                <li key={`${match.page}-${index}`}>
+                  <button
+                    type="button"
+                    onClick={() => onJump(match.page)}
+                    aria-current={onStage ? "true" : undefined}
+                    className={cn(
+                      "relative w-full rounded-xl border bg-background/60 p-2.5 text-left transition-colors hover:border-gold/50 hover:bg-gold/5",
+                      onStage && "border-gold/60 bg-gold/10 ring-1 ring-gold/50",
+                    )}
                   >
-                    …{match.snippet}…
-                  </span>
-                </button>
-              </li>
-            ))}
+                    {onStage ? (
+                      <span
+                        aria-hidden
+                        className="absolute right-2.5 top-2.5 h-1.5 w-1.5 rounded-full bg-gold"
+                        title={bn ? "এই পৃষ্ঠায় হাইলাইট হয়েছে" : "highlighted on this page"}
+                      />
+                    ) : null}
+                    <span className={cn("text-[10.5px] font-bold uppercase tracking-wider", onStage ? "text-gold" : "text-gold/80")}>
+                      {bn
+                        ? `পৃষ্ঠা ${toBnDigits(match.page)}${onStage ? " · হাইলাইট" : ""}`
+                        : `Page ${match.page}${onStage ? " · highlighted" : ""}`}
+                    </span>
+                    <span
+                      className="mt-1 block line-clamp-2 text-[12.5px] leading-relaxed text-foreground/85"
+                      dir="auto"
+                    >
+                      …{match.snippet}…
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </>
       )}

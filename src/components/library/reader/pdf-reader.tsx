@@ -18,6 +18,8 @@ import {
   swapPreBaseSigns,
   renderPdfPage,
   usePdfDocument,
+  type PageGeometry,
+  type PageSearchIndex,
 } from "@/components/library/reader/use-pdf";
 
 /**
@@ -58,8 +60,13 @@ export function PdfReader({
 
   const stageRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const overlayRef = useRef<HTMLCanvasElement | null>(null);
   const renderTaskRef = useRef<RenderTask | null>(null);
   const lastSeenPage = useRef(1);
+  /** the current render's geometry (page/zoom); the overlay paints through it */
+  const geometryRef = useRef<PageGeometry | null>(null);
+  /** page → search index (built during runSearch, reused by the overlay) */
+  const indexCacheRef = useRef<Map<number, PageSearchIndex>>(new Map());
 
   const totalPages = numPages > 0 ? numPages : (filePages ?? 0);
   const goToPage = useCallback(
@@ -74,6 +81,54 @@ export function PdfReader({
     },
     [totalPages],
   );
+
+  /* ————— the gold overlay (round-10): paints highlight boxes for the
+     current page's matches, whole text items, through the render's own
+     viewport mapping — dpr-identical to the page beneath. ————— */
+  const repaintOverlay = useCallback(() => {
+    const overlay = overlayRef.current;
+    const geometry = geometryRef.current;
+    if (!overlay || !geometry) return;
+    const context = overlay.getContext("2d");
+    if (!context) return;
+    const { dpr } = geometry;
+    context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    context.clearRect(0, 0, geometry.cssWidth, geometry.cssHeight);
+
+    const index = indexCacheRef.current.get(page);
+    if (!index || matches.length === 0) return;
+
+    // gold fill + stroke, soft enough to read text through
+    context.fillStyle = "rgba(201, 162, 39, 0.22)";
+    context.strokeStyle = "rgba(201, 162, 39, 0.75)";
+    context.lineWidth = 1;
+
+    for (const match of matches) {
+      if (match.page !== page) continue;
+      for (const item of index.items) {
+        // whole-item highlight: the item's char range intersects the match
+        if (item.through < match.from || item.from > match.through) continue;
+        const [x1, y1, x2, y2] = geometry.toViewport([
+          item.x,
+          item.y,
+          item.x + item.w,
+          item.y + item.h,
+        ]);
+        const left = Math.min(x1, x2);
+        const top = Math.min(y1, y2);
+        const boxWidth = Math.max(2, Math.abs(x2 - x1));
+        const boxHeight = Math.max(2, Math.abs(y2 - y1));
+        context.fillRect(left, top, boxWidth, boxHeight);
+        context.strokeRect(left + 0.5, top + 0.5, boxWidth - 1, boxHeight - 1);
+      }
+    }
+  }, [page, matches]);
+
+  // repaint when the matches or the page change (the render effect repaints
+  // after geometry changes itself)
+  useEffect(() => {
+    repaintOverlay();
+  }, [repaintOverlay]);
 
   /* ————— responsive width (fit-width zoom base) ————— */
   useEffect(() => {
@@ -92,10 +147,27 @@ export function PdfReader({
     const canvas = canvasRef.current;
     if (status !== "ready" || !doc || !canvas || containerWidth <= 0) return;
     const width = Math.max(220, containerWidth - 4) * zoom;
-    void renderPdfPage(doc, page, canvas, width, renderTaskRef).catch(
-      () => undefined,
-    );
-  }, [status, doc, page, zoom, containerWidth]);
+    let stale = false;
+    void renderPdfPage(doc, page, canvas, width, renderTaskRef)
+      .then((geometry) => {
+        if (!stale && geometry) {
+          geometryRef.current = geometry;
+          // size the overlay to match the fresh render
+          const overlay = overlayRef.current;
+          if (overlay) {
+            overlay.width = Math.floor(geometry.cssWidth * geometry.dpr);
+            overlay.height = Math.floor(geometry.cssHeight * geometry.dpr);
+            overlay.style.width = `${geometry.cssWidth}px`;
+            overlay.style.height = `${geometry.cssHeight}px`;
+          }
+          repaintOverlay();
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      stale = true;
+    };
+  }, [status, doc, page, zoom, containerWidth, repaintOverlay]);
 
   /* ————— reading counter: forward moves only ————— */
   useEffect(() => {
@@ -159,6 +231,7 @@ export function PdfReader({
         pageNumber++
       ) {
         const index = await pdfPageSearchIndex(doc, pageNumber);
+        indexCacheRef.current.set(pageNumber, index);
         const seen = new Set<number>();
         const collect = (haystack: string, visual: boolean) => {
           let at = haystack.indexOf(needle);
@@ -176,6 +249,8 @@ export function PdfReader({
               found.push({
                 page: pageNumber,
                 snippet: visual ? swapPreBaseSigns(raw) : raw,
+                from,
+                through,
               });
             }
             at = haystack.indexOf(needle, at + needle.length);
@@ -189,6 +264,11 @@ export function PdfReader({
     },
     [doc],
   );
+
+  /* clear the overlay when a new search clears the matches */
+  useEffect(() => {
+    if (matches.length === 0) repaintOverlay();
+  }, [query, matches.length, repaintOverlay]);
 
   /* ————— states ————— */
   if (status === "error") {
@@ -238,6 +318,7 @@ export function PdfReader({
         matches={matches}
         searching={searching}
         onJump={goToPage}
+        currentPage={page}
       />
 
       {/* ————— the page stage ————— */}
@@ -261,12 +342,22 @@ export function PdfReader({
             </p>
           </div>
         ) : (
-          <canvas
-            ref={canvasRef}
-            role="img"
-            aria-label={`${pick(title, lang)} — ${bn ? `পৃষ্ঠা ${toBnDigits(page)}` : `page ${page}`}`}
-            className="mx-auto block h-auto max-w-full rounded-md bg-white shadow-md"
-          />
+          <div className="relative mx-auto" style={{ width: "fit-content" }}>
+            <canvas
+              ref={canvasRef}
+              role="img"
+              aria-label={`${pick(title, lang)} — ${bn ? `পৃষ্ঠা ${toBnDigits(page)}` : `page ${page}`}`}
+              className="block h-auto max-w-full rounded-md bg-white shadow-md"
+            />
+            {/* the gold highlight overlay: pointer-transparent so the page
+                beneath stays interactive, print-hidden so the printed copy is
+                the clean page, dpr-matched to the render */}
+            <canvas
+              ref={overlayRef}
+              aria-hidden
+              className="reader-chrome pointer-events-none absolute left-0 top-0 rounded-md print:hidden"
+            />
+          </div>
         )}
       </div>
 

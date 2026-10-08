@@ -30,6 +30,13 @@ secret is missing or a `dev-only` placeholder). Everything below is a deliberate
    completion, and the new বঙ্গাব্দ surfaces — 8 commits, 407/0/3211 gates.
    Evidence screenshots: `/home/z/my-project/download/qa-r9/` (sandbox-side;
    mirror into the PR description).
+1b. **Push the round-10 branch** (stacked on round-9's):
+   `git push origin feat/r10-guardian-link` — base
+   `feat/r9-restore-and-extend` (push both together; round-9's note §2.1a
+   applies first). The branch carries the guardian self-service child-link
+   (E.19) + the reader gold overlay + the search-list ring polish —
+   4 commits, 415/0/3241 gates. Evidence:
+   `/home/z/my-project/download/qa-r10/`.
 2. **Payment gateway merchant account** (bKash merchant / Nagad / SSLCommerz — office's
    choice): create the account, obtain API keys + callback credentials, then decide the
    adapter integration round. The sandbox provider stays functional until then
