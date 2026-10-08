@@ -1090,3 +1090,50 @@ Stage Summary:
   way through, the header and band are designed, roles/portals/invitations run the
   institute's real shape, the library is a real module, and the review's open list is
   closed or honestly accounted. 291 → 353 tests. PROGRESS.md carries proof per row.
+
+---
+Task ID: R9-0 … R9-9 (close)
+Agent: main (Z.ai Code) — round 9 coordinator
+Task: Sandbox-reset recovery — the environment (Postgres, repo, dev server) was
+lost to a reset; the remote held everything through the round-5 close
+(fix/r5-day-one-reality @ 810a7f2, 366 tests) while rounds 6–8 had lived on
+local-only branches and were gone. Rebuilt the environment, re-verified the
+baseline, restored the highest-value lost modules from the worklog specs, and
+added new public surfaces (the session's mandatory styling + features).
+
+Work Log:
+- R9-0/R9-1: pgserver reinstalled + initdb + :5433 (asdri_dev + asdri_test);
+  clone fix/r5-day-one-reality; bun install; migrate deploy both DBs; seed;
+  demo passwords (guardian/teacher/alumni → qa-password-123); dev server :3000.
+- R9-2: baseline gates exact round-5 close numbers (tsc, lint, 366/0/2364);
+  agent-browser sweep public bn + admin + guardian/teacher portals — zero
+  product bugs (one known OOM during compile+browser concurrency, restarted).
+- R9-3: Alumni registry module — model+migration, alumni.manage (ADMIN+
+  ADMISSIONS), admin list/create/PATCH/guarded-DELETE APIs + manager UI,
+  public directory (contact-free select by construction), portal keepsake card
+  + self-update with the email claim; seed 12 rows + alumni.demo; 10 tests.
+- R9-4: bengali-date.ts pure math (2019-revised calendar, UTC-anchored) +
+  BengaliDatePicker (Radix, arrow keys, আজ/পরিষ্কার) wired into intake/
+  campaign/ledger/checkout dialogs; 14 tests.
+- R9-5: insights lib (trend/delta/funnel, conjunct-safe month labels) +
+  server-SVG DonationTrendChart + AdmissionsFunnelRail + MoM delta chips,
+  role-gated; 15-row months-ago donation seed; 17 tests.
+- R9-6: /en font-swap overflow fix (overflow-x-clip on the sticky bar;
+  rAF-proven 1280/1280 across loads; panel bottom 337 vs bar 117).
+- R9-7: donor + student portal cards joined the keepsake set. Guardian
+  self-link (E.19) + reader overlay (E.23.d) deliberately deferred — fully
+  specced in GAPS §E.25 as the top next-phase candidates.
+- R9-8 (new work): বঙ্গাব্দ chip in the utility bar; dual-calendar notice
+  dates; home hero corner ornaments + radial glow + star divider;
+  SectionHeading ✦ accents.
+- R9-9: full gates 407/0/3211 (+41); browser QA of every new surface (Bangla
+  directory search, facets, admin create mint AL-2026-0013 + guarded delete,
+  portal claim verified in DB, insights band, date picker in the intake
+  dialog); docs PROGRESS §R9 + GAPS §E.25 + HUMAN_STEPS §2.1a.
+
+Stage Summary:
+- Round 9 complete: the reset is fully recovered, the lost round-6/8 flagship
+  modules are restored and verified, and two new public features + a styling
+  pass shipped on top. 366 → 407 tests, tsc + eslint green. Branch
+  feat/r9-restore-and-extend (7 commits) LOCAL ONLY — pushing + PR is the
+  token-gated human step (HUMAN_STEPS §2.1a, base fix/r5-day-one-reality).
