@@ -6,6 +6,7 @@ import {
 } from "@/lib/admission-labels";
 import { STATUS_FLOW, statusLabel } from "@/components/admissions/status-track";
 import { formatDate, toBnDigits } from "@/lib/format";
+import { GuardianLinkForm } from "@/components/portal/guardian-link-form";
 import type { ApplicationStatus } from "@prisma/client";
 
 /**
@@ -20,14 +21,18 @@ import type { ApplicationStatus } from "@prisma/client";
  */
 export function GuardianHome({ children_ }: { children_: GuardianChildView[] }) {
   if (children_.length === 0) {
+    // empty state routes straight to the self-service link form (E.19)
     return (
-      <div className="rounded-2xl border border-dashed border-gold/40 bg-card px-6 py-14 text-center">
-        <Baby aria-hidden className="mx-auto h-8 w-8 text-gold" />
-        <h2 className="mt-3 text-lg font-bold">এখনো কোনো সন্তানের তথ্য যুক্ত নেই</h2>
-        <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-          ভর্তি কর্মকর্তা আপনার সন্তানের আবেদনের সঙ্গে আপনার অ্যাকাউন্ট যুক্ত করলে এখানে
-          অগ্রগতি দেখতে পাবেন। এখনো যুক্ত হয়নি মনে হলে অফিসে জানান।
-        </p>
+      <div className="grid gap-6">
+        <GuardianLinkForm />
+        <div className="rounded-2xl border border-dashed border-gold/40 bg-card px-6 py-8 text-center">
+          <Baby aria-hidden className="mx-auto h-7 w-7 text-gold" />
+          <h2 className="mt-3 text-[15.5px] font-bold">এখনো কোনো সন্তানের তথ্য যুক্ত নেই</h2>
+          <p className="mx-auto mt-2 max-w-md text-[12.5px] leading-relaxed text-muted-foreground">
+            উপরের ফর্মে ট্র্যাকিং নম্বর ও পরিবারের মোবাইল দিয়ে নিজেই সংযোগ করতে পারবেন — অথবা
+            ভর্তি কর্মকর্তা আপনার অ্যাকাউন্টের সঙ্গে যুক্ত করে দিলে এখানে অগ্রগতি দেখতে পাবেন।
+          </p>
+        </div>
       </div>
     );
   }
@@ -37,6 +42,8 @@ export function GuardianHome({ children_ }: { children_: GuardianChildView[] }) 
       {children_.map((child) => (
         <ChildCard key={child.linkId} child={child} />
       ))}
+      {/* self-service link (E.19): a second child joins the same way */}
+      <GuardianLinkForm />
     </div>
   );
 }
