@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -52,21 +52,19 @@ export function BengaliDatePicker({
   const [focusWire, setFocusWire] = useState<string>(() => value || todayWire());
   const gridRef = useRef<HTMLDivElement>(null);
 
-  // reset the view whenever the popover (re)opens
-  useEffect(() => {
-    if (!open) return;
+  // the view resets whenever the popover opens (event handler, not an effect —
+  // no cascading renders); the grid then focuses the current day
+  function handleOpenChange(next: boolean) {
+    setOpen(next);
+    if (!next) return;
     const parsed = wireToBengali(value);
-    const anchor = parsed ?? gregorianToBengali(new Date());
-    setViewMonth(anchor);
+    setViewMonth(parsed ?? gregorianToBengali(new Date()));
     setFocusWire(value || todayWire());
-    // focus the current day once the grid mounts
-    const t = setTimeout(() => gridRef.current?.querySelector<HTMLElement>("[data-focused='true']")?.focus(), 30);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+    setTimeout(() => gridRef.current?.querySelector<HTMLElement>("[data-focused='true']")?.focus(), 30);
+  }
 
   const days = useMemo(() => buildMonthGrid(viewMonth), [viewMonth]);
-  const todayBn = useMemo(() => todayWire(), [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  const todayBn = useMemo(() => todayWire(), []);
 
   const monthTitle = `${BENGALI_MONTHS_BN[viewMonth.month - 1]} ${toBnDigits(viewMonth.year)}`;
 
@@ -129,7 +127,7 @@ export function BengaliDatePicker({
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <button
           type="button"
