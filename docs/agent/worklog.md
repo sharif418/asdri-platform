@@ -1137,3 +1137,41 @@ Stage Summary:
   pass shipped on top. 366 → 407 tests, tsc + eslint green. Branch
   feat/r9-restore-and-extend (7 commits) LOCAL ONLY — pushing + PR is the
   token-gated human step (HUMAN_STEPS §2.1a, base fix/r5-day-one-reality).
+
+---
+Task ID: R10-0 … R10-5 (close)
+Agent: main (Z.ai Code) — round 10 coordinator
+Task: The environment survived the round-9 close (baseline gates reproduced
+exactly, QA sweep clean) — so round 10 took the worklog's top two
+next-phase priorities: the two remaining fully-specced round-7 losses
+(guardian self-service child-link E.19, reader gold overlay E.25b), plus
+the session's mandatory styling polish.
+
+Work Log:
+- R10-0/R10-1: baseline 407/0/3211 + tsc clean; agent-browser sweep public
+  bn+en (বঙ্গাব্দ chip live), admin, guardian portal — zero product bugs.
+- R10-2: POST /api/portal/guardian/link — tracking + family-phone second
+  factor (guardianPhone → applicant's phone fallback), byte-identical 404
+  anti-enumeration, factor-gated 409, idempotent same-guardian 200,
+  per-ACCOUNT lookup-grade rate limit, CSRF + same-origin + role gate,
+  guardianLink.self audit; gold-spine portal form card + empty state
+  routing; 8 integration tests; live-flow browser-verified (wrong phone →
+  identical toast; correct → second child card + audit; DB restored).
+- R10-3: reader gold canvas overlay — incremental text construction with
+  exact per-item char ranges + base-space rects; renderPdfPage returns the
+  toViewport geometry hook; gold boxes for whole items intersecting
+  [from, through]; pointer-transparent + print-hidden overlay; repaint on
+  page/zoom/match changes. Browser-verified: ৮,৮২০ gold pixels page 1
+  (the round-7 number), ৪,৮৭৫ page 2, ArrowRight/Left round-trip.
+- R10-4 (polish): current-page search entries wear a gold ring + dot —
+  the list and the overlay read together.
+- R10-5: gates 415/0/3241 (+8), tsc + eslint clean; docs PROGRESS §R10,
+  GAPS §E.26, HUMAN_STEPS §2.1b, this entry — committed.
+
+Stage Summary:
+- Round 10 complete: E.19 closed for good, the reader overlay restored to
+  its exact round-7 verification numbers, and both are browser-proven.
+  407 → 415 tests. Branch feat/r10-guardian-link (4 commits) stacked on
+  feat/r9-restore-and-extend — LOCAL ONLY; push is token-gated
+  (HUMAN_STEPS §2.1a+1b). Next-phase top: course preview links (§E.26a —
+  the last surviving round-7/8 loss, fully specced), then the push queue.
