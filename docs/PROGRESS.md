@@ -712,3 +712,109 @@ until the letter was in their hands.
 `tsc` clean · `lint` clean · **`bun test` 366 pass / 0 fail / 2364 expects** (353 → 366:
 +7 pdf-search unit pins, +6 exam-schedule integration). Evidence screenshots:
 `/home/z/my-project/download/qa-r5/` (sandbox-side; mirrored into the PR description).
+
+## R9 — sandbox-reset recovery: the lost rounds 6–8 restored + new public surfaces
+
+**Context**: the sandbox was reset between rounds; rounds 6–8 (alumni module, Bangla
+date picker, guardian self-link, reader overlay, dashboard insights, course preview,
+/en overflow fix) lived only on local branches and were lost. The remote still had the
+round-5 close (`fix/r5-day-one-reality`, 366 tests). Round 9 rebuilt the environment
+from the remote and restored the highest-value lost modules from the worklog specs,
+plus new public surfaces. Branch: `feat/r9-restore-and-extend` (stacked on
+`fix/r5-day-one-reality`; push is token-gated — HUMAN_STEPS §2.1a).
+
+### R9-1 — Alumni registry module (restores round-6 workstream 1)
+
+- `AlumniProfile` model + migration: `registryNo` office handle (AL-YYYY-NNNN,
+  API-minted — the form never supplies one), optional unique `userId` account link
+  (SetNull), `isPublished` directory gate; contact fields are office/portal-only.
+- `alumni.manage` permission (ADMIN + ADMISSIONS), MODULE_PERMISSIONS + authz test
+  matrix updated.
+- `/api/admin/alumni` GET (session+roleCan safe-read) + POST (mint + audit);
+  `[id]` PATCH + guarded DELETE (a linked row refuses 409 — the alumnus's portal
+  card is never silently orphaned). Audit labels for all four actions.
+- `/admin/admissions/alumni` manager (sidebar child of ভর্তি ব্যবস্থাপনা): stat
+  chips (মোট/প্রকাশিত/যুক্ত/PGDID), debounced search, table with publish badge +
+  account-link glyph, create/edit dialog, guarded delete confirm.
+- `/about/alumni` public directory section: link-based search + facet chips +
+  compact pagination (zero client JS), **privacy-by-default — the public select is
+  contact-free by construction** (verified by test: no phone/email/address key can
+  appear in the result).
+- Alumni portal v2: keepsake registry card (gold spine, avatar initial, gold meta
+  grid, publish badge) + self-service contact form
+  (`POST /api/portal/alumni/profile`; the **email claim**: an unclaimed office row
+  carrying the signer's email pins its `userId` on first save).
+- Seed: 12 rows across PYS/PGDID/CCIS/ATT + `alumni.demo@assunnahinstitute.org`
+  (qa-password-123); re-seed refreshes office fields but keeps a linked member's
+  own contact edits.
+- 10 integration tests (mint, 403 EDITOR, safe-read, PATCH, guarded DELETE, role
+  gate, claim flow, field validation, directory privacy ×2).
+
+### R9-2 — BengaliDatePicker (restores round-6 workstream 2)
+
+- `src/lib/bengali-date.ts` pure UTC math, 2019-revised Bangladesh calendar:
+  বৈশাখ ১ = April 14 (every year), বৈশাখ–আশ্বিন ৩১, কার্তিক–মাঘ ৩০, ফাল্গুন
+  ২৯/৩০ (the season's Gregorian leap February), চৈত্র ৩০. Wire contract stays
+  the plain `YYYY-MM-DD` string — forms unchanged.
+- `BengaliDatePicker` (Radix popover): Bangla months/weekdays/digits, আজ,
+  পরিষ্কার, arrow-key navigation with month auto-advance, today ring + selected
+  fill, sun-first week. The popover reset lives in the open-change handler (a real
+  `react-hooks/set-state-in-effect` fix the first cut masked with a disable).
+- Wired into the four admin dialogs: intake (opens/closes/exam), campaign
+  (starts/ends), ledger (entry date), library checkout (due date).
+- 14 unit tests: full-year round-trips (365 + leap 366), April-13/14 anchor,
+  year flip, ২৬ মার্চ + ২১শে ফেব্রুয়ারি landmarks, impossible-date rejection.
+
+### R9-3 — Dashboard insights (restores round-8 workstream 1)
+
+- `src/lib/insights.ts` pure math: `buildDonationTrend` (COMPLETED/paidAt buckets;
+  PENDING never trends; window-external rows dropped), `buildApplicationTrend`,
+  `monthOverMonthDelta` (নতুন when the previous month was zero),
+  `buildAdmissionsFunnel` (journey order from the StatusTrack flow; DRAFT/REJECTED
+  never enter the rail), explicit Bangla short-month map (conjunct trap — never
+  slice()).
+- `DonationTrendChart`: server-rendered SVG, gold gradient, current-month ring,
+  per-bar `<title>`, `role=img` + sr-only table — zero client JS. Bar heights ∝
+  month totals (browser-proven 14/47/140/116/67/34 ↔ ৭.৫/২৫/৭৫/৬২/৩৬/১৮ হাজার).
+- `AdmissionsFunnelRail` for the 2 newest OPEN/PROCESSING intakes: journey order,
+  ADMITTED in gold, dimmed zero steps, seats fill line, deep link
+  `?intakeId=` (verified to land filtered — the round-8 param bug fixed by
+  construction).
+- MoM delta chips on the donations + new-applications stat cards; the insights
+  band is role-gated (finance.read / admissions.manage).
+- Seed: idempotent 15-row half-year donation history (trackingCode-keyed,
+  months-ago anchored so the chart stays current; one PENDING row proves the
+  rule; office ledger untouched). 17 unit tests.
+
+### R9-4 — /en font-swap overflow fix (restores the round-8 bug fix)
+
+The header actions group renders ~7px wider in the fallback font for the first
+~300ms of every /en load (scrollWidth 1287 vs 1280). `overflow-x-clip` on the
+sticky bar; dropdown panels open below the bar (top-full) so the clip leaves them
+untouched. Browser-proven: rAF-watched scrollWidth across fresh load + reload →
+1280/1280 at every frame; panel bottom 337 vs bar bottom 117, fully rendered.
+
+### R9-5 — Portal keepsake completion + new public surfaces (new work)
+
+- Donor band: gold spine + avatar initial + star-motif divider; student
+  application cards: gold spine, avatar initial, gold meta icons — all five
+  portal roles now share one card language.
+- **New**: today's বঙ্গাব্দ date chip in the utility bar (bn, md+;
+  suppressHydrationWarning — the UTC-anchored math agrees across server/client
+  except an exact midnight render). Verified live: ২৩ আশ্বিন ১৪৩৩ বঙ্গাব্দ.
+- **New**: dual-calendar publication date on notice details (the official gazette
+  convention): "প্রকাশ: ৩ অক্টোবর ২০২৬ · ১৮ আশ্বিন ১৪৩৩ বঙ্গাব্দ" (bn).
+- Home hero manuscript styling (restores the round-6 polish): four corner
+  ornaments, soft radial gold glow behind the headline, star divider between
+  tagline and CTAs; SectionHeading ✦ eyebrow accents platform-wide.
+
+## Gates at round-9 close
+
+`tsc` clean · `lint` clean · **`bun test` 407 pass / 0 fail / 3211 expects**
+(366 → 407: +10 alumni, +14 bengali-date, +17 insights; the 4 authz matrix tests
+were updated in place). Browser QA: directory (Bangla search রংপুর → 1 match,
+ATT facet → 2 published cards), admin manager (create minted AL-2026-0013,
+guarded delete, DB back to 12), portal claim + self-update (DB + audit verified,
+demo value restored), dashboard insights band (zero errors), BengaliDatePicker in
+the intake dialog (আজ → ২৩ আশ্বিন ১৪৩৩ বঙ্গাব্দ). Evidence:
+`/home/z/my-project/download/qa-r9/` (12 screenshots).
