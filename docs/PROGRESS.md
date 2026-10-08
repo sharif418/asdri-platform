@@ -869,3 +869,90 @@ push remains token-gated — HUMAN_STEPS §2.1b).
 `tsc` clean · `lint` clean · **`bun test` 415 pass / 0 fail / 3241 expects**
 (407 → 415: +8 guardian-link). Evidence:
 `/home/z/my-project/download/qa-r10/` (4 screenshots).
+
+## R11 — the last preview entity, the unlink affordance, and C.2 closed
+
+**Context**: the environment survived the round-10 close intact (repo at
+`feat/r10-guardian-link`, Postgres @5433, dev server :3000; baseline gates
+reproduced 407→415/0/3241 exactly; QA sweep across public EN/BN + admin +
+all four portals found zero product bugs — the login-button click → /register
+observation was re-confirmed as the known synthetic-click/Fast-Refresh
+artifact, not a product defect). Round 11 therefore took the worklog's next
+three priorities. Branch: `feat/r11-course-preview` (stacked on
+`feat/r10-guardian-link`; push remains token-gated — HUMAN_STEPS §2.1c).
+
+### R11-1 — course preview links (§E.26a: the LAST round-7/8 loss, closed)
+
+- `PreviewEntity` gains `"Course"`; the minting API's module gate now
+  FOLLOWS the parsed entity — `content.manage` for Notice/Post,
+  `academics.manage` for Course — so a pure-academics EDITOR is never
+  bounced by a content guard, and an ADMISSIONS officer cannot mint course
+  previews (Notice minting keeps refusing them too).
+- The public course page's body is extracted into a shared
+  **`CourseDetail`** component; `/preview/<token>` renders a draft course
+  through the exact same render path under the gold banner — minus the
+  apply CTA band AND the sidebar's apply button (a draft must not invite
+  applications; `CourseFacts` gained `showApply`).
+- `getCourseForPreview` (by id, no isPublished gate) vs `getCourseBySlug`
+  (nulls drafts → permalink 404 stays); the SDP loader was deduplicated
+  behind `loadSdp`.
+- `PreviewLinkButton` gained a `className` prop and sits in the course
+  editor's bottom bar; the "view on site" link now only exists once the
+  course is published (the public page 404s drafts), with a Bangla hint in
+  its place.
+- 6 integration tests (token roundtrip, mint+verify, 404, ADMISSIONS 403,
+  anonymous 401, Notice→content gate still holds, draft loader split).
+- Browser-verified end-to-end: PYS minted+rendered (banner + sections, NO
+  apply CTA), IRM flipped to draft → preview renders while the public page
+  404s → restored; invalid token → the quiet state.
+
+### R11-2 — alumni one-click unlink (§E.25g, closed)
+
+- `POST /api/admin/alumni/[id]/unlink`: clears `userId` under the module's
+  own guards (alumni.manage + CSRF; unlinked → 409, missing → 404) with an
+  `alumni.profile.unlink` audit row carrying before/after. The account
+  itself survives and may re-claim later through the portal's email claim.
+- The manager table wears a Link2Off button on linked rows behind the
+  `adminConfirm` dialog — the officer no longer needs a manual DB trip to
+  satisfy DELETE's linked-row guard; the delete dialog now points at the
+  affordance instead of just refusing.
+- 2 integration tests (claim → unlink → audit → guarded-delete-now-succeeds
+  chain + the guard matrix). Live-verified in the browser (toast + row
+  state + audit row, demo link restored after).
+
+### R11-3 — C.2 closed: donations keyset cursor + range-aware audit export
+
+- The donations ledger's page-based OFFSET walk (the round-1 backlog item:
+  deep pagination degrades past ~300 rows) became a chronological keyset
+  walk: the **(createdAt, id)** pair is the ordering key — gap-free under
+  timestamp ties (id breaks them), composable with the officer's
+  status/fund/month/search filters (the cursor ANDs into them, never
+  replaces), malformed cursors degrade to the newest page.
+- `CursorPager` (« সর্বশেষ, prev/next windows, per-window count) replaces the
+  numbered pager on that page, backed by cheap findFirst neighbor probes so
+  a dead direction renders as an inert span, never an empty page.
+- The audit CSV gained the `from`/`to` range through the audit-range parser
+  that had shipped unused — now wired to the audit page's filter form too,
+  so the listing and the export share one range; the CSV filename carries
+  it (audit-log-FROM_TO-date.csv).
+- 8 integration tests: three-window gap-free walk, prev round-trip, the
+  partial last window, the multi-window filtered walk (count == total),
+  tie determinism, malformed-cursor parsing, range narrowing + one-sided
+  semantics + role guard. Browser-proven: 40 seeded rows walked window→
+  window→back→reset, then cleaned up.
+
+### R11-4 — styling pass (mandatory)
+
+- The preview banner graduates from a plain gold bar to the manuscript
+  language: lattice pattern, the entity kind (দাপ্তরিক বিজ্ঞপ্তি/ব্লগ পোস্ট/
+  কোর্স পেজ), and the link's own expiry in the dual calendar
+  (গ্রেগরিয়ান · বঙ্গাব্দ) — the reviewer knows exactly when the link dies.
+  Flex-wraps on 390px.
+- CurriculumTabs gained per-semester subject-count chips in Bangla digits
+  (৫, ৬ …) so the explorer's scope is visible before a tab is opened.
+
+## Gates at round-11 close
+
+`tsc` clean · `lint` clean · **`bun test` 431 pass / 0 fail / 3306 expects**
+(415 → 431: +6 course-preview, +2 alumni-unlink, +8 C.2). Evidence:
+`/home/z/my-project/download/qa-r11/` (12 screenshots).

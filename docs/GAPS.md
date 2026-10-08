@@ -293,3 +293,49 @@ c. **PPR/ISR home shell** (unchanged), **donation-ledger cursor pagination
    (C.2)** (unchanged).
 d. **Admin "unlink account" affordance** for linked alumni rows (§E.25g,
    unchanged — small).
+
+## §E.27 — Round-11 decisions + the remaining open items
+
+### Decisions
+
+1. **Course preview gate follows the entity** (E.26a/E.25c closed): the
+   minting API parses the body first, then requires the module the entity
+   lives in — content.manage for Notice/Post, academics.manage for Course.
+   An anonymous/garbage body still gets 400-before-401; the existing
+   tests' 401 shapes (valid body, no session) are unchanged. The preview
+   render is the public page's own CourseDetail with `withApplyBand=false`
+   — a draft must not invite applications, so the CTA band AND the
+   sidebar's apply button stay off (CourseFacts.showApply).
+2. **The "view on site" link in the course editor is publish-gated**: the
+   public page 404s drafts, so an unpublished course shows the preview-link
+   hint instead of a link that would dead-end.
+3. **Unlink semantics** (§E.25g closed): one POST clears userId; the USER
+   account survives (a wrong claim is reversible by re-claiming through the
+   portal's email match — the row keeps its email). 409 on an unlinked row
+   keeps the endpoint probe-safe; audit carries before/after.
+4. **Donations keyset key = (createdAt, id)**: the id half breaks timestamp
+   ties so the walk is deterministic and gap-free. Malformed cursors
+   degrade to the newest page (a stale shared URL renders, never errors).
+   The numbered pager was replaced by CursorPager on THIS page only — the
+   office's realistic flow is chronological walking + filters; random
+   deep-page jumping was the OFFSET cost we removed.
+5. **Audit range = both-sides parser** (audit-range.ts, finally wired): a
+   one-sided or malformed pair is ignored entirely; a reversed pair is
+   swapped. The listing and the CSV export share the parser, so what the
+   officer filters is what they export.
+
+### Open items (next-phase candidates)
+
+a. **Push + PR queue**: feat/r9-restore-and-extend, feat/r10-guardian-link
+   AND feat/r11-course-preview are all local-only (token-gated); the
+   round-11 PR stacks on round-10's (HUMAN_STEPS §2.1c).
+b. **PPR/ISR home shell** for the 90 mobile-perf target (unchanged — the
+   last remaining big perf lever, deliberately deferred until Next 16
+   stabilizes PPR).
+c. **Manual-ledger page** still uses the numbered OFFSET pager (25→50 rows/
+   page, realistically small); migrate to CursorPager if the office's
+   manual entries ever scale — the component is now reusable.
+d. **Home-sections "pages" preview links** if the office wants them (the
+   E.24h follow-up — preview infrastructure now accepts a third entity
+   kind, adding "Page" would follow the same pattern).
+e. **VLM screenshot review** still unavailable (z-ai CLI auth).

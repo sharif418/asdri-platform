@@ -37,6 +37,14 @@ secret is missing or a `dev-only` placeholder). Everything below is a deliberate
    (E.19) + the reader gold overlay + the search-list ring polish —
    4 commits, 415/0/3241 gates. Evidence:
    `/home/z/my-project/download/qa-r10/`.
+1c. **Push the round-11 branch** (stacked on round-10's):
+   `git push origin feat/r11-course-preview` — base
+   `feat/r10-guardian-link` (push all three together; round-9 §2.1a and
+   round-10 §2.1b apply first). The branch carries the course preview links
+   (the last round-7/8 loss, E.26a), the alumni one-click unlink (E.25g),
+   C.2 closed (donations keyset cursor + range-aware audit export), and the
+   preview-banner/curriculum styling pass — 4 commits, 431/0/3306 gates.
+   Evidence: `/home/z/my-project/download/qa-r11/`.
 2. **Payment gateway merchant account** (bKash merchant / Nagad / SSLCommerz — office's
    choice): create the account, obtain API keys + callback credentials, then decide the
    adapter integration round. The sandbox provider stays functional until then
