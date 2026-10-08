@@ -30,8 +30,11 @@ export function CurriculumTabs({ semesters, lang }: CurriculumTabsProps) {
         className="scrollbar-thin h-auto max-w-full flex-wrap justify-start gap-1 overflow-x-auto py-1"
       >
         {semesters.map((semester) => (
-          <TabsTrigger key={semester.label.en} value={semester.label.en} className="px-4 py-1.5">
+          <TabsTrigger key={semester.label.en} value={semester.label.en} className="gap-1.5 px-4 py-1.5">
             {pick(semester.label, lang)}
+            <span className="rounded-full bg-secondary px-1.5 py-px text-[10px] font-semibold tabular-nums text-secondary-foreground">
+              {lang === "bn" ? toBnDigits(semester.courses.length) : semester.courses.length}
+            </span>
           </TabsTrigger>
         ))}
       </TabsList>

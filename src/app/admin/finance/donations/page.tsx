@@ -3,10 +3,16 @@ import { redirect } from "next/navigation";
 import { Banknote, Search } from "lucide-react";
 import { db } from "@/lib/db";
 import { getSession, roleCan } from "@/lib/auth";
-import { AdminPager } from "@/components/admin/admin-pager";
+import { CursorPager } from "@/components/admin/cursor-pager";
 import { DonationsTable, type DonationRowData } from "@/components/admin/donations-table";
 import { FinanceExportButton } from "@/components/admin/finance-export-button";
 import { donationStatusLabel, DONATION_STATUS_META } from "@/lib/finance-labels";
+import {
+  donationCursorWhere,
+  donationNeighborProbes,
+  encodeDonationCursor,
+  parseDonationCursor,
+} from "@/lib/finance/donation-cursor";
 import { cn } from "@/lib/utils";
 import { formatNumber, formatTaka } from "@/lib/format";
 import type { DonationStatus, Prisma } from "@prisma/client";
@@ -17,16 +23,23 @@ const PAGE_SIZE = 25;
 const STATUS_OPTIONS = Object.keys(DONATION_STATUS_META) as DonationStatus[];
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-function buildQuery(base: Record<string, string | undefined>, page: number): string {
+function buildQuery(base: Record<string, string | undefined>, cursor?: string, dir?: "next" | "prev"): string {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(base)) {
     if (value) params.set(key, value);
   }
-  params.set("page", String(page));
+  if (cursor && dir) {
+    params.set("cursor", cursor);
+    params.set("dir", dir);
+  }
   return `/admin/finance/donations?${params.toString()}`;
 }
 
-/** The donations ledger — filters, pills, pagination, officer actions, CSV. */
+/**
+ * The donations ledger — filters, pills, keyset pagination (round 11, C.2:
+ * the deep OFFSET walk became chronological cursor windows), officer
+ * actions, CSV.
+ */
 export default async function AdminDonationsPage({ searchParams }: { searchParams: SearchParams }) {
   const session = await getSession();
   if (!session || !roleCan(session.user.role, "finance.manage")) redirect("/admin");
@@ -37,7 +50,9 @@ export default async function AdminDonationsPage({ searchParams }: { searchParam
     typeof sp.status === "string" && STATUS_OPTIONS.includes(sp.status as DonationStatus) ? (sp.status as DonationStatus) : undefined;
   const fundId = typeof sp.fundId === "string" && sp.fundId.length > 0 ? sp.fundId : undefined;
   const month = typeof sp.month === "string" && /^\d{4}-\d{2}$/.test(sp.month) ? sp.month : undefined;
-  const page = Math.max(1, Number.parseInt(typeof sp.page === "string" ? sp.page : "1", 10) || 1);
+  // keyset state (round 11): a malformed cursor degrades to the newest page
+  const cursor = parseDonationCursor(typeof sp.cursor === "string" ? sp.cursor : undefined);
+  const dir = sp.dir === "prev" ? "prev" : "next";
 
   const createdAt: Prisma.DateTimeFilter | undefined = (() => {
     if (!month) return undefined;
@@ -48,7 +63,7 @@ export default async function AdminDonationsPage({ searchParams }: { searchParam
     return { gte: start, lt: end };
   })();
 
-  const where: Prisma.DonationWhereInput = {
+  const filters: Prisma.DonationWhereInput = {
     ...(status ? { status } : {}),
     ...(fundId ? { fundId } : {}),
     ...(createdAt ? { createdAt } : {}),
@@ -62,13 +77,14 @@ export default async function AdminDonationsPage({ searchParams }: { searchParam
         }
       : {}),
   };
+  const where = cursor ? donationCursorWhere(filters, cursor, dir) : filters;
 
-  const [total, rows, counts, funds, totals] = await Promise.all([
-    db.donation.count({ where }),
+  const [total, windowRows, counts, funds, totals] = await Promise.all([
+    db.donation.count({ where: filters }),
     db.donation.findMany({
       where,
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * PAGE_SIZE,
+      // dir=prev fetches the newer window ascending, then reverses for display
+      orderBy: dir === "prev" ? [{ createdAt: "asc" }, { id: "asc" }] : [{ createdAt: "desc" }, { id: "desc" }],
       take: PAGE_SIZE,
       select: {
         id: true,
@@ -92,14 +108,31 @@ export default async function AdminDonationsPage({ searchParams }: { searchParam
     db.fund.findMany({ orderBy: { sortOrder: "asc" }, select: { id: true, nameBn: true } }),
     db.donation.groupBy({
       by: ["status"],
-      where: { ...where, status: { in: ["COMPLETED", "PENDING"] } },
+      where: { ...filters, status: { in: ["COMPLETED", "PENDING"] } },
       _sum: { amount: true },
     }),
   ]);
 
+  // display order is ALWAYS newest-first, whichever direction produced it
+  const rows = dir === "prev" ? [...windowRows].reverse() : windowRows;
+
+  // neighbor probes: anything older/newer beyond this window? (cheap findFirst)
+  const probes =
+    rows.length > 0
+      ? donationNeighborProbes(filters, {
+          first: { createdAt: rows[0]!.createdAt, id: rows[0]!.id },
+          last: { createdAt: rows[rows.length - 1]!.createdAt, id: rows[rows.length - 1]!.id },
+        })
+      : null;
+  const [olderExists, newerExists] = probes
+    ? await Promise.all([
+        db.donation.findFirst({ where: probes.older, select: { id: true } }),
+        db.donation.findFirst({ where: probes.newer, select: { id: true } }),
+      ])
+    : [null, null];
+
   const countFor = (value: DonationStatus) => counts.find((row) => row.status === value)?._count._all ?? 0;
   const sumFor = (value: DonationStatus) => totals.find((row) => row.status === value)?._sum.amount ?? 0;
-  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const tableRows: DonationRowData[] = rows.map((row) => ({
     id: row.id,
@@ -159,7 +192,7 @@ export default async function AdminDonationsPage({ searchParams }: { searchParam
           return (
             <Link
               key={value}
-              href={buildQuery({ q: q || undefined, fundId, month, status: value }, 1).replace(/[?&]page=1$/, "")}
+              href={buildQuery({ q: q || undefined, fundId, month, status: value })}
               aria-current={active ? "page" : undefined}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-3 py-1 transition-opacity",
@@ -230,12 +263,30 @@ export default async function AdminDonationsPage({ searchParams }: { searchParam
         )}
       </div>
 
-      <AdminPager
-        page={page}
-        pageCount={pageCount}
+      <CursorPager
+        shown={tableRows.length}
         total={total}
         unit="অনুদান"
-        buildHref={(next) => buildQuery({ q: q || undefined, status, fundId, month: month ?? undefined }, next)}
+        deep={cursor !== null}
+        resetHref={cursor ? buildQuery({ q: q || undefined, status, fundId, month: month ?? undefined }) : null}
+        prevHref={
+          rows.length > 0 && newerExists
+            ? buildQuery(
+                { q: q || undefined, status, fundId, month: month ?? undefined },
+                encodeDonationCursor({ createdAt: rows[0]!.createdAt, id: rows[0]!.id }),
+                "prev",
+              )
+            : null
+        }
+        nextHref={
+          rows.length > 0 && olderExists
+            ? buildQuery(
+                { q: q || undefined, status, fundId, month: month ?? undefined },
+                encodeDonationCursor({ createdAt: rows[rows.length - 1]!.createdAt, id: rows[rows.length - 1]!.id }),
+                "next",
+              )
+            : null
+        }
       />
     </div>
   );

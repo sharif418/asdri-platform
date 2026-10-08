@@ -2,10 +2,10 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { env } from "@/lib/env";
 
 /**
- * Signed, expiring preview links (round 4, workstream 5).
- *
- * A preview link lets the office (or anyone they hand the URL to) read a
- * Notice/Post through the public render before it is published. The token is
+ * Signed, expiring preview links (round 4, workstream 5; Course entity added
+ * round 11). A preview link lets the office (or anyone they hand the URL
+ * to) read a Notice/Post/Course through the public render before it is
+ * published. The token is
  *   base64url(payload) + "." + base64url(HMAC-SHA256(sessionSecret, body))
  * with payload = JSON { entity, entityId, exp } — the same shape as the
  * sandbox checkout grant / session-cookie MAC (constant-time compare, 24h
@@ -14,7 +14,7 @@ import { env } from "@/lib/env";
 
 export const PREVIEW_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-export type PreviewEntity = "Notice" | "Post";
+export type PreviewEntity = "Notice" | "Post" | "Course";
 
 export interface PreviewPayload {
   entity: PreviewEntity;
@@ -24,7 +24,7 @@ export interface PreviewPayload {
 }
 
 export function isPreviewEntity(value: unknown): value is PreviewEntity {
-  return value === "Notice" || value === "Post";
+  return value === "Notice" || value === "Post" || value === "Course";
 }
 
 /** Mint a preview token for one entity row (exp = now + 24h). */

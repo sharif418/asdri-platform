@@ -5,6 +5,7 @@ import { getSession, roleCan } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { formatNumber } from "@/lib/format";
 import { auditActionLabelBn, auditEntityLabelBn } from "@/lib/audit-labels";
+import { parseAuditRange } from "@/lib/audit-range";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "অডিট লগ" };
@@ -21,11 +22,18 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: S
   const sp = await searchParams;
   const entity = typeof sp.entity === "string" ? sp.entity.trim().slice(0, 60) : "";
   const action = typeof sp.action === "string" ? sp.action.trim().slice(0, 60) : "";
+  // Range filter (round 11, C.2): shared parser with the CSV export — both
+  // sides must parse, a reversed pair is swapped into order.
+  const range = parseAuditRange(
+    typeof sp.from === "string" ? sp.from : undefined,
+    typeof sp.to === "string" ? sp.to : undefined,
+  );
   const page = Math.max(1, Number.parseInt(typeof sp.page === "string" ? sp.page : "1", 10) || 1);
 
   const where = {
     ...(entity ? { entity } : {}),
     ...(action ? { action: { contains: action, mode: "insensitive" as const } } : {}),
+    ...(range ? { createdAt: { gte: range.start, lte: range.end } } : {}),
   };
 
   const [total, entities, rows] = await Promise.all([
@@ -53,6 +61,21 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: S
   const exportParams = new URLSearchParams();
   if (entity) exportParams.set("entity", entity);
   if (action) exportParams.set("action", action);
+  if (range) {
+    exportParams.set("from", range.from);
+    exportParams.set("to", range.to);
+  }
+
+  const pageHref = (next: number): string => {
+    const params = new URLSearchParams({ page: String(next) });
+    if (entity) params.set("entity", entity);
+    if (action) params.set("action", action);
+    if (range) {
+      params.set("from", range.from);
+      params.set("to", range.to);
+    }
+    return `/admin/audit?${params.toString()}`;
+  };
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -91,6 +114,14 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: S
           dir="ltr"
           className="min-w-52 flex-1 rounded-lg border bg-card px-3.5 py-2 text-sm outline-none focus:border-primary/50"
         />
+        <label className="flex items-center gap-1.5 rounded-lg border bg-card px-3 py-2 text-[12px] text-muted-foreground">
+          থেকে
+          <input type="date" name="from" defaultValue={range?.from ?? ""} className="bg-transparent text-sm text-foreground outline-none" />
+        </label>
+        <label className="flex items-center gap-1.5 rounded-lg border bg-card px-3 py-2 text-[12px] text-muted-foreground">
+          পর্যন্ত
+          <input type="date" name="to" defaultValue={range?.to ?? ""} className="bg-transparent text-sm text-foreground outline-none" />
+        </label>
         <button type="submit" className="rounded-lg border bg-card px-4 py-2 text-sm font-semibold hover:bg-secondary">
           <Search aria-hidden className="mr-1 inline h-3.5 w-3.5" />
           ফিল্টার
@@ -178,7 +209,7 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: S
           <div className="flex gap-2">
             {page > 1 && (
               <Link
-                href={`/admin/audit?${new URLSearchParams({ ...(entity ? { entity } : {}), ...(action ? { action } : {}), page: String(page - 1) }).toString()}`}
+                href={pageHref(page - 1)}
                 className="inline-flex items-center gap-1 rounded-lg border bg-card px-3 py-1.5 font-semibold hover:bg-secondary"
               >
                 <ChevronLeft aria-hidden className="h-3.5 w-3.5" /> পূর্ববর্তী
@@ -186,7 +217,7 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: S
             )}
             {page < pageCount && (
               <Link
-                href={`/admin/audit?${new URLSearchParams({ ...(entity ? { entity } : {}), ...(action ? { action } : {}), page: String(page + 1) }).toString()}`}
+                href={pageHref(page + 1)}
                 className={cn("inline-flex items-center gap-1 rounded-lg border bg-card px-3 py-1.5 font-semibold hover:bg-secondary")}
               >
                 পরবর্তী <ChevronRight aria-hidden className="h-3.5 w-3.5" />

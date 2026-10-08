@@ -1175,3 +1175,74 @@ Stage Summary:
   feat/r9-restore-and-extend — LOCAL ONLY; push is token-gated
   (HUMAN_STEPS §2.1a+1b). Next-phase top: course preview links (§E.26a —
   the last surviving round-7/8 loss, fully specced), then the push queue.
+
+---
+## Round 11 (feat/r11-course-preview, stacked on feat/r10-guardian-link)
+
+Task: standing round pattern — worklog review, assessment + agent-browser
+QA, fixes first (none needed), then development with the mandatory styling
++ features, all recorded in the handover.
+
+- R11-0/1: environment survived the round-10 close; baseline gates
+  reproduced 415/0/3241 exactly; full QA sweep (public EN/BN at 1280+390,
+  admin dashboard incl. the insights band, guardian/teacher/alumni portals)
+  found ZERO product bugs. The teacher-login → /register observation was
+  re-confirmed as the known synthetic-click/Fast-Refresh artifact (a stale
+  ref resolves to the register link after a remount; a real user click
+  cannot navigate there). Two dev-server silent deaths this session (the
+  documented nohup restart pattern fixed both; treat HTTP 000 /
+  ERR_CONNECTION_REFUSED as the restart signal).
+- R11-2: COURSE PREVIEW LINKS (§E.26a — the LAST round-7/8 loss, closed).
+  PreviewEntity += "Course"; the mint API's module gate FOLLOWS the parsed
+  entity (content.manage for Notice/Post, academics.manage for Course);
+  the public page's body became the shared CourseDetail component so
+  /preview/<token> renders a draft through the same path under the gold
+  banner with withApplyBand=false (CTA band + sidebar apply button off —
+  a draft must not invite applications); getCourseForPreview by id without
+  the publish gate; PreviewLinkButton +className in the editor bottom bar,
+  "view on site" publish-gated; +6 tests. Browser-verified: PYS
+  minted+rendered, IRM draft-preview + public 404 + restored, invalid
+  token → quiet state.
+- R11-3: ALUMNI ONE-CLICK UNLINK (§E.25g, closed): POST
+  /api/admin/alumni/[id]/unlink (alumni.manage + CSRF; unlinked → 409;
+  audit before/after) + Link2Off button behind adminConfirm in the manager;
+  the delete dialog points at it. +2 tests; live-flow verified then
+  restored.
+- R11-4: C.2 CLOSED — donations keyset cursor ((createdAt, id) ordering,
+  gap-free under ties, composes with filters, malformed → newest page)
+  + CursorPager with findFirst neighbor probes; audit CSV + page share the
+  audit-range parser (finally wired; both-sides semantics, reversed
+  swapped); CSV filename carries the range. +8 tests incl. the
+  three-window walk; browser-proven with 40 seeded rows (window → window
+  → back → reset → cleaned).
+- R11-5 (mandatory styling): preview banner → manuscript language with
+  entity kind + dual-calendar expiry (the reviewer sees when the link
+  dies; wraps at 390px); CurriculumTabs per-semester subject-count chips.
+- R11-6: gates tsc + eslint clean, bun test 431/0/3306 (415 → 431).
+  Docs: PROGRESS §R11, GAPS §E.27, HUMAN_STEPS §2.1c, this entry —
+  committed (5 commits on the branch: 4 feature + docs).
+
+Stage Summary:
+- Round 11 complete: the preview infrastructure is whole again (all three
+  entity kinds), the alumni module is self-sufficient for the office, and
+  the round-1 data-scale backlog is closed. 415 → 431 tests. Branch
+  feat/r11-course-preview (4 commits) stacked on feat/r10-guardian-link —
+  LOCAL ONLY; push is token-gated (HUMAN_STEPS §2.1a+1b+1c). Next-phase
+  top: the push queue, then PPR/ISR home shell (the last big perf lever)
+  and the CursorPager migration for the manual ledger if it ever scales.
+
+## Round 11 — addendum: the push queue cleared (R11-POST)
+
+The client supplied a GitHub token after the round-11 close. All three
+stacked branches were pushed and the PRs opened exactly as specced in
+HUMAN_STEPS §2.1a/1b/1c (now folded into §2.1):
+
+- `feat/r9-restore-and-extend` → **PR #32** (base `fix/r5-day-one-reality`)
+- `feat/r10-guardian-link` → **PR #33** (base `feat/r9-restore-and-extend`)
+- `feat/r11-course-preview` → **PR #34** (base `feat/r10-guardian-link`)
+
+Stack integrity verified before pushing (r9~8 = fix/r5 tip 810a7f2;
+merge-base r10/r9 = a6321f4; merge-base r11/r10 = 5bc6e19). Nothing was
+merged — the PR chain #2 → #34 remains client-review-only, bottom-up.
+HUMAN_STEPS §2.1 updated: the push notes are resolved; the remaining human
+step is the merge review itself.

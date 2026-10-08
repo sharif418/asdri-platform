@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "@/hooks/use-toast";
+import { PreviewLinkButton } from "@/components/admin/preview-link-button";
 import { MetaSection } from "./meta-section";
 import { CurriculumSection } from "./curriculum-section";
 import { SpecializationsSection, SdpSection } from "./list-sections";
@@ -113,13 +114,29 @@ export function CourseEditor({ initial }: { initial: CourseEditorValues }) {
       <SpecializationsSection specs={specs} setSpecs={setSpecs} saving={savingSpecs} onSave={saveSpecs} />
       <SdpSection sdp={sdp} setSdp={setSdp} saving={savingSdp} onSave={saveSdp} />
 
-      <div className="flex items-center justify-between border-t pt-6 text-sm">
+      {/* Bottom bar (round 11): the preview link works for drafts AND
+          published rows; the "view on site" link only exists once the course
+          is published (the public page 404s drafts). */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t pt-6 text-sm">
         <Link href="/admin/courses" className="text-muted-foreground hover:text-primary">
           ← কোর্স তালিকায় ফিরুন
         </Link>
-        <Link href={`/academics/courses/${initial.slug}`} target="_blank" className="font-semibold text-primary hover:underline">
-          ওয়েবসাইটে কোর্স পেজ দেখুন ↗
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <PreviewLinkButton entity="Course" entityId={initial.id} className="gap-1.5" />
+          {meta.isPublished ? (
+            <Link
+              href={`/academics/courses/${initial.slug}`}
+              target="_blank"
+              className="font-semibold text-primary hover:underline"
+            >
+              ওয়েবসাইটে কোর্স পেজ দেখুন ↗
+            </Link>
+          ) : (
+            <span className="text-[11px] leading-snug text-muted-foreground">
+              প্রকাশের আগে প্রিভিউ লিংকেই কোর্সটি হুবহু দেখা যাবে (২৪ ঘণ্টা বৈধ)।
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

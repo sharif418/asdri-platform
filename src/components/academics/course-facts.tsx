@@ -6,8 +6,20 @@ import { pick } from "@/types";
 import type { Course, Language } from "@/types";
 import { langPath } from "@/lib/locale";
 
-/** Key-facts sidebar for the course detail page. */
-export function CourseFacts({ course, lang }: { course: Course; lang: Language }) {
+/**
+ * Key-facts sidebar for the course detail page. `showApply` (round 11) hides
+ * the admissions CTA when rendering a draft preview — a preview must not
+ * invite applications. Defaults to true for the public permalink.
+ */
+export function CourseFacts({
+  course,
+  lang,
+  showApply = true,
+}: {
+  course: Course;
+  lang: Language;
+  showApply?: boolean;
+}) {
   const facts = [
     {
       icon: ScrollText,
@@ -71,16 +83,18 @@ export function CourseFacts({ course, lang }: { course: Course; lang: Language }
             </div>
           </div>
 
-          <Button
-            asChild
-            size="lg"
-            className="bg-gold-gradient w-full font-semibold text-gold-foreground shadow-md hover:opacity-95"
-          >
-            <Link href={langPath(lang, "/admissions")}>
-              {lang === "bn" ? "ভর্তির আবেদন করুন" : "Apply for Admission"}
-              <ArrowRight aria-hidden className="h-4 w-4" />
-            </Link>
-          </Button>
+          {showApply ? (
+            <Button
+              asChild
+              size="lg"
+              className="bg-gold-gradient w-full font-semibold text-gold-foreground shadow-md hover:opacity-95"
+            >
+              <Link href={langPath(lang, "/admissions")}>
+                {lang === "bn" ? "ভর্তির আবেদন করুন" : "Apply for Admission"}
+                <ArrowRight aria-hidden className="h-4 w-4" />
+              </Link>
+            </Button>
+          ) : null}
         </div>
       </div>
     </aside>
