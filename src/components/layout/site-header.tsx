@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HeartHandshake, Languages, Mail, MapPin, Phone, Search } from "lucide-react";
+import { HeartHandshake, Languages, Mail, MapPin, Phone, Search, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LogoLockup, LogoTextLockup } from "@/components/shared/logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -16,6 +16,7 @@ import { useSiteConfig, useSiteMenu, useModuleEnabled } from "@/components/provi
 import { navigation } from "@/content/site";
 import { langPath } from "@/lib/locale";
 import type { DictionaryKey } from "@/lib/i18n";
+import { bengaliDateChip } from "@/lib/bengali-date";
 import { cn } from "@/lib/utils";
 
 /** Resolve the nav sections: DB menus (office-edited) with the static seed
@@ -67,10 +68,22 @@ function displayPath(pathname: string): string {
 function TopUtilityBar() {
   const { lang, toggle } = useLanguage();
   const siteConfig = useSiteConfig();
+  // today's Bengali-calendar reading (the Bangladesh convention: news portals
+  // carry বঙ্গাব্দ beside the Gregorian date). suppressHydrationWarning: the
+  // UTC-anchored chip can only disagree across an exact UTC-midnight render.
+  const todayBnChip = lang === "bn" ? bengaliDateChip(new Date()) : "";
   return (
     <div className="bg-emerald-deep text-ivory/90">
       <div className="container-site flex h-10 items-center justify-between gap-4 text-[12px] sm:text-[13px]">
         <div className="flex min-w-0 items-center gap-4">
+          <span
+            className="hidden items-center gap-1.5 whitespace-nowrap md:inline-flex"
+            suppressHydrationWarning
+            title="আজকের তারিখ — বঙ্গাব্দ ক্যালেন্ডার"
+          >
+            <CalendarDays aria-hidden className="h-3.5 w-3.5 shrink-0 text-gold" />
+            {todayBnChip}
+          </span>
           <a
             href={siteConfig.phoneHref}
             className="hidden items-center gap-1.5 transition-colors hover:text-gold min-[420px]:inline-flex"

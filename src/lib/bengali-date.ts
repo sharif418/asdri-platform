@@ -160,6 +160,11 @@ export function todayWire(): string {
   return dateToWire(new Date());
 }
 
+/** A Date → "২৯ আশ্বিন ১৪৩৩ বঙ্গাব্দ" (for headers + meta lines). */
+export function bengaliDateChip(date: Date): string {
+  return `${formatBengaliDate(gregorianToBengali(date))} বঙ্গাব্দ`;
+}
+
 /** The first day of the Bengali month containing the wire date (or Boishakh of today's year). */
 export function monthStartWire(wire: string): string {
   const bengali = wireToBengali(wire);

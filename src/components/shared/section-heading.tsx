@@ -55,11 +55,17 @@ export function SectionHeading({
           <span aria-hidden className="h-px w-8 bg-gold/70" />
           <span
             className={cn(
-              "text-xs font-semibold uppercase tracking-[0.25em]",
+              "flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.25em]",
               tone === "on-dark" ? "text-gold" : "text-gold",
             )}
           >
+            <span aria-hidden className="text-[7px] leading-none text-gold/60">
+              ✦
+            </span>
             {eyebrowText}
+            <span aria-hidden className="text-[7px] leading-none text-gold/60">
+              ✦
+            </span>
           </span>
           <span aria-hidden className="h-px w-8 bg-gold/70" />
         </div>

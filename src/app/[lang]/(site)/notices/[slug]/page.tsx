@@ -10,6 +10,7 @@ import { getNoticeBySlug, getNoticeNeighbors } from "@/lib/content/notices";
 import { env } from "@/lib/env";
 import { pick } from "@/types";
 import { formatDate } from "@/lib/format";
+import { bengaliDateChip } from "@/lib/bengali-date";
 import { ModuleUnavailable } from "@/components/shared/module-unavailable";
 import { PageHero } from "@/components/shared/page-hero";
 import { PrintButton } from "@/components/shared/print-button";
@@ -104,7 +105,8 @@ export default async function NoticeDetailPage({ params }: NoticePageProps) {
           { label: notice.title },
         ]}
         meta={{
-          textBn: `প্রকাশ: ${formatDate(notice.publishedAt, "bn")}`,
+          // dual calendar (the official gazette convention): Gregorian + বঙ্গাব্দ
+          textBn: `প্রকাশ: ${formatDate(notice.publishedAt, "bn")} · ${bengaliDateChip(new Date(notice.publishedAt))}`,
           textEn: `Published: ${formatDate(notice.publishedAt, "en")}`,
         }}
       />
