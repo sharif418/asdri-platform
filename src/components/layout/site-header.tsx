@@ -150,7 +150,7 @@ export function SiteHeader() {
         <TopUtilityBar />
         <div
           className={cn(
-            "sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85",
+            "sticky top-0 z-50 overflow-x-clip border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85",
             "transition-[box-shadow,border-color] duration-200",
             scrolled ? "border-border shadow-md shadow-emerald-950/5" : "border-transparent",
           )}
